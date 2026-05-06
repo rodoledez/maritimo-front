@@ -79,9 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (credentials: { username: string; password: string }) => {
       const response = await loginRequest(credentials);
       setToken(response.access_token);
-      setStoredUser(response.user);
-      setState({ user: response.user, isHydrating: false });
-      return response.user;
+      const user = response.user ?? (await profileRequest());
+      setStoredUser(user);
+      setState({ user, isHydrating: false });
+      return user;
     },
     []
   );

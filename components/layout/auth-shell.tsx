@@ -11,6 +11,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { NavLink } from "@/components/layout/nav-links";
 
@@ -59,13 +60,15 @@ export function AuthShell({
   if (role === "client" && !isClient) return null;
 
   return (
-    <SidebarProvider>
-      <AppSidebar links={links} />
-      <SidebarInset>
-        <EnvIndicator />
-        <AppHeader />
-        <main className="flex-1 bg-muted/30 p-4 md:p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <TooltipProvider>
+      <SidebarProvider>
+        <AppSidebar links={links} />
+        <SidebarInset>
+          <EnvIndicator />
+          <AppHeader />
+          <main className="flex-1 bg-muted/30 p-4 md:p-6">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

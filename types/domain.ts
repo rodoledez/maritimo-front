@@ -20,5 +20,5 @@ export type Client = {
 
 export type LoginResponse = {
   access_token: string;
-  user: User;
+  user: User | null;
 };
