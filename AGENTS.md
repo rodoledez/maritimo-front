@@ -166,20 +166,25 @@ NEXT_PUBLIC_APP_ENV=development
 
 `NEXT_PUBLIC_*` is required because the values are read in client components.
 
+## Migration roadmap
+
+For phased plan, effort estimates, per-phase definitions of done, and open questions for the backend team, see **`ROADMAP.md`** at the project root. The status table below is the short version.
+
 ## Migration status
 
 | Route | State | Notes |
 |---|---|---|
 | `/login` | ✅ Done | RHF + Zod, role-based redirect on success |
 | `/admin` | ✅ Done | KPI cards (uses `/kpis`) |
-| `/admin/clientes` | ✅ **Template** | Full CRUD with all patterns wired up |
-| `/admin/reservas` | 🟡 Stub | Bookings management — needs design pass |
-| `/admin/itinerarios` | 🟡 Stub | Includes Excel import — non-trivial |
-| `/admin/usuarios` | 🟡 Stub | Includes change-password dialog |
-| `/admin/{commodities,countries,ports,shipping-companies,type-containers}` | 🟡 Stub | Plain CRUD — replicate the `clientes` pattern |
+| `/admin/clientes` | ✅ **Template** | Full CRUD — reference for new admin pages |
+| `/admin/{commodities,countries,type-containers,shipping-companies,ports}` | ✅ Done | Plain CRUD; `active` toggled via PATCH (no dedicated routes) |
+| `/admin/usuarios` | ✅ Done | Includes change-password dialog. `active` via dedicated `/users/:id/{activate,deactivate}` |
+| `/admin/reservas` | ✅ Done | Detail / edit / confirm / cancel dialogs. Edit/confirm/cancel gated on `Pendiente` status. |
+| `/admin/itinerarios` | ✅ Done | CRUD + auto-calc transit time + Excel import + template download |
 | `/cliente` | ✅ Done | Landing tiles |
-| `/cliente/crear-solicitud-reserva` | 🟡 Stub | The 52KB `FlujoReserva.vue` multi-step form — its own session |
-| `/cliente/ver-{reservas,itinerario}` | 🟡 Stub | Read-only views |
+| `/cliente/ver-itinerario` | ✅ Done | Read-only itineraries (`/itineraries?vigent=Y`) |
+| `/cliente/ver-reservas` | ✅ Done | `/clients/:id/bookings` with detail dialog |
+| `/cliente/crear-solicitud-reserva` | ✅ Done | 4-step wizard: filters → select itinerary → details → review/submit |
 
 ## Reference: legacy → new file mapping
 

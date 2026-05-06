@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { NavLink } from "@/components/layout/nav-links";
 
@@ -71,7 +72,7 @@ export function AuthShell({
             tabIndex={-1}
             className="flex-1 bg-muted/30 p-4 outline-none md:p-6"
           >
-            {children}
+            <ErrorBoundary>{children}</ErrorBoundary>
           </main>
         </SidebarInset>
       </SidebarProvider>

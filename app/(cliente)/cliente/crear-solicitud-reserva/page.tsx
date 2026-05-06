@@ -1,11 +1,940 @@
-import { StubPage } from "@/components/stub-page";
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { useAuth } from "@/lib/auth/auth-context";
+import { useItineraries } from "@/lib/hooks/use-itineraries";
+import { useCommodities } from "@/lib/hooks/use-commodities";
+import { useTypeContainers } from "@/lib/hooks/use-type-containers";
+import { useCreateBooking } from "@/lib/hooks/use-bookings";
+import { errorMessage } from "@/lib/utils/errors";
+import { formatDate } from "@/lib/utils/format";
+import type { Itinerary } from "@/types/domain";
+
+import { Stepper, type Step } from "./stepper";
+import {
+  BL_OPTIONS,
+  FREIGHT_OPTIONS,
+  VGM_OPTIONS,
+  wizardSchema,
+  step1Fields,
+  step3Fields,
+  validateStep3,
+  type WizardValues,
+} from "./wizard-schema";
+
+const STEPS: Step[] = [
+  { id: 1, title: "Buscar itinerario" },
+  { id: 2, title: "Seleccionar itinerario" },
+  { id: 3, title: "Detalles de la reserva" },
+  { id: 4, title: "Resumen y enviar" },
+];
+
+const empty: WizardValues = {
+  weekNo: 1,
+  additionalWeeks: 4,
+  country: "",
+  port: "",
+  itineraryId: undefined,
+  commodityId: undefined,
+  typeContainerId: undefined,
+  typeFreight: "",
+  qtyContainers: 1,
+  temperature: undefined,
+  ventilation: "",
+  bl: "",
+  vgm: "",
+  isAtm: false,
+  isColdTreatment: false,
+  isCheckHumidity: false,
+  humidity: undefined,
+  description: "",
+};
 
 export default function CrearSolicitudReservaPage() {
-  return (
-    <StubPage
-      title="Crear solicitud de reserva"
-      description="Flujo multi-paso de solicitud de booking. Pendiente de migración."
-      reference="components/FlujoReserva.vue (proyecto antiguo)"
-    />
+  const router = useRouter();
+  const { user } = useAuth();
+  const [step, setStep] = useState<number>(1);
+  const [createdId, setCreatedId] = useState<number | string | null>(null);
+
+  const { data: itineraries = [] } = useItineraries({ vigent: "Y" });
+  const { data: commodities = [] } = useCommodities();
+  const { data: containers = [] } = useTypeContainers();
+  const createMutation = useCreateBooking();
+
+  const form = useForm<WizardValues>({
+    resolver: zodResolver(wizardSchema),
+    defaultValues: empty,
+    mode: "onBlur",
+  });
+
+  const values = useWatch({ control: form.control });
+
+  const countries = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          itineraries
+            .map((it) => it.countryDestination)
+            .filter((v): v is string => !!v)
+        )
+      ).sort(),
+    [itineraries]
   );
+  const destinationPorts = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          itineraries
+            .map((it) => it.portDestination)
+            .filter((v): v is string => !!v)
+        )
+      ).sort(),
+    [itineraries]
+  );
+
+  const filteredItineraries = useMemo<Itinerary[]>(() => {
+    if (!values.weekNo) return [];
+    const upper = (values.weekNo ?? 1) + (values.additionalWeeks ?? 4);
+    return itineraries
+      .filter((it) => {
+        if (!it.active) return false;
+        const wn = Number(it.weekNo);
+        if (Number.isNaN(wn)) return false;
+        if (wn < (values.weekNo ?? 1) || wn > upper) return false;
+        if (values.country && it.countryDestination !== values.country) {
+          return false;
+        }
+        if (values.port && it.portDestination !== values.port) return false;
+        return true;
+      })
+      .sort((a, b) => Number(a.weekNo) - Number(b.weekNo));
+  }, [
+    itineraries,
+    values.weekNo,
+    values.additionalWeeks,
+    values.country,
+    values.port,
+  ]);
+
+  const selectedItinerary = useMemo(
+    () =>
+      filteredItineraries.find(
+        (it) => Number(it.id) === Number(values.itineraryId)
+      ) ??
+      itineraries.find((it) => Number(it.id) === Number(values.itineraryId)) ??
+      null,
+    [filteredItineraries, itineraries, values.itineraryId]
+  );
+
+  const goNext = async () => {
+    if (step === 1) {
+      const ok = await form.trigger([...step1Fields]);
+      if (!ok) return;
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      if (!values.itineraryId) {
+        toast.error("Selecciona un itinerario para continuar");
+        return;
+      }
+      setStep(3);
+      return;
+    }
+    if (step === 3) {
+      const ok = await form.trigger([...step3Fields]);
+      const semantic = validateStep3(form.getValues());
+      if (!ok || semantic) {
+        if (semantic) toast.error(semantic);
+        return;
+      }
+      setStep(4);
+      return;
+    }
+  };
+
+  const goBack = () => setStep((s) => Math.max(1, s - 1));
+
+  const onSubmit = async () => {
+    const v = form.getValues();
+    if (!values.itineraryId || !selectedItinerary) {
+      toast.error("Falta el itinerario");
+      return;
+    }
+    const commodity = commodities.find(
+      (c) => Number(c.id) === Number(v.commodityId)
+    );
+    const container = containers.find(
+      (c) => Number(c.id) === Number(v.typeContainerId)
+    );
+
+    try {
+      const created = await createMutation.mutateAsync({
+        client_id: user?.Client?.id,
+        itinerary_id: selectedItinerary.id,
+        itineraryId: selectedItinerary.id,
+        commodityId: commodity?.id,
+        specie: commodity?.name ?? null,
+        typeContainerId: container?.id,
+        typeContainer: container?.name ?? null,
+        typeFreight: v.typeFreight,
+        qtyContainers: v.qtyContainers ?? 1,
+        temperature: v.temperature ?? null,
+        ventilation: v.ventilation || null,
+        bl: v.bl,
+        vgm: v.vgm,
+        isAtm: v.isAtm,
+        isATM: v.isAtm,
+        isColdTreatment: v.isColdTreatment,
+        humidity: v.isCheckHumidity ? v.humidity ?? null : null,
+        description: v.description || null,
+      });
+      setCreatedId(created.id);
+      toast.success("Solicitud creada");
+    } catch (e) {
+      toast.error(errorMessage(e, "No se pudo crear la solicitud"));
+    }
+  };
+
+  if (createdId !== null) {
+    return (
+      <div className="mx-auto max-w-xl py-12">
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-success/15 text-brand-success">
+              <CheckCircle2 className="h-8 w-8" />
+            </span>
+            <h1 className="text-xl font-semibold">¡Solicitud enviada!</h1>
+            <p className="text-sm text-muted-foreground">
+              Tu solicitud ha sido registrada con el número{" "}
+              <span className="font-mono font-semibold text-foreground">
+                #{createdId}
+              </span>
+              .
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push("/cliente/ver-reservas")}
+              >
+                Ver mis reservas
+              </Button>
+              <Button onClick={() => router.push("/cliente")}>
+                Ir al inicio
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Crear solicitud de reserva"
+        description="Completa los pasos para enviar tu solicitud."
+      />
+      <Card>
+        <CardContent className="space-y-6 py-6">
+          <Stepper steps={STEPS} current={step} />
+
+          <Form {...form}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (step === 4) onSubmit();
+                else goNext();
+              }}
+              className="space-y-6"
+            >
+              {step === 1 ? (
+                <Step1
+                  countries={countries}
+                  ports={destinationPorts}
+                  itinerariesLoaded={itineraries.length > 0}
+                />
+              ) : null}
+              {step === 2 ? (
+                <Step2
+                  rows={filteredItineraries}
+                  selectedId={values.itineraryId}
+                  onSelect={(id) =>
+                    form.setValue("itineraryId", id, { shouldValidate: true })
+                  }
+                />
+              ) : null}
+              {step === 3 ? <Step3 /> : null}
+              {step === 4 ? (
+                <Step4Review
+                  itinerary={selectedItinerary}
+                  commodityName={
+                    commodities.find(
+                      (c) => Number(c.id) === Number(values.commodityId)
+                    )?.name ?? ""
+                  }
+                  containerName={
+                    containers.find(
+                      (c) => Number(c.id) === Number(values.typeContainerId)
+                    )?.name ?? ""
+                  }
+                />
+              ) : null}
+
+              <div className="flex justify-between border-t pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={goBack}
+                  disabled={step === 1 || createMutation.isPending}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Atrás
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Enviando…
+                    </>
+                  ) : step === 4 ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Enviar solicitud
+                    </>
+                  ) : (
+                    <>
+                      Siguiente
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Step 1
+// ─────────────────────────────────────────────────────────
+function Step1({
+  countries,
+  ports,
+  itinerariesLoaded,
+}: {
+  countries: string[];
+  ports: string[];
+  itinerariesLoaded: boolean;
+}) {
+  const form = useFormFromCtx();
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField
+          control={form.control}
+          name="weekNo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Semana *</FormLabel>
+              <FormControl>
+                <Input {...field} type="number" min={1} max={53} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="additionalWeeks"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Semanas adicionales *</FormLabel>
+              <FormControl>
+                <Input {...field} type="number" min={1} max={8} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField
+          control={form.control}
+          name="country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>País destino</FormLabel>
+              <Select
+                value={field.value ?? ""}
+                onValueChange={(v) => {
+                  field.onChange(v);
+                  form.setValue("port", "");
+                }}
+                disabled={!itinerariesLoaded}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {countries.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="port"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Puerto destino</FormLabel>
+              <Select
+                value={field.value ?? ""}
+                onValueChange={(v) => {
+                  field.onChange(v);
+                  form.setValue("country", "");
+                }}
+                disabled={!itinerariesLoaded}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {ports.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Selecciona país O puerto destino (no ambos).
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Step 2
+// ─────────────────────────────────────────────────────────
+function Step2({
+  rows,
+  selectedId,
+  onSelect,
+}: {
+  rows: Itinerary[];
+  selectedId: number | undefined;
+  onSelect: (id: number) => void;
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-muted-foreground">
+        <p className="text-sm">
+          No se encontraron itinerarios para los filtros seleccionados.
+        </p>
+        <p className="text-xs">Ajusta la búsqueda en el paso anterior.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-10"></TableHead>
+            <TableHead>Sem</TableHead>
+            <TableHead>Naviera</TableHead>
+            <TableHead>M/N</TableHead>
+            <TableHead>Viaje</TableHead>
+            <TableHead>Pto. Zarpe</TableHead>
+            <TableHead>Pto. Destino</TableHead>
+            <TableHead>ETD</TableHead>
+            <TableHead>ETA</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((it) => {
+            const checked = Number(selectedId) === Number(it.id);
+            return (
+              <TableRow
+                key={it.id}
+                onClick={() => onSelect(Number(it.id))}
+                className={checked ? "bg-primary/5" : "cursor-pointer"}
+              >
+                <TableCell>
+                  <input
+                    type="radio"
+                    name="itineraryRow"
+                    checked={checked}
+                    onChange={() => onSelect(Number(it.id))}
+                    className="h-4 w-4 accent-primary"
+                  />
+                </TableCell>
+                <TableCell className="font-medium">{it.weekNo}</TableCell>
+                <TableCell>{it.carrier ?? "—"}</TableCell>
+                <TableCell>{it.containerShip ?? "—"}</TableCell>
+                <TableCell>{it.tripNo ?? "—"}</TableCell>
+                <TableCell>{it.portDeparture ?? "—"}</TableCell>
+                <TableCell>{it.portDestination ?? "—"}</TableCell>
+                <TableCell>{formatDate(it.etd)}</TableCell>
+                <TableCell>{formatDate(it.eta)}</TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Step 3
+// ─────────────────────────────────────────────────────────
+function Step3() {
+  const form = useFormFromCtx();
+  const { data: commodities = [], isLoading: loadingCom } = useCommodities();
+  const { data: containers = [], isLoading: loadingCt } = useTypeContainers();
+  const isCheckHumidity = useWatch({
+    control: form.control,
+    name: "isCheckHumidity",
+  });
+
+  if (loadingCom || loadingCt) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    );
+  }
+
+  const activeCommodities = commodities.filter((c) => c.active);
+  const activeContainers = containers.filter((c) => c.active);
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-4">
+        <FormField
+          control={form.control}
+          name="commodityId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Especie *</FormLabel>
+              <Select
+                value={field.value ? String(field.value) : ""}
+                onValueChange={(v) => field.onChange(Number(v))}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {activeCommodities.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="typeContainerId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de contenedor *</FormLabel>
+              <Select
+                value={field.value ? String(field.value) : ""}
+                onValueChange={(v) => field.onChange(Number(v))}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {activeContainers.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="typeFreight"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de flete *</FormLabel>
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {FREIGHT_OPTIONS.map((o) => (
+                    <SelectItem key={o} value={o}>
+                      {o}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex flex-col gap-3 rounded-lg border p-3">
+          <FormField
+            control={form.control}
+            name="isAtm"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(v) => field.onChange(v === true)}
+                  />
+                </FormControl>
+                <FormLabel className="font-normal">ATM controlada</FormLabel>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="isColdTreatment"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(v) => field.onChange(v === true)}
+                  />
+                </FormControl>
+                <FormLabel className="font-normal">Cold treatment</FormLabel>
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observaciones</FormLabel>
+              <FormControl>
+                <Textarea {...field} rows={3} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      <div className="space-y-4">
+        <FormField
+          control={form.control}
+          name="qtyContainers"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cantidad de contenedores *</FormLabel>
+              <FormControl>
+                <Input {...field} type="number" min={1} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="temperature"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Temperatura (°C)</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  value={field.value ?? ""}
+                  type="number"
+                  step="0.1"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="ventilation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Ventilación</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="bl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Emisión BL *</FormLabel>
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {BL_OPTIONS.map((o) => (
+                    <SelectItem key={o} value={o}>
+                      {o}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="vgm"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>VGM *</FormLabel>
+              <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona…" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {VGM_OPTIONS.map((o) => (
+                    <SelectItem key={o} value={o}>
+                      {o}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="isCheckHumidity"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center gap-2 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={(v) => field.onChange(v === true)}
+                />
+              </FormControl>
+              <FormLabel className="font-normal">¿Humedad?</FormLabel>
+            </FormItem>
+          )}
+        />
+        {isCheckHumidity ? (
+          <FormField
+            control={form.control}
+            name="humidity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Humedad (%) *</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    value={field.value ?? ""}
+                    type="number"
+                    min={0}
+                    max={100}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Step 4
+// ─────────────────────────────────────────────────────────
+function Step4Review({
+  itinerary,
+  commodityName,
+  containerName,
+}: {
+  itinerary: Itinerary | null;
+  commodityName: string;
+  containerName: string;
+}) {
+  const form = useFormFromCtx();
+  const v = form.getValues();
+  return (
+    <div className="space-y-6">
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-secondary">
+          Itinerario seleccionado
+        </h3>
+        <div className="grid gap-3 rounded-lg border p-4 sm:grid-cols-3">
+          <Field label="Semana" value={itinerary?.weekNo} />
+          <Field label="Naviera" value={itinerary?.carrier} />
+          <Field label="M/N" value={itinerary?.containerShip} />
+          <Field label="Viaje" value={itinerary?.tripNo} />
+          <Field label="Pto. Zarpe" value={itinerary?.portDeparture} />
+          <Field label="Pto. Destino" value={itinerary?.portDestination} />
+          <Field label="ETD" value={formatDate(itinerary?.etd)} />
+          <Field label="ETA" value={formatDate(itinerary?.eta)} />
+          <Field
+            label="Tránsito"
+            value={
+              typeof itinerary?.transitTime === "number"
+                ? `${itinerary.transitTime} días`
+                : "—"
+            }
+          />
+        </div>
+      </section>
+      <section>
+        <h3 className="mb-3 text-sm font-semibold text-secondary">Carga</h3>
+        <div className="grid gap-3 rounded-lg border p-4 sm:grid-cols-3">
+          <Field label="Especie" value={commodityName || "—"} />
+          <Field label="Contenedor" value={containerName || "—"} />
+          <Field label="Cantidad" value={v.qtyContainers} />
+          <Field label="Tipo de flete" value={v.typeFreight} />
+          <Field label="Emisión BL" value={v.bl} />
+          <Field label="VGM" value={v.vgm} />
+          <Field
+            label="Temperatura"
+            value={v.temperature !== undefined ? `${v.temperature} °C` : "—"}
+          />
+          <Field label="Ventilación" value={v.ventilation || "—"} />
+          <Field
+            label="Humedad"
+            value={
+              v.isCheckHumidity && v.humidity !== undefined
+                ? `${v.humidity}%`
+                : "—"
+            }
+          />
+          <Field label="ATM" value={v.isAtm ? "Sí" : "No"} />
+          <Field
+            label="Cold treatment"
+            value={v.isColdTreatment ? "Sí" : "No"}
+          />
+        </div>
+        {v.description ? (
+          <div className="mt-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Observaciones
+            </p>
+            <p className="mt-1 whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-sm">
+              {v.description}
+            </p>
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="text-sm font-medium">{value ?? "—"}</p>
+    </div>
+  );
+}
+
+// React Hook Form sub-components reach the parent form via FormProvider
+// (provided by shadcn's <Form> wrapper). Use `useFormContext` in real life;
+// in this file the children are rendered inside <Form>, so we can re-call
+// `useForm()` would return a different instance — instead use the provider.
+import { useFormContext } from "react-hook-form";
+function useFormFromCtx() {
+  return useFormContext<WizardValues>();
 }

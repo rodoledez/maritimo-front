@@ -1,10 +1,239 @@
-import { StubPage } from "@/components/stub-page";
+"use client";
+
+import { useCallback, useMemo, useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Anchor, Check, MoreHorizontal, Plus, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table/data-table";
+import { ActiveBadge } from "@/components/data-table/active-cell";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useCountries } from "@/lib/hooks/use-countries";
+import {
+  useDeletePort,
+  usePorts,
+  useUpdatePort,
+} from "@/lib/hooks/use-ports";
+import { errorMessage } from "@/lib/utils/errors";
+import type { Port } from "@/types/domain";
+
+import { PortFormDialog } from "./port-form-dialog";
+
+function BoolIcon({ value }: { value: boolean }) {
+  return value ? (
+    <Check className="h-4 w-4 text-brand-success" />
+  ) : (
+    <X className="h-4 w-4 text-muted-foreground" />
+  );
+}
 
 export default function PortsPage() {
+  const { data, isLoading, error, refetch, isFetching } = usePorts();
+  const { data: countries = [] } = useCountries();
+  const updateMutation = useUpdatePort();
+  const deleteMutation = useDeletePort();
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<Port | null>(null);
+  const [deleting, setDeleting] = useState<Port | null>(null);
+
+  const countryById = useMemo(
+    () => new Map(countries.map((c) => [String(c.id), c.name])),
+    [countries]
+  );
+
+  const onCreate = () => {
+    setEditing(null);
+    setFormOpen(true);
+  };
+  const onEdit = useCallback((item: Port) => {
+    setEditing(item);
+    setFormOpen(true);
+  }, []);
+  const onToggle = useCallback(
+    async (item: Port) => {
+      try {
+        await updateMutation.mutateAsync({
+          id: item.id,
+          payload: { active: !item.active },
+        });
+        toast.success(item.active ? "Puerto desactivado" : "Puerto activado");
+      } catch (e) {
+        toast.error(errorMessage(e, "No se pudo cambiar el estado"));
+      }
+    },
+    [updateMutation]
+  );
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    try {
+      await deleteMutation.mutateAsync(deleting.id);
+      toast.success("Puerto eliminado");
+      setDeleting(null);
+    } catch (e) {
+      toast.error(errorMessage(e, "No se pudo eliminar"));
+    }
+  };
+
+  const columns = useMemo<ColumnDef<Port>[]>(
+    () => [
+      { accessorKey: "id", header: "ID" },
+      {
+        accessorKey: "name",
+        header: "Nombre",
+        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      },
+      {
+        accessorKey: "countryId",
+        header: "País",
+        cell: ({ row }) => {
+          const fromRel = row.original.Country?.name;
+          const fromMap = row.original.countryId
+            ? countryById.get(String(row.original.countryId))
+            : null;
+          return fromRel ?? fromMap ?? "—";
+        },
+      },
+      {
+        accessorKey: "isOrigin",
+        header: "Origen",
+        cell: ({ row }) => <BoolIcon value={!!row.original.isOrigin} />,
+      },
+      {
+        accessorKey: "isDestination",
+        header: "Destino",
+        cell: ({ row }) => <BoolIcon value={!!row.original.isDestination} />,
+      },
+      {
+        accessorKey: "active",
+        header: "Estado",
+        cell: ({ row }) => <ActiveBadge active={row.original.active} />,
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Acciones</span>,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={() => onEdit(item)}>Editar</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onToggle(item)}>
+                    {item.active ? "Desactivar" : "Activar"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => setDeleting(item)}
+                  >
+                    Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
+    ],
+    [onEdit, onToggle, countryById]
+  );
+
   return (
-    <StubPage
-      title="Puertos"
-      description="Mantenedor de puertos."
-    />
+    <div className="space-y-6">
+      <PageHeader
+        title="Puertos"
+        description="Catálogo de puertos de origen y destino."
+        actions={
+          <Button onClick={onCreate}>
+            <Plus className="h-4 w-4" />
+            Crear puerto
+          </Button>
+        }
+      />
+      {error ? (
+        <Alert variant="destructive">
+          <AlertTitle>No se pudieron cargar los puertos</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span>{errorMessage(error, "Error desconocido")}</span>
+            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              Reintentar
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      <DataTable
+        columns={columns}
+        data={data ?? []}
+        isLoading={isLoading}
+        searchPlaceholder="Buscar por nombre…"
+        emptyState={
+          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <Anchor className="h-8 w-8" />
+            <p className="text-sm">No hay puertos registrados.</p>
+            <Button size="sm" onClick={onCreate}>
+              <Plus className="h-4 w-4" />
+              Crear puerto
+            </Button>
+          </div>
+        }
+      />
+      <PortFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editing={editing}
+      />
+      <AlertDialog
+        open={!!deleting}
+        onOpenChange={(open) => !open && setDeleting(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar puerto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se eliminará{" "}
+              <span className="font-semibold text-foreground">
+                {deleting?.name}
+              </span>
+              .
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

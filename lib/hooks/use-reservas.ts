@@ -19,6 +19,8 @@ export function useRecentReservas(limit = 10) {
     queryKey: [...RESERVAS_KEY, "recent", limit] as const,
     queryFn: listReservas,
     select: (data: Booking[]) =>
-      [...data].sort((a, b) => b.id - a.id).slice(0, limit),
+      [...data]
+        .sort((a, b) => Number(b.id) - Number(a.id))
+        .slice(0, limit),
   });
 }

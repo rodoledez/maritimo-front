@@ -48,7 +48,7 @@ Both are `NEXT_PUBLIC_*` because they're read in client components.
 - **Forms** via React Hook Form + Zod.
 - **UI** via shadcn/ui primitives over Radix + Tailwind 4. Brand palette in `app/globals.css`.
 
-For the full picture (decisions, conventions, how to add a new CRUD page), read **`AGENTS.md`**.
+For the full picture (decisions, conventions, how to add a new CRUD page), read **`AGENTS.md`**. For the phased migration plan (what's left, in what order, with effort estimates), read **`ROADMAP.md`**.
 
 ## Project structure
 
