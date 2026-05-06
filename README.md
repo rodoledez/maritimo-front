@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# maritimo-front-next
 
-## Getting Started
+Next.js 16 + shadcn/ui rewrite of the legacy Nuxt 2 / Vuetify [`maritimo-front`](../maritimo-front) reservation system for **Acosta y Aguayo Intermodal Logistic Services**.
 
-First, run the development server:
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.local.example .env.local        # adjust if your backend isn't the default
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Default | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | `http://informatica.acostayaguayo.cl:3300` | Backend base URL (axios + interceptors) |
+| `NEXT_PUBLIC_APP_ENV` | `development` | Drives the env banner; hidden when `production` |
 
-## Learn More
+Both are `NEXT_PUBLIC_*` because they're read in client components.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Dev server (Turbopack) on :3000 |
+| `pnpm build` | Production build — also runs TypeScript |
+| `pnpm start` | Serve the built app |
+| `pnpm lint` | ESLint (strict React 19 rules) |
+| `pnpm exec tsc --noEmit` | Standalone type-check |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## What's implemented
 
-## Deploy on Vercel
+- ✅ Login (`/login`) with role-based redirect
+- ✅ Admin shell (sidebar + header + role guard) at `/admin`
+- ✅ Admin dashboard (`/admin`) — KPI cards
+- ✅ **`/admin/clientes` — full CRUD vertical slice**, used as the template for other admin maintainers
+- ✅ Cliente shell + landing (`/cliente`)
+- 🟡 13 routes scaffolded as stubs — see `AGENTS.md` for the full migration table
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture in 30 seconds
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Client-rendered SPA.** Token in `localStorage`, role gate in client layouts.
+- **Auth flow** ported as-is from the old `services/api.js` — request interceptor injects the bearer token, response interceptor refreshes-and-retries on 401.
+- **Server state** via TanStack Query. Mutations invalidate query keys; no manual loading state.
+- **Forms** via React Hook Form + Zod.
+- **UI** via shadcn/ui primitives over Radix + Tailwind 4. Brand palette in `app/globals.css`.
+
+For the full picture (decisions, conventions, how to add a new CRUD page), read **`AGENTS.md`**.
+
+## Project structure
+
+```
+app/             # App Router routes + layouts
+  (admin)/       # Admin role-group
+  (cliente)/     # Cliente role-group
+  login/
+components/
+  ui/            # shadcn primitives
+  layout/        # Sidebar, header, env indicator, auth shell
+  data-table/    # TanStack Table wrapper
+lib/
+  api/           # axios instance, auth, domain wrappers (clients.ts is the template)
+  auth/          # AuthProvider + useAuth() + token storage
+  hooks/         # TanStack Query hooks per domain
+types/           # Shared TS types (domain + api)
+```
+
+## Backend
+
+This frontend is paired with the maritime reservation backend at `../maritimo-back`. The frontend doesn't own any data models — see that project for the source of truth on schemas and endpoints.
+
+## License & attribution
+
+Internal project for Acosta y Aguayo. Not published.
