@@ -100,6 +100,7 @@ export function ClientFormDialog({
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: emptyValues,
+    mode: "onBlur",
   });
   const createMutation = useCreateClient();
   const updateMutation = useUpdateClient();
@@ -134,17 +135,19 @@ export function ClientFormDialog({
     try {
       if (isEditing && editing) {
         await updateMutation.mutateAsync({ id: editing.id, payload });
-        toast.success("Cliente actualizado exitosamente");
+        toast.success("Cliente actualizado");
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success("Cliente creado exitosamente");
+        toast.success("Cliente creado");
       }
       onOpenChange(false);
     } catch (error) {
       toast.error(
         explainError(
           error,
-          isEditing ? "Error al actualizar cliente" : "Error al crear cliente"
+          isEditing
+            ? "No se pudo actualizar el cliente"
+            : "No se pudo crear el cliente"
         )
       );
     }
@@ -177,7 +180,7 @@ export function ClientFormDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre Empresa</FormLabel>
+                  <FormLabel>Empresa *</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -194,7 +197,7 @@ export function ClientFormDialog({
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre Usuario (e-mail)</FormLabel>
+                    <FormLabel>Usuario (email) *</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -212,7 +215,7 @@ export function ClientFormDialog({
                 name="contactEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-mail contacto</FormLabel>
+                    <FormLabel>Email contacto *</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -231,7 +234,7 @@ export function ClientFormDialog({
                 name="contactName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre contacto</FormLabel>
+                    <FormLabel>Nombre contacto *</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Nombre del contacto" />
                     </FormControl>
@@ -244,7 +247,7 @@ export function ClientFormDialog({
                 name="contactEmail2"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-mails adicionales</FormLabel>
+                    <FormLabel>Email adicional</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -264,7 +267,7 @@ export function ClientFormDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                Cerrar
+                Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (

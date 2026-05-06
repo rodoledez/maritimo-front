@@ -10,6 +10,7 @@ import {
   Home,
   Package,
   Ship,
+  UserCog,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -25,7 +26,7 @@ export const adminLinks: NavLink[] = [
   { label: "Clientes", href: "/admin/clientes", icon: Users },
   { label: "Reservas", href: "/admin/reservas", icon: ClipboardList },
   { label: "Itinerarios", href: "/admin/itinerarios", icon: CalendarRange },
-  { label: "Usuarios", href: "/admin/usuarios", icon: Users },
+  { label: "Usuarios", href: "/admin/usuarios", icon: UserCog },
   { label: "Commodities", href: "/admin/commodities", icon: Package },
   { label: "Contenedores", href: "/admin/type-containers", icon: Container },
   { label: "Puertos", href: "/admin/ports", icon: Anchor },

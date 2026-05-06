@@ -10,11 +10,12 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Search } from "lucide-react";
+import { ArrowUpDown, Inbox, Search } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -31,6 +32,9 @@ type DataTableProps<TData, TValue> = {
   searchKey?: keyof TData & string;
   toolbarRight?: React.ReactNode;
   emptyMessage?: string;
+  emptyState?: React.ReactNode;
+  isLoading?: boolean;
+  skeletonRows?: number;
 };
 
 export function DataTable<TData, TValue>({
@@ -40,6 +44,9 @@ export function DataTable<TData, TValue>({
   searchKey,
   toolbarRight,
   emptyMessage = "Sin resultados",
+  emptyState,
+  isLoading = false,
+  skeletonRows = 6,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -116,7 +123,17 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {isLoading ? (
+              Array.from({ length: skeletonRows }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  {columns.map((_col, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
@@ -133,9 +150,14 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-sm text-muted-foreground"
+                  className="py-12 text-center"
                 >
-                  {emptyMessage}
+                  {emptyState ?? (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Inbox className="h-8 w-8" />
+                      <p className="text-sm">{emptyMessage}</p>
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             )}

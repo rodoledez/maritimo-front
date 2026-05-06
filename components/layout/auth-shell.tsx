@@ -66,7 +66,13 @@ export function AuthShell({
         <SidebarInset>
           <EnvIndicator />
           <AppHeader />
-          <main className="flex-1 bg-muted/30 p-4 md:p-6">{children}</main>
+          <main
+            id="main"
+            tabIndex={-1}
+            className="flex-1 bg-muted/30 p-4 outline-none md:p-6"
+          >
+            {children}
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

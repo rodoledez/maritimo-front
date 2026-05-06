@@ -64,7 +64,7 @@ export default function LoginPage() {
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-secondary via-[#1e1382] to-primary px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-secondary via-brand-azuldark to-primary px-4 py-10">
       <Card className="w-full max-w-4xl overflow-hidden border-0 shadow-2xl">
         <div className="grid md:grid-cols-2">
           <div className="hidden bg-brand-celeste p-10 md:flex md:flex-col md:items-center md:justify-center">

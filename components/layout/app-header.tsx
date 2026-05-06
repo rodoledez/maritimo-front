@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth/auth-context";
 
-export function AppHeader({ title }: { title?: string }) {
+export function AppHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -37,11 +37,8 @@ export function AppHeader({ title }: { title?: string }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background px-4">
-      <SidebarTrigger />
+      <SidebarTrigger aria-label="Abrir menú" />
       <Separator orientation="vertical" className="h-6" />
-      {title ? (
-        <h1 className="text-sm font-medium text-muted-foreground">{title}</h1>
-      ) : null}
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -64,9 +61,6 @@ export function AppHeader({ title }: { title?: string }) {
               </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <UserIcon className="h-4 w-4" /> Mi perfil
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={onLogout} className="text-destructive">
               <LogOut className="h-4 w-4" /> Cerrar sesión
             </DropdownMenuItem>

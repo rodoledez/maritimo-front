@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { MoreHorizontal, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -27,7 +27,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   useClients,
   useDeleteClient,
@@ -70,12 +69,10 @@ export default function ClientesPage() {
           id: client.id,
           active: client.active,
         });
-        toast.success(
-          `Cliente ${client.active ? "desactivado" : "activado"} exitosamente`
-        );
+        toast.success(client.active ? "Cliente desactivado" : "Cliente activado");
       } catch (error) {
         toast.error(
-          errorMessage(error, "Error al cambiar el estado del cliente")
+          errorMessage(error, "No se pudo cambiar el estado del cliente")
         );
       }
     },
@@ -86,10 +83,10 @@ export default function ClientesPage() {
     if (!deleting) return;
     try {
       await deleteMutation.mutateAsync(deleting.id);
-      toast.success("Cliente eliminado exitosamente");
+      toast.success("Cliente eliminado");
       setDeleting(null);
     } catch (error) {
-      toast.error(errorMessage(error, "Error al eliminar cliente"));
+      toast.error(errorMessage(error, "No se pudo eliminar el cliente"));
     }
   };
 
@@ -97,14 +94,14 @@ export default function ClientesPage() {
     () => [
       {
         accessorKey: "name",
-        header: "Nombre Empresa",
+        header: "Empresa",
         cell: ({ row }) => (
           <span className="font-medium">{row.original.name}</span>
         ),
       },
       { accessorKey: "contactName", header: "Contacto" },
       { accessorKey: "username", header: "Usuario" },
-      { accessorKey: "contactEmail", header: "E-mail contacto" },
+      { accessorKey: "contactEmail", header: "Email contacto" },
       {
         accessorKey: "active",
         header: "Estado",
@@ -163,7 +160,7 @@ export default function ClientesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Mantenedor de clientes"
+        title="Clientes"
         description="Gestiona los clientes que pueden solicitar reservas."
         actions={
           <Button onClick={onCreate}>
@@ -190,19 +187,22 @@ export default function ClientesPage() {
         </Alert>
       ) : null}
 
-      {isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-9 w-full max-w-xs" />
-          <Skeleton className="h-72 w-full" />
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={data ?? []}
-          searchPlaceholder="Buscar por empresa, contacto, usuario…"
-          emptyMessage="No hay clientes registrados"
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={data ?? []}
+        isLoading={isLoading}
+        searchPlaceholder="Buscar por empresa, contacto, usuario…"
+        emptyState={
+          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+            <Users className="h-8 w-8" />
+            <p className="text-sm">No hay clientes registrados.</p>
+            <Button size="sm" onClick={onCreate}>
+              <Plus className="h-4 w-4" />
+              Crear cliente
+            </Button>
+          </div>
+        }
+      />
 
       <ClientFormDialog
         open={formOpen}
@@ -216,13 +216,13 @@ export default function ClientesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar cliente</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Está seguro de eliminar el cliente{" "}
+              Esta acción eliminará a{" "}
               <span className="font-semibold text-foreground">
                 {deleting?.name}
               </span>
-              ? Esta acción no se puede deshacer.
+              . No se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

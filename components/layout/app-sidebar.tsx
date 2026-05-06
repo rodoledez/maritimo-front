@@ -38,7 +38,7 @@ export function AppSidebar({ links }: { links: NavLink[] }) {
             <Ship className="h-4 w-4" />
           </span>
           <span className="text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
-            maritimo-reservas
+            Marítimo Reservas
           </span>
         </Link>
       </SidebarHeader>
