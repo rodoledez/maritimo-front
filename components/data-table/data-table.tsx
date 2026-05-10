@@ -47,6 +47,7 @@ type DataTableProps<TData, TValue> = {
   data: TData[];
   searchPlaceholder?: string;
   searchKey?: keyof TData & string;
+  toolbarLeft?: React.ReactNode;
   toolbarRight?: React.ReactNode;
   emptyMessage?: string;
   emptyState?: React.ReactNode;
@@ -59,6 +60,7 @@ export function DataTable<TData, TValue>({
   data,
   searchPlaceholder = "Buscar…",
   searchKey,
+  toolbarLeft,
   toolbarRight,
   emptyMessage = "Sin resultados",
   emptyState,
@@ -97,17 +99,40 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={searchPlaceholder}
-            value={globalFilter}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="pl-9"
-            aria-label={searchPlaceholder}
-          />
-        </div>
-        {toolbarRight}
+        {toolbarLeft ? (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              {toolbarLeft}
+            </div>
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+              {toolbarRight}
+              <div className="relative w-full sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={searchPlaceholder}
+                  value={globalFilter}
+                  onChange={(event) => setGlobalFilter(event.target.value)}
+                  className="pl-9"
+                  aria-label={searchPlaceholder}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={globalFilter}
+                onChange={(event) => setGlobalFilter(event.target.value)}
+                className="pl-9"
+                aria-label={searchPlaceholder}
+              />
+            </div>
+            {toolbarRight}
+          </>
+        )}
       </div>
       <div className="rounded-lg border bg-card">
         <Table>

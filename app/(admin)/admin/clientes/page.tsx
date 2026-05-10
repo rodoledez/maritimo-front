@@ -2,7 +2,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Plus, Users } from "lucide-react";
+import {
+  MoreHorizontal,
+  Plus,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -19,7 +24,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ActiveBadge } from "@/components/data-table/active-cell";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -42,10 +55,22 @@ import type { Client } from "@/types/domain";
 
 import { ClientFormDialog } from "./client-form-dialog";
 
+type ActiveFilter = "all" | "active" | "inactive";
+
+const FILTER_OPTIONS: { value: ActiveFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "active", label: "Activos" },
+  { value: "inactive", label: "Inactivos" },
+];
+
 function errorMessage(error: unknown, fallback: string): string {
   if (isApiError(error)) return error.message ?? fallback;
   if (error instanceof Error) return error.message;
   return fallback;
+}
+
+function getInitial(name?: string | null): string {
+  return name?.trim().charAt(0).toUpperCase() || "?";
 }
 
 export default function ClientesPage() {
@@ -56,6 +81,7 @@ export default function ClientesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [deleting, setDeleting] = useState<Client | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
 
   const onCreate = () => {
     setEditing(null);
@@ -95,18 +121,49 @@ export default function ClientesPage() {
     }
   };
 
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    if (activeFilter === "all") return data;
+    return data.filter((c) =>
+      activeFilter === "active" ? c.active : !c.active
+    );
+  }, [data, activeFilter]);
+
   const columns = useMemo<ColumnDef<Client>[]>(
     () => [
       {
         accessorKey: "name",
         header: "Empresa",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.name}</span>
+          <div className="flex items-center gap-2.5">
+            <Avatar size="sm">
+              <AvatarFallback className="bg-brand-celeste text-secondary text-xs font-semibold">
+                {getInitial(row.original.name)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-medium">{row.original.name}</span>
+          </div>
         ),
       },
       { accessorKey: "contactName", header: "Contacto" },
       { accessorKey: "username", header: "Usuario" },
-      { accessorKey: "contactEmail", header: "Email contacto" },
+      {
+        accessorKey: "contactEmail",
+        header: "Email contacto",
+        cell: ({ row }) => {
+          const email = row.original.contactEmail;
+          if (!email) return <span className="text-muted-foreground">—</span>;
+          return (
+            <a
+              href={`mailto:${email}`}
+              className="text-primary underline underline-offset-2 hover:text-primary/80"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {email}
+            </a>
+          );
+        },
+      },
       {
         accessorKey: "active",
         header: "Estado",
@@ -156,17 +213,59 @@ export default function ClientesPage() {
     [onEdit, onToggle]
   );
 
+  const toolbarLeft = (
+    <Button variant="outline" onClick={onCreate}>
+      <Plus className="h-4 w-4" />
+      Crear cliente
+    </Button>
+  );
+
+  const toolbarRight = (
+    <Popover>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative"
+              aria-label="Filtros"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {activeFilter !== "all" ? (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
+              ) : null}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Filtros</TooltipContent>
+      </Tooltip>
+      <PopoverContent align="end" className="w-56">
+        <PopoverHeader>
+          <PopoverTitle>Estado</PopoverTitle>
+        </PopoverHeader>
+        <div className="flex flex-col gap-1">
+          {FILTER_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              variant={activeFilter === opt.value ? "secondary" : "ghost"}
+              size="sm"
+              className="justify-start"
+              onClick={() => setActiveFilter(opt.value)}
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Clientes"
         description="Gestiona los clientes que pueden solicitar reservas."
-        actions={
-          <Button onClick={onCreate}>
-            <Plus className="h-4 w-4" />
-            Crear cliente
-          </Button>
-        }
       />
 
       {error ? (
@@ -188,9 +287,11 @@ export default function ClientesPage() {
 
       <DataTable
         columns={columns}
-        data={data ?? []}
+        data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por empresa, contacto, usuario…"
+        toolbarLeft={toolbarLeft}
+        toolbarRight={toolbarRight}
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <Users className="h-8 w-8" />

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pnpm exec tsc --noEmit)",
+      "PowerShell(npx --yes tsc --noEmit)",
+      "PowerShell(Get-Command pnpm -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command npm -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command npx -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command corepack -ErrorAction SilentlyContinue)",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(node node_modules/eslint/bin/eslint.js \"app/\\(admin\\)/admin/clientes/page.tsx\" \"components/data-table/data-table.tsx\")"
+    ]
+  }
+}
