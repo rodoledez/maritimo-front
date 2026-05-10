@@ -51,18 +51,25 @@ export function AppHeader() {
       <Separator orientation="vertical" className="h-6" />
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-9 gap-2 px-2">
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden text-sm font-medium sm:inline">
-                {user?.name ?? "Usuario"}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-9 gap-2 px-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden text-sm font-medium sm:inline">
+                    {user?.name ?? "Usuario"}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              {user?.name ?? user?.username ?? user?.email ?? "Usuario"}
+            </TooltipContent>
+          </Tooltip>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="flex flex-col">
               <span className="text-sm">{user?.name ?? "—"}</span>

@@ -45,7 +45,7 @@ Poppins is already loaded in `app/layout.tsx` as `--font-sans`. Don't add a seco
 | Role            | Class                                | Notes                                      |
 | --------------- | ------------------------------------ | ------------------------------------------ |
 | Page title (h1) | `text-2xl font-semibold tracking-tight` | Use `<PageHeader title=… />`            |
-| Section (h2)    | `text-lg font-semibold`              | Within cards / dialog sections             |
+| Section (h3)    | `text-sm font-semibold text-secondary` | Within dialog sections, review summaries (booking detail, wizard step 4). Smaller than the page-title scale on purpose to keep dense surfaces tight. Rendered as `<h3>` since `<h1>` is the page title. |
 | Body            | `text-sm` (default)                  | Tables, forms, dense surfaces              |
 | Helper / meta   | `text-xs text-muted-foreground`      | Form helper text, table secondary cells    |
 | Numbers in tables | `tabular-nums`                     | Always for currency, counts, dates         |
@@ -60,7 +60,7 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 
 - Page container: `mx-auto max-w-7xl` inside the `<SidebarInset>`. The shell already supplies `p-4 md:p-6`.
 - Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 only — Tailwind `1 / 2 / 3 / 4 / 6 / 8`. No ad-hoc `p-[7px]`.
-- Card padding: `p-4 md:p-6`. KPI cards use `p-4`.
+- Card padding: `p-4` throughout — that's what the customized `Card` primitive ships (`py-4` on the root, `px-4` on `CardHeader`/`CardContent`, `p-4` on `CardFooter`). Pass `<Card size="sm">` for a tighter `p-3` variant when stacking many cards in a single row. The earlier `md:p-6` upgrade has been retired in favor of consistent density across breakpoints — KPI cards and content cards share the same padding scale.
 - Section gap: `space-y-6` between major sections, `space-y-4` inside a section.
 - Tables: row height `h-11`, cell padding `px-3 py-2`. Don't expand row height for breathing room — use sticky headers and pagination instead.
 - Dialogs — pick the width based on content density. The primitive caps to `max-w-[calc(100%-2rem)]` on phones, so each value below effectively applies at ≥ 640px:
