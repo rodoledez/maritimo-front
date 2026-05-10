@@ -110,7 +110,11 @@ export function BookingConfirmDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+            noValidate
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}

@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+import { ActiveBadge } from "@/components/data-table/active-cell";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -105,18 +105,7 @@ export default function ClientesPage() {
       {
         accessorKey: "active",
         header: "Estado",
-        cell: ({ row }) => (
-          <Badge
-            variant={row.original.active ? "default" : "destructive"}
-            className={
-              row.original.active
-                ? "bg-brand-success/15 text-brand-success hover:bg-brand-success/20"
-                : "bg-brand-danger/15 text-brand-danger hover:bg-brand-danger/20"
-            }
-          >
-            {row.original.active ? "Activo" : "Inactivo"}
-          </Badge>
-        ),
+        cell: ({ row }) => <ActiveBadge active={row.original.active} />,
       },
       {
         id: "actions",

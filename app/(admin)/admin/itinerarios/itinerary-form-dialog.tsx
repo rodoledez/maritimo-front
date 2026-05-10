@@ -201,7 +201,7 @@ export function ItineraryFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar itinerario" : "Crear itinerario"}
@@ -211,7 +211,11 @@ export function ItineraryFormDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+            noValidate
+          >
             <div className="grid gap-4 sm:grid-cols-3">
               <FormField
                 control={form.control}

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock, Inbox, XCircle } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookingStatusBadge } from "@/components/booking/status-badge";
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -19,7 +19,7 @@ import {
 import { useAuth } from "@/lib/auth/auth-context";
 import { pickKpi, useKpis } from "@/lib/hooks/use-kpis";
 import { useRecentReservas } from "@/lib/hooks/use-reservas";
-import type { Booking, BookingStatus } from "@/types/domain";
+import type { Booking } from "@/types/domain";
 
 type Tone = "warning" | "success" | "danger" | "muted";
 
@@ -71,12 +71,6 @@ function StatCard({
   );
 }
 
-const STATUS_BADGE: Record<BookingStatus, string> = {
-  Pendiente: "bg-brand-warning/10 text-brand-warning",
-  Confirmado: "bg-brand-success/10 text-brand-success",
-  Cancelado: "bg-brand-danger/10 text-brand-danger",
-};
-
 const dateFormatter = new Intl.DateTimeFormat("es-CL", {
   day: "2-digit",
   month: "2-digit",
@@ -94,14 +88,6 @@ function formatDate(value: string | null | undefined) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return dateFormatter.format(date);
-}
-
-function StatusBadge({ status }: { status: BookingStatus }) {
-  return (
-    <Badge variant="outline" className={`${STATUS_BADGE[status]} border-0`}>
-      {status}
-    </Badge>
-  );
 }
 
 function RecentReservasCard() {
@@ -181,7 +167,7 @@ function RecentReservasCard() {
                       {formatDate(booking.Itinerary?.eta)}
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={booking.status} />
+                      <BookingStatusBadge status={booking.status} />
                     </TableCell>
                   </TableRow>
                 ))

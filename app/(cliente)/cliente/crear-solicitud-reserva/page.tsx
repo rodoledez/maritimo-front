@@ -501,24 +501,27 @@ function Step2({
     );
   }
   return (
-    <div className="rounded-lg border">
+    <div className="overflow-x-auto rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-10"></TableHead>
             <TableHead>Sem</TableHead>
             <TableHead>Naviera</TableHead>
-            <TableHead>M/N</TableHead>
-            <TableHead>Viaje</TableHead>
-            <TableHead>Pto. Zarpe</TableHead>
+            <TableHead className="hidden md:table-cell">M/N</TableHead>
+            <TableHead className="hidden md:table-cell">Viaje</TableHead>
+            <TableHead className="hidden md:table-cell">Pto. Zarpe</TableHead>
             <TableHead>Pto. Destino</TableHead>
             <TableHead>ETD</TableHead>
-            <TableHead>ETA</TableHead>
+            <TableHead className="hidden md:table-cell">ETA</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((it) => {
             const checked = Number(selectedId) === Number(it.id);
+            const radioLabel = `Itinerario semana ${it.weekNo}${
+              it.carrier ? ` — ${it.carrier}` : ""
+            }`;
             return (
               <TableRow
                 key={it.id}
@@ -531,17 +534,26 @@ function Step2({
                     name="itineraryRow"
                     checked={checked}
                     onChange={() => onSelect(Number(it.id))}
+                    aria-label={radioLabel}
                     className="h-4 w-4 accent-primary"
                   />
                 </TableCell>
                 <TableCell className="font-medium">{it.weekNo}</TableCell>
                 <TableCell>{it.carrier ?? "—"}</TableCell>
-                <TableCell>{it.containerShip ?? "—"}</TableCell>
-                <TableCell>{it.tripNo ?? "—"}</TableCell>
-                <TableCell>{it.portDeparture ?? "—"}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {it.containerShip ?? "—"}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {it.tripNo ?? "—"}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {it.portDeparture ?? "—"}
+                </TableCell>
                 <TableCell>{it.portDestination ?? "—"}</TableCell>
                 <TableCell>{formatDate(it.etd)}</TableCell>
-                <TableCell>{formatDate(it.eta)}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {formatDate(it.eta)}
+                </TableCell>
               </TableRow>
             );
           })}

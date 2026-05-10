@@ -83,7 +83,11 @@ export function BookingCancelDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+            noValidate
+          >
             <FormField
               control={form.control}
               name="statusNotes"
@@ -103,6 +107,7 @@ export function BookingCancelDialog({
               </Button>
               <Button
                 type="submit"
+                variant="destructive"
                 disabled={isSubmitting}
                 className="bg-destructive text-white hover:bg-destructive/90"
               >

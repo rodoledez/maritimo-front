@@ -166,7 +166,7 @@ export function BookingEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Editar reserva #{booking?.id}</DialogTitle>
           <DialogDescription>
@@ -174,7 +174,11 @@ export function BookingEditDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4"
+            noValidate
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}

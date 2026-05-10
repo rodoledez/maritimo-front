@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,19 +41,11 @@ import type { Itinerary } from "@/types/domain";
 import { ItineraryFormDialog } from "./itinerary-form-dialog";
 import { ItineraryImportDialog } from "./itinerary-import-dialog";
 
-function StatusBadge({ status }: { status?: Itinerary["status"] | null }) {
+function ItineraryStatusBadge({ status }: { status?: Itinerary["status"] | null }) {
   if (status === "CO") {
-    return (
-      <Badge className="bg-brand-success/15 text-brand-success hover:bg-brand-success/20">
-        Confirmado
-      </Badge>
-    );
+    return <StatusBadge tone="success">Confirmado</StatusBadge>;
   }
-  return (
-    <Badge className="bg-brand-warning/15 text-brand-warning hover:bg-brand-warning/20">
-      Por confirmar
-    </Badge>
-  );
+  return <StatusBadge tone="pending">Por confirmar</StatusBadge>;
 }
 
 export default function ItinerariosPage() {
@@ -149,7 +141,7 @@ export default function ItinerariosPage() {
       {
         accessorKey: "status",
         header: "Estado",
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+        cell: ({ row }) => <ItineraryStatusBadge status={row.original.status} />,
       },
       {
         id: "actions",
@@ -164,6 +156,7 @@ export default function ItinerariosPage() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Acciones</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
