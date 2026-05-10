@@ -63,7 +63,12 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 - Card padding: `p-4 md:p-6`. KPI cards use `p-4`.
 - Section gap: `space-y-6` between major sections, `space-y-4` inside a section.
 - Tables: row height `h-11`, cell padding `px-3 py-2`. Don't expand row height for breathing room — use sticky headers and pagination instead.
-- Dialogs: `sm:max-w-lg` for create/edit forms, `sm:max-w-2xl` for forms with two columns.
+- Dialogs — pick the width based on content density. The primitive caps to `max-w-[calc(100%-2rem)]` on phones, so each value below effectively applies at ≥ 640px:
+  - `max-w-md` — confirmations / single-input prompts (`change-password-dialog`, `itinerary-import-dialog`).
+  - `max-w-lg` — short forms with one reason field (`booking-cancel-dialog`).
+  - `max-w-xl` — single-column CRUD forms (`commodity`, `country`, `port`, `type-container`, `user`).
+  - `max-w-2xl` — two-column CRUD forms (`client`, `booking-confirm`, `shipping-company`).
+  - `max-w-3xl` — data-dense edit forms or read-only details (`booking-edit`, `booking-detail`, `itinerary-form`).
 - Border radius: stick to `--radius` (10px). Cards `rounded-xl`, inputs/buttons `rounded-lg` (which equals `--radius`). `rounded-md` evaluates to 8px in this theme — don't reach for it on interactive surfaces unless you specifically want the smaller corner.
 - Shadows: shadcn defaults only. Don't introduce `shadow-2xl` outside the login card.
 
@@ -92,7 +97,7 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 - Row actions: dropdown menu (`<MoreHorizontal />`) on the right. Don't sprinkle inline icon buttons across the row.
 - Destructive row actions go in a confirm dialog (`<AlertDialog>`) — never one-click delete.
 - Pagination on every list — default 10 rows, options `[10, 25, 50, 100]`.
-- Use `tabular-nums` on numeric columns and right-align them.
+- Use `tabular-nums` on numeric columns and right-align them. Apply both at once by setting `meta: { align: "right" }` on the column def — `DataTable` reads it and applies `text-right` to the header plus `text-right tabular-nums` to body cells. `meta: { align: "center" }` is also supported.
 
 ### Dialogs
 - Title in Spanish, sentence case ("Crear cliente", not "Crear Cliente").

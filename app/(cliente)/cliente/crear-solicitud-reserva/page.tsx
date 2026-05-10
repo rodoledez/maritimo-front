@@ -506,14 +506,14 @@ function Step2({
         <TableHeader>
           <TableRow>
             <TableHead className="w-10"></TableHead>
-            <TableHead>Sem</TableHead>
+            <TableHead className="text-right">Sem</TableHead>
             <TableHead>Naviera</TableHead>
             <TableHead className="hidden md:table-cell">M/N</TableHead>
             <TableHead className="hidden md:table-cell">Viaje</TableHead>
             <TableHead className="hidden md:table-cell">Pto. Zarpe</TableHead>
             <TableHead>Pto. Destino</TableHead>
-            <TableHead>ETD</TableHead>
-            <TableHead className="hidden md:table-cell">ETA</TableHead>
+            <TableHead className="text-right">ETD</TableHead>
+            <TableHead className="hidden md:table-cell text-right">ETA</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -538,7 +538,9 @@ function Step2({
                     className="h-4 w-4 accent-primary"
                   />
                 </TableCell>
-                <TableCell className="font-medium">{it.weekNo}</TableCell>
+                <TableCell className="text-right font-medium tabular-nums">
+                  {it.weekNo}
+                </TableCell>
                 <TableCell>{it.carrier ?? "—"}</TableCell>
                 <TableCell className="hidden md:table-cell">
                   {it.containerShip ?? "—"}
@@ -550,8 +552,10 @@ function Step2({
                   {it.portDeparture ?? "—"}
                 </TableCell>
                 <TableCell>{it.portDestination ?? "—"}</TableCell>
-                <TableCell>{formatDate(it.etd)}</TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="text-right tabular-nums">
+                  {formatDate(it.etd)}
+                </TableCell>
+                <TableCell className="hidden md:table-cell text-right tabular-nums">
                   {formatDate(it.eta)}
                 </TableCell>
               </TableRow>

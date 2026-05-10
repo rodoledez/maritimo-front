@@ -13,6 +13,7 @@ import {
 import { ArrowUpDown, Inbox, Search } from "lucide-react";
 import { useState } from "react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,6 +34,13 @@ import {
 } from "@/components/ui/table";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+
+type ColumnAlign = "right" | "center";
+type ColumnMeta = { align?: ColumnAlign };
+
+function readAlign(meta: unknown): ColumnAlign | undefined {
+  return (meta as ColumnMeta | undefined)?.align;
+}
 
 type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
@@ -108,10 +116,15 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
+                  const align = readAlign(header.column.columnDef.meta);
                   return (
                     <TableHead
                       key={header.id}
-                      className="sticky top-14 z-10 h-11 bg-card px-3"
+                      className={cn(
+                        "sticky top-14 z-10 h-11 bg-card px-3",
+                        align === "right" && "text-right",
+                        align === "center" && "text-center",
+                      )}
                     >
                       {header.isPlaceholder ? null : canSort ? (
                         <Button
@@ -154,14 +167,24 @@ export function DataTable<TData, TValue>({
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-3 py-2">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const align = readAlign(cell.column.columnDef.meta);
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          "px-3 py-2",
+                          align === "right" && "text-right tabular-nums",
+                          align === "center" && "text-center",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

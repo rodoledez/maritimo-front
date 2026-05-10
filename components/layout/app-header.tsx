@@ -15,6 +15,11 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export function AppHeader() {
@@ -37,7 +42,12 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background px-4">
-      <SidebarTrigger aria-label="Abrir menú" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <SidebarTrigger aria-label="Abrir menú" />
+        </TooltipTrigger>
+        <TooltipContent>Abrir menú</TooltipContent>
+      </Tooltip>
       <Separator orientation="vertical" className="h-6" />
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>

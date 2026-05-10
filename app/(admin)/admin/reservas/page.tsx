@@ -45,7 +45,7 @@ export default function ReservasPage() {
 
   const columns = useMemo<ColumnDef<Booking>[]>(
     () => [
-      { accessorKey: "id", header: "Nº" },
+      { accessorKey: "id", header: "Nº", meta: { align: "right" } },
       {
         accessorKey: "status",
         header: "Estado",
@@ -60,6 +60,7 @@ export default function ReservasPage() {
         accessorKey: "Itinerary.weekNo",
         header: "Sem",
         cell: ({ row }) => row.original.Itinerary?.weekNo ?? "—",
+        meta: { align: "right" },
       },
       {
         accessorKey: "Itinerary.carrier",
@@ -77,7 +78,7 @@ export default function ReservasPage() {
         cell: ({ row }) => row.original.Itinerary?.tripNo ?? "—",
       },
       { accessorKey: "specie", header: "Especie" },
-      { accessorKey: "qtyContainers", header: "Cont." },
+      { accessorKey: "qtyContainers", header: "Cont.", meta: { align: "right" } },
       {
         accessorKey: "typeContainer",
         header: "Tipo cont.",

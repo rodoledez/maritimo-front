@@ -5,6 +5,11 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { XIcon } from "lucide-react"
 
 function Dialog({
@@ -70,17 +75,21 @@ function DialogContent({
           {children}
         </div>
         {showCloseButton && (
-          <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button
-              variant="ghost"
-              className="absolute top-2 right-2"
-              size="icon-sm"
-            >
-              <XIcon
-              />
-              <span className="sr-only">Cerrar</span>
-            </Button>
-          </DialogPrimitive.Close>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DialogPrimitive.Close data-slot="dialog-close" asChild>
+                <Button
+                  variant="ghost"
+                  className="absolute top-2 right-2"
+                  size="icon-sm"
+                >
+                  <XIcon />
+                  <span className="sr-only">Cerrar</span>
+                </Button>
+              </DialogPrimitive.Close>
+            </TooltipTrigger>
+            <TooltipContent>Cerrar</TooltipContent>
+          </Tooltip>
         )}
       </DialogPrimitive.Content>
     </DialogPortal>

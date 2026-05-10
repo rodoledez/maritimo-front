@@ -70,7 +70,9 @@ export function AuthShell({
           tabIndex={-1}
           className="flex-1 bg-muted/30 p-4 outline-none md:p-6"
         >
-          <ErrorBoundary>{children}</ErrorBoundary>
+          <div className="mx-auto max-w-7xl">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </div>
         </main>
       </SidebarInset>
     </SidebarProvider>

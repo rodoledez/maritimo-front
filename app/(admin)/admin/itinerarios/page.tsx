@@ -112,8 +112,8 @@ export default function ItinerariosPage() {
 
   const columns = useMemo<ColumnDef<Itinerary>[]>(
     () => [
-      { accessorKey: "id", header: "ID" },
-      { accessorKey: "weekNo", header: "Sem" },
+      { accessorKey: "id", header: "ID", meta: { align: "right" } },
+      { accessorKey: "weekNo", header: "Sem", meta: { align: "right" } },
       { accessorKey: "carrier", header: "Naviera" },
       { accessorKey: "containerShip", header: "M/N" },
       { accessorKey: "tripNo", header: "Viaje" },
@@ -124,11 +124,13 @@ export default function ItinerariosPage() {
         accessorKey: "etd",
         header: "ETD",
         cell: ({ row }) => formatDate(row.original.etd),
+        meta: { align: "right" },
       },
       {
         accessorKey: "eta",
         header: "ETA",
         cell: ({ row }) => formatDate(row.original.eta),
+        meta: { align: "right" },
       },
       {
         accessorKey: "transitTime",
@@ -137,6 +139,7 @@ export default function ItinerariosPage() {
           typeof row.original.transitTime === "number"
             ? `${row.original.transitTime} días`
             : "—",
+        meta: { align: "right" },
       },
       {
         accessorKey: "active",
