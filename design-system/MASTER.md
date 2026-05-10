@@ -62,7 +62,7 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 - Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 only — Tailwind `1 / 2 / 3 / 4 / 6 / 8`. No ad-hoc `p-[7px]`.
 - Card padding: `p-4` throughout — that's what the customized `Card` primitive ships (`py-4` on the root, `px-4` on `CardHeader`/`CardContent`, `p-4` on `CardFooter`). Pass `<Card size="sm">` for a tighter `p-3` variant when stacking many cards in a single row. The earlier `md:p-6` upgrade has been retired in favor of consistent density across breakpoints — KPI cards and content cards share the same padding scale.
 - Section gap: `space-y-6` between major sections, `space-y-4` inside a section.
-- Tables: row height `h-11`, cell padding `px-3 py-2`. Don't expand row height for breathing room — use sticky headers and pagination instead.
+- Tables: row height `h-11`, cell padding `px-3 py-2`. Don't expand row height for breathing room — use pagination instead. Header rows are **not** sticky: the shadcn `<Table>` primitive wraps in `overflow-x-auto` (creating a scroll container), which traps `position: sticky` inside the table card and produces a visible top gap rather than docking below the AppHeader. Page-level sticky would require flattening the primitive's overflow wrapper — not done.
 - Dialogs — pick the width based on content density. The primitive caps to `max-w-[calc(100%-2rem)]` on phones, so each value below effectively applies at ≥ 640px:
   - `max-w-md` — confirmations / single-input prompts (`change-password-dialog`, `itinerary-import-dialog`).
   - `max-w-lg` — short forms with one reason field (`booking-cancel-dialog`).
@@ -91,13 +91,22 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 - Run API errors through helpers in `lib/utils/errors`: `errorMessage(error, fallback)` for the common path, `explainSequelizeError(error, fallback)` when you specifically need `SequelizeUniqueConstraintError` mapped to a Spanish field-level message. The local `explainError` in `clientes/client-form-dialog.tsx` is a per-domain variant retained for the username uniqueness case — don't propagate that pattern, factor any new domain-specific mappings into `lib/utils/errors`.
 
 ### Tables (TanStack Table v8 wrapper)
-- Sticky header. Horizontal scroll wrapper (`overflow-x-auto`) is mandatory — tables must never break the layout on tablet.
+- Horizontal scroll wrapper (`overflow-x-auto`) is mandatory — tables must never break the layout on tablet. Header is **not** sticky (see §3); the overflow wrapper traps it.
+- **Toolbar** — `DataTable` exposes two slots that sit just above the table card:
+  - `toolbarLeft` — primary list actions, starting with the **create CTA** (`<Button>` default/primary variant with a `<Plus />` icon, e.g. "Crear cliente"). For surfaces with multiple list-level actions (e.g. itinerarios has *Importar Excel* + *Crear*), keep the create button as primary and the secondary action as `variant="outline"`. When `toolbarLeft` is provided, search moves to the right edge.
+  - `toolbarRight` — list-scoped controls (filters, view toggles). Use the shared `<FilterPopover>` helper from `components/data-table/filter-popover.tsx`: it renders an icon-only `<Button variant="outline" size="icon">` with `<SlidersHorizontal />`, a `bg-primary` 8px dot when the value is non-default, a `<PopoverHeader><PopoverTitle>` for the section label, and `variant="secondary"` / `variant="ghost"` toggles for the options. Don't reimplement the popover scaffolding per page.
+  - When you adopt this pattern, **drop the create button from `<PageHeader>`** — `<PageHeader>` only carries title + description on list pages with a toolbar CTA.
 - Empty state: centered icon + Spanish copy ("No hay clientes registrados") + primary CTA to create.
 - Loading state: skeleton rows (5–8) inside the table body. Don't show a spinner over the whole page.
 - Row actions: dropdown menu (`<MoreHorizontal />`) on the right. Don't sprinkle inline icon buttons across the row.
 - Destructive row actions go in a confirm dialog (`<AlertDialog>`) — never one-click delete.
 - Pagination on every list — default 10 rows, options `[10, 25, 50, 100]`.
 - Use `tabular-nums` on numeric columns and right-align them. Apply both at once by setting `meta: { align: "right" }` on the column def — `DataTable` reads it and applies `text-right` to the header plus `text-right tabular-nums` to body cells. `meta: { align: "center" }` is also supported.
+
+#### Cell rendering conventions
+- **Identifier columns** (the row's primary noun: client, commodity, port, ship, type-container, user, etc.): use the shared `<IdentityCell name={…}>` from `components/data-table/identity-cell.tsx`. It renders a small `<Avatar size="sm">` with the first letter on `bg-brand-celeste text-secondary` plus the name in `font-medium`. Skip avatars for numeric/code identifiers (booking N°, itinerary ID, week number) — those stay plain.
+- **Email columns**: use the shared `<EmailCell email={…}>` from `components/data-table/email-cell.tsx`. It emits a `mailto:` link with the right token (`text-primary underline underline-offset-2`), stops row click propagation, and shows `—` when the field is empty. Don't inline anchor tags.
+- **Status columns**: keep using `<StatusBadge>` / `<ActiveBadge>` / `<BookingStatusBadge>` — don't reach for ad-hoc pills.
 
 ### Dialogs
 - Title in Spanish, sentence case ("Crear cliente", not "Crear Cliente").
@@ -197,7 +206,7 @@ For TanStack Query, derive UI from `isPending` / `isError` / `data?.length === 0
 - [ ] All text uses tokens (`text-foreground`, `text-muted-foreground`, brand classes) — no raw hex in JSX.
 - [ ] All async actions show loading + success/error states; no silent submits.
 - [ ] All forms: visible labels, errors below the field, focus on first invalid on submit.
-- [ ] All tables: sticky header, horizontal scroll wrapper, empty state, skeleton loader, pagination.
+- [ ] All tables: horizontal scroll wrapper, empty state, skeleton loader, pagination. (Header is not sticky — see §3.)
 - [ ] All destructive actions sit behind `<AlertDialog>` confirmation.
 - [ ] Spanish copy reviewed; sentence case on headings; imperatives on buttons.
 - [ ] Keyboard tab order matches visual order; focus rings visible.
@@ -225,7 +234,7 @@ If your PR adds a new **table or DataTable consumer**, also:
 - Paginate forward and back; switch page size between 10 / 25 / 50 / 100; the range display ("X–Y de Z") must update correctly.
 - Sort a sortable column; the arrow indicator and `aria-sort` must reflect direction.
 - Hover a row-action `MoreHorizontal` button; the "Acciones" tooltip must appear, then dismiss when you click and the dropdown opens.
-- Scroll past the page header; the table header must dock just below the AppHeader (`top-14`), not slide under it.
+- Scroll past the page header; the table header is not sticky (see §3) — confirm there is no visible top gap inside the table card and that header docking is not expected.
 - If you used `meta: { align: "right" }` on any column, confirm the body cells use `tabular-nums` and right-align cleanly.
 
 If the path you touched goes through `<Dialog>`, the X close button now lives inside `<Tooltip>`. Test that the tooltip "Cerrar" appears on hover and that the dialog still closes correctly via every dismissal route.

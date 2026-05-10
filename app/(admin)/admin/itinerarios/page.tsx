@@ -8,6 +8,12 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { ActiveBadge } from "@/components/data-table/active-cell";
+import {
+  ACTIVE_FILTER_OPTIONS,
+  FilterPopover,
+  matchesActiveFilter,
+  type ActiveFilter,
+} from "@/components/data-table/filter-popover";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -64,6 +70,12 @@ export default function ItinerariosPage() {
   const [editing, setEditing] = useState<Itinerary | null>(null);
   const [deleting, setDeleting] = useState<Itinerary | null>(null);
   const [confirming, setConfirming] = useState<Itinerary | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter((i) => matchesActiveFilter(activeFilter, i.active ?? true));
+  }, [data, activeFilter]);
 
   const onCreate = () => {
     setEditing(null);
@@ -208,18 +220,6 @@ export default function ItinerariosPage() {
       <PageHeader
         title="Itinerarios"
         description="Catálogo de viajes marítimos por semana."
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <FileSpreadsheet className="h-4 w-4" />
-              Importar Excel
-            </Button>
-            <Button onClick={onCreate}>
-              <Plus className="h-4 w-4" />
-              Crear itinerario
-            </Button>
-          </div>
-        }
       />
       {error ? (
         <Alert variant="destructive">
@@ -234,9 +234,30 @@ export default function ItinerariosPage() {
       ) : null}
       <DataTable
         columns={columns}
-        data={data ?? []}
+        data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por naviera, M/N, puerto…"
+        toolbarLeft={
+          <>
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="h-4 w-4" />
+              Importar Excel
+            </Button>
+            <Button onClick={onCreate}>
+              <Plus className="h-4 w-4" />
+              Crear itinerario
+            </Button>
+          </>
+        }
+        toolbarRight={
+          <FilterPopover
+            label="Estado"
+            value={activeFilter}
+            defaultValue="all"
+            options={ACTIVE_FILTER_OPTIONS}
+            onChange={setActiveFilter}
+          />
+        }
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <CalendarRange className="h-8 w-8" />

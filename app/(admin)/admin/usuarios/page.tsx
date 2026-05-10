@@ -8,6 +8,14 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { ActiveBadge } from "@/components/data-table/active-cell";
+import { EmailCell } from "@/components/data-table/email-cell";
+import {
+  ACTIVE_FILTER_OPTIONS,
+  FilterPopover,
+  matchesActiveFilter,
+  type ActiveFilter,
+} from "@/components/data-table/filter-popover";
+import { IdentityCell } from "@/components/data-table/identity-cell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -54,6 +62,12 @@ export default function UsuariosPage() {
   const [editing, setEditing] = useState<User | null>(null);
   const [deleting, setDeleting] = useState<User | null>(null);
   const [passwordTarget, setPasswordTarget] = useState<User | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter((u) => matchesActiveFilter(activeFilter, u.active ?? true));
+  }, [data, activeFilter]);
 
   const onCreate = () => {
     setEditing(null);
@@ -95,12 +109,17 @@ export default function UsuariosPage() {
       {
         accessorKey: "name",
         header: "Nombre",
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => <IdentityCell name={row.original.name} />,
       },
       {
         accessorKey: "email",
         header: "Email",
-        cell: ({ row }) => row.original.email ?? row.original.username,
+        cell: ({ row }) =>
+          row.original.email ? (
+            <EmailCell email={row.original.email} />
+          ) : (
+            <span>{row.original.username}</span>
+          ),
       },
       {
         accessorKey: "isClient",
@@ -174,12 +193,6 @@ export default function UsuariosPage() {
       <PageHeader
         title="Usuarios"
         description="Administra cuentas de usuarios y clientes."
-        actions={
-          <Button onClick={onCreate}>
-            <Plus className="h-4 w-4" />
-            Crear usuario
-          </Button>
-        }
       />
       {error ? (
         <Alert variant="destructive">
@@ -194,9 +207,24 @@ export default function UsuariosPage() {
       ) : null}
       <DataTable
         columns={columns}
-        data={data ?? []}
+        data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por nombre, email…"
+        toolbarLeft={
+          <Button onClick={onCreate}>
+            <Plus className="h-4 w-4" />
+            Crear usuario
+          </Button>
+        }
+        toolbarRight={
+          <FilterPopover
+            label="Estado"
+            value={activeFilter}
+            defaultValue="all"
+            options={ACTIVE_FILTER_OPTIONS}
+            onChange={setActiveFilter}
+          />
+        }
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <UserCog className="h-8 w-8" />

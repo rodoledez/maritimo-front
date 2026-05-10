@@ -9,9 +9,12 @@ It doesn't really deviate — it **defines** how the rest of the admin CRUDs sho
 
 ## Conventions to mirror in other CRUDs
 
-- **Page header** — `<PageHeader title="Clientes" actions={<CreateButton />} />`. Title is the plural noun in sentence case.
-- **List shell** — `<Card>` wrapping the `<DataTable>`. No filter bar yet; add one only when needed.
-- **Columns** — start with: identifier, name, contact, status badge, row actions. Right-align the actions column, give it a fixed width.
+- **Page header** — `<PageHeader title="Clientes" description="…" />`. Title is the plural noun in sentence case. **No `actions` prop** — the create CTA lives in the table toolbar (see below).
+- **List shell** — `<DataTable>` directly under the `PageHeader`. The toolbar (search + actions + filters) sits in its own row above the bordered table card.
+- **Toolbar** — see MASTER §4 *Toolbar*:
+  - `toolbarLeft`: `<Button variant="outline">` "Crear cliente" with `<Plus />` icon.
+  - `toolbarRight`: filter `<Popover>` triggered by `<Button variant="outline" size="icon">` with `<SlidersHorizontal />`. Default filter is **Estado** (Todos / Activos / Inactivos). Filtering is applied outside the table via `useMemo` over `data`; the table receives the already-filtered array. Show a `bg-primary` dot on the trigger when the filter ≠ "Todos".
+- **Columns** — start with: identifier (avatar + name), contact, status badge, row actions. Right-align the actions column, give it a fixed width. See MASTER §4 *Cell rendering conventions* for avatar / email / status patterns.
 - **Status column** — single chip per MASTER §1 (`activo` green, `inactivo` red). Pair color with text.
 - **Row actions** — dropdown menu (`<MoreHorizontal />`): Editar, Activar/Desactivar (toggle based on current state), Eliminar (destructive, opens `<AlertDialog>`).
 - **Create / edit dialog** — `client-form-dialog.tsx` is the template. Same component handles both modes via an optional `client` prop.

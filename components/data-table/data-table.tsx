@@ -146,7 +146,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "sticky top-14 z-10 h-11 bg-card px-3",
+                        "h-11 px-3",
                         align === "right" && "text-right",
                         align === "center" && "text-center",
                       )}

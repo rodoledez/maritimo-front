@@ -6,6 +6,11 @@ import { ClipboardList, MoreHorizontal } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
+import {
+  FilterPopover,
+  type FilterOption,
+} from "@/components/data-table/filter-popover";
+import { IdentityCell } from "@/components/data-table/identity-cell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {

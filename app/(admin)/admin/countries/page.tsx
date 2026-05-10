@@ -8,6 +8,13 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { ActiveBadge } from "@/components/data-table/active-cell";
+import {
+  ACTIVE_FILTER_OPTIONS,
+  FilterPopover,
+  matchesActiveFilter,
+  type ActiveFilter,
+} from "@/components/data-table/filter-popover";
+import { IdentityCell } from "@/components/data-table/identity-cell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -50,6 +57,12 @@ export default function CountriesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Country | null>(null);
   const [deleting, setDeleting] = useState<Country | null>(null);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    return data.filter((c) => matchesActiveFilter(activeFilter, c.active));
+  }, [data, activeFilter]);
 
   const onCreate = () => {
     setEditing(null);
@@ -90,7 +103,7 @@ export default function CountriesPage() {
       {
         accessorKey: "name",
         header: "Nombre",
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => <IdentityCell name={row.original.name} />,
       },
       {
         accessorKey: "isoCode",
@@ -151,12 +164,6 @@ export default function CountriesPage() {
       <PageHeader
         title="Países"
         description="Catálogo de países de origen y destino."
-        actions={
-          <Button onClick={onCreate}>
-            <Plus className="h-4 w-4" />
-            Crear país
-          </Button>
-        }
       />
       {error ? (
         <Alert variant="destructive">
@@ -171,9 +178,24 @@ export default function CountriesPage() {
       ) : null}
       <DataTable
         columns={columns}
-        data={data ?? []}
+        data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar…"
+        toolbarLeft={
+          <Button onClick={onCreate}>
+            <Plus className="h-4 w-4" />
+            Crear país
+          </Button>
+        }
+        toolbarRight={
+          <FilterPopover
+            label="Estado"
+            value={activeFilter}
+            defaultValue="all"
+            options={ACTIVE_FILTER_OPTIONS}
+            onChange={setActiveFilter}
+          />
+        }
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <Flag className="h-8 w-8" />
