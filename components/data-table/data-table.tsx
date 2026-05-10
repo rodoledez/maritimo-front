@@ -15,6 +15,13 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -24,6 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
 type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
@@ -72,6 +81,11 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize: 10 } },
   });
 
+  const totalRows = table.getFilteredRowModel().rows.length;
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const rangeStart = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
+  const rangeEnd = Math.min((pageIndex + 1) * pageSize, totalRows);
+
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -82,6 +96,7 @@ export function DataTable<TData, TValue>({
             value={globalFilter}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="pl-9"
+            aria-label={searchPlaceholder}
           />
         </div>
         {toolbarRight}
@@ -94,7 +109,10 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className="sticky top-14 z-10 h-11 bg-card px-3"
+                    >
                       {header.isPlaceholder ? null : canSort ? (
                         <Button
                           variant="ghost"
@@ -127,7 +145,7 @@ export function DataTable<TData, TValue>({
               Array.from({ length: skeletonRows }).map((_, i) => (
                 <TableRow key={`skeleton-${i}`}>
                   {columns.map((_col, j) => (
-                    <TableCell key={j}>
+                    <TableCell key={j} className="px-3 py-2">
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
@@ -137,7 +155,7 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="px-3 py-2">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -164,28 +182,55 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
-          Página {table.getState().pagination.pageIndex + 1} de{" "}
-          {table.getPageCount() || 1}
-        </span>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+      <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <span>Filas por página</span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(v) => table.setPageSize(Number(v))}
           >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Siguiente
-          </Button>
+            <SelectTrigger
+              className="h-8 w-[72px]"
+              aria-label="Filas por página"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="tabular-nums">
+            {totalRows === 0
+              ? "Sin resultados"
+              : `${rangeStart}–${rangeEnd} de ${totalRows}`}
+          </span>
+          <span className="tabular-nums">
+            Página {pageIndex + 1} de {table.getPageCount() || 1}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Siguiente
+            </Button>
+          </div>
         </div>
       </div>
     </div>

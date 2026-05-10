@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth/auth-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -22,8 +23,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
-        <Toaster richColors position="top-right" />
+        <TooltipProvider delayDuration={300}>
+          {children}
+          <Toaster richColors position="top-right" />
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -25,12 +25,16 @@ The brand palette is defined in `app/globals.css` and **must not** be overridden
 | `--brand-pending`  | `#FCD54E` | "En proceso" / awaiting badges                |
 | `--destructive`    | `#DD2F2F` | shadcn destructive surfaces                   |
 
-**Status badge mapping (use everywhere reservas/itinerarios/clientes show state):**
-- `activo` / `confirmada` → `bg-brand-success/10 text-brand-success`
-- `pendiente` / `borrador` → `bg-brand-pending/20 text-brand-warning`
-- `en proceso` → `bg-brand-warning/10 text-brand-warning`
-- `cancelada` / `inactivo` → `bg-brand-danger/10 text-brand-danger`
-- neutral → `bg-muted text-muted-foreground`
+**Status badges** — use the shared `<StatusBadge tone="success|warning|pending|danger|neutral">` from `components/status-badge.tsx`. It bakes in the tone-correct background opacity, foreground color, and a default lucide icon (override via the `icon` prop, or pass `icon={null}` to suppress). Domain wrappers exist for the common cases:
+- `<BookingStatusBadge status={…}>` (`components/booking/status-badge.tsx`) for `BookingStatus`.
+- `<ActiveBadge active={…}>` (`components/data-table/active-cell.tsx`) for activo/inactivo columns.
+
+Tone mapping (use these on every reserva / itinerario / cliente surface that shows state):
+- `success` (activo / confirmada) → `bg-brand-success/10 text-brand-success`
+- `pending` (pendiente / borrador) → `bg-brand-pending/20 text-brand-warning`
+- `warning` (en proceso) → `bg-brand-warning/10 text-brand-warning`
+- `danger` (cancelada / inactivo) → `bg-brand-danger/10 text-brand-danger`
+- `neutral` (fallback) → `bg-muted text-muted-foreground`
 
 ---
 
@@ -60,7 +64,7 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 - Section gap: `space-y-6` between major sections, `space-y-4` inside a section.
 - Tables: row height `h-11`, cell padding `px-3 py-2`. Don't expand row height for breathing room — use sticky headers and pagination instead.
 - Dialogs: `sm:max-w-lg` for create/edit forms, `sm:max-w-2xl` for forms with two columns.
-- Border radius: stick to `--radius` (10px). Cards `rounded-xl`, inputs/buttons `rounded-md`.
+- Border radius: stick to `--radius` (10px). Cards `rounded-xl`, inputs/buttons `rounded-lg` (which equals `--radius`). `rounded-md` evaluates to 8px in this theme — don't reach for it on interactive surfaces unless you specifically want the smaller corner.
 - Shadows: shadcn defaults only. Don't introduce `shadow-2xl` outside the login card.
 
 ---
@@ -70,16 +74,16 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 ### Buttons
 - One **primary** CTA per surface (`<Button>`). Secondary actions use `variant="outline"` or `variant="ghost"`. Destructive uses `variant="destructive"`.
 - Async submit: `disabled={isSubmitting}` plus a `<Loader2 className="animate-spin" />` icon. Never leave a button enabled mid-request.
-- Icon-only buttons: include `aria-label` (Spanish copy) and a tooltip via shadcn `<Tooltip>`.
+- Icon-only buttons: include `aria-label` (Spanish copy) and a tooltip via shadcn `<Tooltip>`. `TooltipProvider` is mounted at the app root in `app/providers.tsx` (with `delayDuration={300}`), so `<Tooltip>` works on every route — including `/login`, which is rendered outside `AuthShell`.
 
 ### Forms (RHF + Zod)
 - Always render `<FormLabel>`. Placeholder is **not** a label.
 - Errors render via `<FormMessage>` directly under the field. Don't summarize errors at the top of the form.
 - Validate on blur (`mode: "onBlur"`) for typed fields; on submit only for selects/checkboxes.
 - Required fields: append a subtle ` *` to the label, not a separate badge.
-- Long forms (>8 fields) split into two columns at `md:` (`grid md:grid-cols-2 gap-4`).
+- Long forms (>8 fields) split into two columns at `sm:` (`grid sm:grid-cols-2 gap-4`) — the codebase standard. Single column under 640px keeps mobile labels legible.
 - After failed submit, focus the first invalid field. RHF does this when you use `<Form>` correctly — don't fight it.
-- Reuse `explainError(error, fallback)` (see `clientes/client-form-dialog.tsx`) to map `SequelizeUniqueConstraintError` → Spanish field-level message.
+- Run API errors through helpers in `lib/utils/errors`: `errorMessage(error, fallback)` for the common path, `explainSequelizeError(error, fallback)` when you specifically need `SequelizeUniqueConstraintError` mapped to a Spanish field-level message. The local `explainError` in `clientes/client-form-dialog.tsx` is a per-domain variant retained for the username uniqueness case — don't propagate that pattern, factor any new domain-specific mappings into `lib/utils/errors`.
 
 ### Tables (TanStack Table v8 wrapper)
 - Sticky header. Horizontal scroll wrapper (`overflow-x-auto`) is mandatory — tables must never break the layout on tablet.
