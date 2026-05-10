@@ -205,6 +205,31 @@ For TanStack Query, derive UI from `isPending` / `isError` / `data?.length === 0
 - [ ] `pnpm lint && pnpm exec tsc --noEmit` clean.
 - [ ] Manually clicked through the new surface in dev — golden path + one error path.
 
+Most code-level boxes (icons, tokens, async states, forms, tables, destructive confirms) are now enforced by shared primitives — `DataTable`, the `Dialog` primitive, `<StatusBadge>` / `<BookingStatusBadge>` / `<ActiveBadge>`, `<PageHeader>`, `<AuthShell>`. New page work mostly *applies* these; the human-pass items (Spanish copy review, keyboard, breakpoints, manual click-through) are where the bugs actually hide.
+
+### 10.1 Browser pass minimum
+
+Boxes 9 and 11 above require running `pnpm dev`. For an average page-level PR, the irreducible click-through is:
+
+1. **Golden path** — open the new/changed surface, complete the primary action (create → save, edit → update, etc.). Confirm the success toast (top-right, 4s auto-dismiss) and that the affected list refetches.
+2. **One error path** — either submit with an invalid field (confirm `<FormMessage>` shows under the field and submission is blocked) **or** force a backend error (devtools → Network → offline) and confirm the `<Alert variant="destructive">` + `Reintentar` pattern, **not** a silent failure.
+3. **Three breakpoints** — 1280 (default desktop), 1024 (laptop), 768 (tablet). Watch for: horizontal page scroll, button overlap, sidebar collapse behavior, table column truncation. Add 375 (phone) **only** if the surface is on the `/cliente` role.
+4. **Keyboard pass** — Tab from page top to the primary CTA; the focus ring must be visible at every stop. Press Enter on the CTA; it must trigger. ESC must close any open dialog.
+5. **Reduced motion** — devtools → Rendering → "Emulate CSS media feature `prefers-reduced-motion`" → reduce. Confirm spinners stop spinning and modal entrance animations are clamped (the `@layer base` rule in `globals.css` does this; this step verifies it's wired up).
+
+If your PR adds a new **dialog**, also:
+- Open it on a 768px viewport with a deliberately tall form. Inner content must scroll; the X close button must stay docked top-right.
+- Close it via the X, the Cerrar/Cancelar button, ESC, and click-outside. All four must work.
+
+If your PR adds a new **table or DataTable consumer**, also:
+- Paginate forward and back; switch page size between 10 / 25 / 50 / 100; the range display ("X–Y de Z") must update correctly.
+- Sort a sortable column; the arrow indicator and `aria-sort` must reflect direction.
+- Hover a row-action `MoreHorizontal` button; the "Acciones" tooltip must appear, then dismiss when you click and the dropdown opens.
+- Scroll past the page header; the table header must dock just below the AppHeader (`top-14`), not slide under it.
+- If you used `meta: { align: "right" }` on any column, confirm the body cells use `tabular-nums` and right-align cleanly.
+
+If the path you touched goes through `<Dialog>`, the X close button now lives inside `<Tooltip>`. Test that the tooltip "Cerrar" appears on hover and that the dialog still closes correctly via every dismissal route.
+
 ---
 
 ## 11. How to use this file
