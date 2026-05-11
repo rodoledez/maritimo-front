@@ -21,6 +21,8 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
+  FieldRequiredMark,
+  FieldSectionTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -83,22 +85,6 @@ function explainError(error: unknown, fallback: string): string {
     return "Nombre de usuario ya creado";
   }
   return data?.message ?? error.message ?? fallback;
-}
-
-function RequiredMark() {
-  return (
-    <span className="opacity-60" aria-hidden>
-      *
-    </span>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="border-b pb-2 text-sm font-semibold text-secondary">
-      {children}
-    </h3>
-  );
 }
 
 const FORM_ID = "client-form";
@@ -192,7 +178,7 @@ export function ClientFormDialog({
           noValidate
         >
           <section className="space-y-5">
-            <SectionTitle>Datos de la empresa</SectionTitle>
+            <FieldSectionTitle>Datos de la empresa</FieldSectionTitle>
             <FieldGroup className="grid gap-8 sm:grid-cols-2">
               <Controller
                 name="name"
@@ -200,7 +186,7 @@ export function ClientFormDialog({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="client-name">
-                      Empresa <RequiredMark />
+                      Empresa <FieldRequiredMark />
                     </FieldLabel>
                     <Input
                       {...field}
@@ -221,7 +207,7 @@ export function ClientFormDialog({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="client-username">
-                      Usuario (email) <RequiredMark />
+                      Usuario (email) <FieldRequiredMark />
                     </FieldLabel>
                     <Input
                       {...field}
@@ -242,7 +228,7 @@ export function ClientFormDialog({
           </section>
 
           <section className="space-y-5">
-            <SectionTitle>Contacto principal</SectionTitle>
+            <FieldSectionTitle>Contacto principal</FieldSectionTitle>
             <FieldGroup className="grid gap-8 sm:grid-cols-2">
               <Controller
                 name="contactName"
@@ -250,7 +236,7 @@ export function ClientFormDialog({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="client-contact-name">
-                      Nombre contacto <RequiredMark />
+                      Nombre contacto <FieldRequiredMark />
                     </FieldLabel>
                     <Input
                       {...field}
@@ -271,7 +257,7 @@ export function ClientFormDialog({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="client-contact-email">
-                      Email contacto <RequiredMark />
+                      Email contacto <FieldRequiredMark />
                     </FieldLabel>
                     <Input
                       {...field}

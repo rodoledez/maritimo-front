@@ -63,12 +63,13 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 - Card padding: `p-4` throughout — that's what the customized `Card` primitive ships (`py-4` on the root, `px-4` on `CardHeader`/`CardContent`, `p-4` on `CardFooter`). Pass `<Card size="sm">` for a tighter `p-3` variant when stacking many cards in a single row. The earlier `md:p-6` upgrade has been retired in favor of consistent density across breakpoints — KPI cards and content cards share the same padding scale.
 - Section gap: `space-y-6` between major sections, `space-y-4` inside a section.
 - Tables: row height `h-11`, cell padding `px-3 py-2`. Don't expand row height for breathing room — use pagination instead. Header rows are **not** sticky: the shadcn `<Table>` primitive wraps in `overflow-x-auto` (creating a scroll container), which traps `position: sticky` inside the table card and produces a visible top gap rather than docking below the AppHeader. Page-level sticky would require flattening the primitive's overflow wrapper — not done.
-- Dialogs — pick the width based on content density. The primitive caps to `max-w-[calc(100%-2rem)]` on phones, so each value below effectively applies at ≥ 640px:
+- Dialogs — pick the width based on content density. The primitive caps to `max-w-[calc(100%-2rem)]` on phones; above 640px the caller's `max-w-*` wins (the primitive **no longer hardcodes** `sm:max-w-sm` — if you re-introduce it, every dialog in the app collapses to ~384px regardless of what callers pass):
   - `max-w-md` — confirmations / single-input prompts (`change-password-dialog`, `itinerary-import-dialog`).
   - `max-w-lg` — short forms with one reason field (`booking-cancel-dialog`).
-  - `max-w-xl` — single-column CRUD forms (`commodity`, `country`, `port`, `type-container`, `user`).
-  - `max-w-2xl` — two-column CRUD forms (`client`, `booking-confirm`, `shipping-company`).
-  - `max-w-3xl` — data-dense edit forms or read-only details (`booking-edit`, `booking-detail`, `itinerary-form`).
+  - `max-w-2xl` — small CRUD forms with 3–4 fields (`commodity`, `country`, `port`, `type-container`, `user`, `booking-confirm`).
+  - `max-w-3xl` — multi-section CRUD forms or read-only details (`shipping-company`, `booking-edit`, `booking-detail`).
+  - `max-w-4xl` — data-dense forms with 3+ sections and Selects (`itinerary-form`).
+  - `max-w-5xl` — wide two-column forms where each column needs room for long values like emails (`client-form`).
 - Border radius: stick to `--radius` (10px). Cards `rounded-xl`, inputs/buttons `rounded-lg` (which equals `--radius`). `rounded-md` evaluates to 8px in this theme — don't reach for it on interactive surfaces unless you specifically want the smaller corner.
 - Shadows: shadcn defaults only. Don't introduce `shadow-2xl` outside the login card.
 
@@ -82,13 +83,50 @@ This is an **operations tool**, not a marketing site. Density matters more than 
 - Icon-only buttons: include `aria-label` (Spanish copy) and a tooltip via shadcn `<Tooltip>`. `TooltipProvider` is mounted at the app root in `app/providers.tsx` (with `delayDuration={300}`), so `<Tooltip>` works on every route — including `/login`, which is rendered outside `AuthShell`.
 
 ### Forms (RHF + Zod)
-- Always render `<FormLabel>`. Placeholder is **not** a label.
-- Errors render via `<FormMessage>` directly under the field. Don't summarize errors at the top of the form.
+
+The canonical form pattern is `Controller` (from `react-hook-form`) + the `Field` primitive (`components/ui/field.tsx`). The older `Form`/`FormField`/`FormControl`/`FormMessage` wrappers are **deprecated** — every admin CRUD dialog has been migrated. Don't reintroduce them for new work.
+
+**Anatomy of a form field:**
+```tsx
+<Controller
+  name="email"
+  control={form.control}
+  render={({ field, fieldState }) => (
+    <Field data-invalid={fieldState.invalid}>
+      <FieldLabel htmlFor="some-id">
+        Email <FieldRequiredMark />
+      </FieldLabel>
+      <Input
+        {...field}
+        id="some-id"
+        type="email"
+        aria-invalid={fieldState.invalid}
+        placeholder="usuario@empresa.com"
+        autoComplete="off"
+      />
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
+  )}
+/>
+```
+
+- **`<Field>`** propagates `data-invalid` so `<FieldLabel>` auto-paints `text-destructive` on error. Default `orientation="vertical"` stacks label-over-input with `gap-3`. Use `orientation="horizontal"` for checkbox+label rows or for the inline footer button row.
+- **`<FieldGroup>`** stacks fields vertically with `gap-6`. Wrap groups of related fields in a `<FieldGroup>`; for multi-column rows inside a group, nest a `<div className="grid gap-6 sm:grid-cols-2">` (or `-3`).
+- **`<FieldRequiredMark />`** — the subtle `*` (opacity-60). Inherits the parent label's `text-destructive` automatically on error.
+- **`<FieldSectionTitle>`** — small section heading with a bottom border. Use when a form has 7+ fields naturally splitting into 2+ logical groups (`shipping-company`: *Datos* + *Contacto*; `itinerary`: *Viaje* + *Puertos* + *Fechas y cortes*; `client`: *Datos de la empresa* + *Contacto principal*). Skip sections for <6 field forms — they just add noise.
+- **`<FieldDescription>`** — `text-xs text-muted-foreground` helper text, e.g. inside the Switch container in `user-form-dialog` ("Activado: el usuario es un cliente…").
+- **`<FieldError errors={[fieldState.error]}>`** renders only when there's an error. Pass the RHF error as a single-element array; the component handles undefined gracefully.
+
+**Form-level rules:**
 - Validate on blur (`mode: "onBlur"`) for typed fields; on submit only for selects/checkboxes.
-- Required fields: append a subtle ` *` to the label, not a separate badge.
-- Long forms (>8 fields) split into two columns at `sm:` (`grid sm:grid-cols-2 gap-4`) — the codebase standard. Single column under 640px keeps mobile labels legible.
-- After failed submit, focus the first invalid field. RHF does this when you use `<Form>` correctly — don't fight it.
+- Required fields: subtle `<FieldRequiredMark />` after the label text — never a separate badge.
+- Multi-column layouts: nest a `<div className="grid gap-6 sm:grid-cols-2">` (or `-3`) inside `<FieldGroup>`. The grid's `gap-6` overrides the FieldGroup's vertical gap inside that row.
+- Section spacing: `<form className="space-y-8">` between `<section className="space-y-5">` blocks. Inside each section, `<FieldSectionTitle>` followed by `<FieldGroup>`.
+- **Submit button in `<DialogFooter>`, form in body** — give the `<form>` a stable `id` (e.g. `FORM_ID = "client-form"`) and set `<Button type="submit" form={FORM_ID}>` in the footer. This keeps the footer visually separated and avoids any scrolling-with-content quirks.
+- After failed submit, focus the first invalid field. RHF does this when `mode: "onBlur"` + a Zod resolver is in place — don't fight it.
 - Run API errors through helpers in `lib/utils/errors`: `errorMessage(error, fallback)` for the common path, `explainSequelizeError(error, fallback)` when you specifically need `SequelizeUniqueConstraintError` mapped to a Spanish field-level message. The local `explainError` in `clientes/client-form-dialog.tsx` is a per-domain variant retained for the username uniqueness case — don't propagate that pattern, factor any new domain-specific mappings into `lib/utils/errors`.
+
+**Input sizing:** the `<Input>` primitive is `h-10 px-3 py-2`. Don't override per-form unless the field is genuinely special (e.g. a deliberately disabled read-only computed value).
 
 ### Tables (TanStack Table v8 wrapper)
 - Horizontal scroll wrapper (`overflow-x-auto`) is mandatory — tables must never break the layout on tablet. Header is **not** sticky (see §3); the overflow wrapper traps it.

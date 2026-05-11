@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -17,13 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldRequiredMark,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -64,6 +63,8 @@ const empty: FormValues = {
   isDestination: true,
   active: true,
 };
+
+const FORM_ID = "port-form";
 
 export function PortFormDialog({
   open,
@@ -133,7 +134,7 @@ export function PortFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar puerto" : "Crear puerto"}</DialogTitle>
           <DialogDescription>
@@ -142,136 +143,176 @@ export function PortFormDialog({
               : "Registra un nuevo puerto."}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-            noValidate
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre *</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Ej. San Antonio" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="countryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>País *</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={countriesLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
+
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(onSubmit)}
+          noValidate
+        >
+          <FieldGroup>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="port-name">
+                      Nombre <FieldRequiredMark />
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="port-name"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Ej. San Antonio"
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="countryId"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="port-country">
+                      País <FieldRequiredMark />
+                    </FieldLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={countriesLoading}
+                    >
+                      <SelectTrigger
+                        id="port-country"
+                        aria-invalid={fieldState.invalid}
+                        className="w-full"
+                      >
                         <SelectValue
                           placeholder={
                             countriesLoading ? "Cargando…" : "Selecciona un país"
                           }
                         />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {countries.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.name} ({c.isoCode})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} rows={2} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="isOrigin"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(v) => field.onChange(v === true)}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Puerto de origen</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="isDestination"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(v) => field.onChange(v === true)}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Puerto de destino</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={(v) => field.onChange(v === true)}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Activo</FormLabel>
-                  </FormItem>
+                      <SelectContent>
+                        {countries.map((c) => (
+                          <SelectItem key={c.id} value={String(c.id)}>
+                            {c.name} ({c.isoCode})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cerrar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : isEditing ? (
-                  "Actualizar"
-                ) : (
-                  "Guardar"
+            <Controller
+              name="description"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="port-description">
+                    Descripción
+                  </FieldLabel>
+                  <Textarea
+                    {...field}
+                    id="port-description"
+                    rows={2}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Controller
+                name="isOrigin"
+                control={form.control}
+                render={({ field }) => (
+                  <Field orientation="horizontal" className="justify-start">
+                    <Checkbox
+                      id="port-is-origin"
+                      checked={field.value}
+                      onCheckedChange={(v) => field.onChange(v === true)}
+                    />
+                    <FieldLabel
+                      htmlFor="port-is-origin"
+                      className="font-normal"
+                    >
+                      Puerto de origen
+                    </FieldLabel>
+                  </Field>
                 )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              />
+              <Controller
+                name="isDestination"
+                control={form.control}
+                render={({ field }) => (
+                  <Field orientation="horizontal" className="justify-start">
+                    <Checkbox
+                      id="port-is-destination"
+                      checked={field.value}
+                      onCheckedChange={(v) => field.onChange(v === true)}
+                    />
+                    <FieldLabel
+                      htmlFor="port-is-destination"
+                      className="font-normal"
+                    >
+                      Puerto de destino
+                    </FieldLabel>
+                  </Field>
+                )}
+              />
+              <Controller
+                name="active"
+                control={form.control}
+                render={({ field }) => (
+                  <Field orientation="horizontal" className="justify-start">
+                    <Checkbox
+                      id="port-active"
+                      checked={field.value}
+                      onCheckedChange={(v) => field.onChange(v === true)}
+                    />
+                    <FieldLabel
+                      htmlFor="port-active"
+                      className="font-normal"
+                    >
+                      Activo
+                    </FieldLabel>
+                  </Field>
+                )}
+              />
+            </div>
+          </FieldGroup>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cerrar
+          </Button>
+          <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando…
+              </>
+            ) : isEditing ? (
+              "Actualizar"
+            ) : (
+              "Guardar"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

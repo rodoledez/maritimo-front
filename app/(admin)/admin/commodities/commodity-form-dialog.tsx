@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -17,13 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldRequiredMark,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,6 +43,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const empty: FormValues = { name: "", description: "", active: true };
+const FORM_ID = "commodity-form";
 
 export function CommodityFormDialog({
   open,
@@ -108,7 +108,7 @@ export function CommodityFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar commodity" : "Crear commodity"}
@@ -119,80 +119,97 @@ export function CommodityFormDialog({
               : "Registra una nueva commodity (especie / producto)."}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-            noValidate
-          >
-            <FormField
-              control={form.control}
+
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(onSubmit)}
+          noValidate
+        >
+          <FieldGroup>
+            <Controller
               name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre *</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Ej. Cerezas" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="commodity-name">
+                    Nombre <FieldRequiredMark />
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="commodity-name"
+                    aria-invalid={fieldState.invalid}
+                    placeholder="Ej. Cerezas"
+                    autoComplete="off"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
-            <FormField
-              control={form.control}
+            <Controller
               name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      rows={3}
-                      placeholder="Detalles opcionales"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
               control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={(v) => field.onChange(v === true)}
-                    />
-                  </FormControl>
-                  <FormLabel className="font-normal">Activo</FormLabel>
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="commodity-description">
+                    Descripción
+                  </FieldLabel>
+                  <Textarea
+                    {...field}
+                    id="commodity-description"
+                    rows={3}
+                    placeholder="Detalles opcionales"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cerrar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : isEditing ? (
-                  "Actualizar"
-                ) : (
-                  "Guardar"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            <Controller
+              name="active"
+              control={form.control}
+              render={({ field }) => (
+                <Field orientation="horizontal" className="justify-start">
+                  <Checkbox
+                    id="commodity-active"
+                    checked={field.value}
+                    onCheckedChange={(v) => field.onChange(v === true)}
+                  />
+                  <FieldLabel
+                    htmlFor="commodity-active"
+                    className="font-normal"
+                  >
+                    Activo
+                  </FieldLabel>
+                </Field>
+              )}
+            />
+          </FieldGroup>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cerrar
+          </Button>
+          <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando…
+              </>
+            ) : isEditing ? (
+              "Actualizar"
+            ) : (
+              "Guardar"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

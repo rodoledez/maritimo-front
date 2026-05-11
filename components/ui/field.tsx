@@ -102,4 +102,36 @@ function FieldError({
   );
 }
 
-export { Field, FieldGroup, FieldLabel, FieldDescription, FieldError };
+function FieldSectionTitle({
+  className,
+  ...props
+}: React.ComponentProps<"h3">) {
+  return (
+    <h3
+      data-slot="field-section-title"
+      className={cn(
+        "border-b pb-2 text-sm font-semibold text-secondary",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function FieldRequiredMark() {
+  return (
+    <span className="opacity-60" aria-hidden>
+      *
+    </span>
+  );
+}
+
+export {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+  FieldRequiredMark,
+  FieldSectionTitle,
+};

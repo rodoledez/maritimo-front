@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -17,13 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldRequiredMark,
+  FieldSectionTitle,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -71,6 +71,8 @@ const empty: FormValues = {
   stacking: "",
   documentClosure: "",
 };
+
+const FORM_ID = "itinerary-form";
 
 function diffDays(etd: string, eta: string): number | null {
   if (!etd || !eta) return null;
@@ -201,7 +203,7 @@ export function ItineraryFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar itinerario" : "Crear itinerario"}
@@ -210,232 +212,341 @@ export function ItineraryFormDialog({
             Completa los datos del itinerario marítimo.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-            noValidate
-          >
-            <div className="grid gap-4 sm:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="weekNo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Semana *</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" min={1} max={53} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="shippingCompanyId"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>Naviera *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona…" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {activeCompanies.map((c) => (
-                          <SelectItem key={c.id} value={String(c.id)}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="containerShip"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Motonave *</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tripNo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Viaje *</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="portOriginId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Puerto de zarpe *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona…" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {originPorts.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="portDestinationId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Puerto de destino *</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={(v) => {
-                        field.onChange(v);
-                        const dest = destinationPorts.find(
-                          (p) => String(p.id) === v
-                        );
-                        if (dest?.Country?.name) {
-                          form.setValue(
-                            "countryDestination",
-                            dest.Country.name
-                          );
-                        }
-                      }}
+
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-8"
+          noValidate
+        >
+          <section className="space-y-5">
+            <FieldSectionTitle>Viaje</FieldSectionTitle>
+            <FieldGroup>
+              <div className="grid gap-6 sm:grid-cols-3">
+                <Controller
+                  name="weekNo"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-week">
+                        Semana <FieldRequiredMark />
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="itin-week"
+                        type="number"
+                        min={1}
+                        max={53}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="shippingCompanyId"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field
+                      data-invalid={fieldState.invalid}
+                      className="sm:col-span-2"
                     >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
+                      <FieldLabel htmlFor="itin-shipping">
+                        Naviera <FieldRequiredMark />
+                      </FieldLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger
+                          id="itin-shipping"
+                          aria-invalid={fieldState.invalid}
+                          className="w-full"
+                        >
                           <SelectValue placeholder="Selecciona…" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {destinationPorts.map((p) => (
-                          <SelectItem key={p.id} value={String(p.id)}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
+                        <SelectContent>
+                          {activeCompanies.map((c) => (
+                            <SelectItem key={c.id} value={String(c.id)}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Controller
+                  name="containerShip"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-ship">
+                        Motonave <FieldRequiredMark />
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="itin-ship"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="tripNo"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-trip">
+                        Viaje <FieldRequiredMark />
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="itin-trip"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+            </FieldGroup>
+          </section>
+
+          <section className="space-y-5">
+            <FieldSectionTitle>Puertos</FieldSectionTitle>
+            <FieldGroup>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Controller
+                  name="portOriginId"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-port-origin">
+                        Puerto de zarpe <FieldRequiredMark />
+                      </FieldLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger
+                          id="itin-port-origin"
+                          aria-invalid={fieldState.invalid}
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Selecciona…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {originPorts.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="portDestinationId"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-port-destination">
+                        Puerto de destino <FieldRequiredMark />
+                      </FieldLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => {
+                          field.onChange(v);
+                          const dest = destinationPorts.find(
+                            (p) => String(p.id) === v
+                          );
+                          if (dest?.Country?.name) {
+                            form.setValue(
+                              "countryDestination",
+                              dest.Country.name
+                            );
+                          }
+                        }}
+                      >
+                        <SelectTrigger
+                          id="itin-port-destination"
+                          aria-invalid={fieldState.invalid}
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Selecciona…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {destinationPorts.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+              <Controller
                 name="countryDestination"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-3">
-                    <FormLabel>País destino</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
                 control={form.control}
-                name="etd"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ETD *</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="itin-country-destination">
+                      País destino
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="itin-country-destination"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="eta"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ETA *</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormItem>
-                <FormLabel>Transit time</FormLabel>
-                <FormControl>
+            </FieldGroup>
+          </section>
+
+          <section className="space-y-5">
+            <FieldSectionTitle>Fechas y cortes</FieldSectionTitle>
+            <FieldGroup>
+              <div className="grid gap-6 sm:grid-cols-3">
+                <Controller
+                  name="etd"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-etd">
+                        ETD <FieldRequiredMark />
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="itin-etd"
+                        type="date"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="eta"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-eta">
+                        ETA <FieldRequiredMark />
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="itin-eta"
+                        type="date"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Field>
+                  <FieldLabel htmlFor="itin-transit">Transit time</FieldLabel>
                   <Input
+                    id="itin-transit"
                     value={transit !== null ? `${transit} días` : "—"}
                     disabled
                   />
-                </FormControl>
-              </FormItem>
-              <FormField
-                control={form.control}
-                name="stacking"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stacking</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="documentClosure"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>Corte documental</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cerrar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : isEditing ? (
-                  "Actualizar"
-                ) : (
-                  "Guardar"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                </Field>
+              </div>
+              <div className="grid gap-6 sm:grid-cols-3">
+                <Controller
+                  name="stacking"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="itin-stacking">Stacking</FieldLabel>
+                      <Input
+                        {...field}
+                        id="itin-stacking"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="documentClosure"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field
+                      data-invalid={fieldState.invalid}
+                      className="sm:col-span-2"
+                    >
+                      <FieldLabel htmlFor="itin-document-closure">
+                        Corte documental
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="itin-document-closure"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+            </FieldGroup>
+          </section>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cerrar
+          </Button>
+          <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando…
+              </>
+            ) : isEditing ? (
+              "Actualizar"
+            ) : (
+              "Guardar"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

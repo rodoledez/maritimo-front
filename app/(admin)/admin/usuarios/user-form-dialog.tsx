@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -17,13 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldRequiredMark,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -51,6 +51,8 @@ const empty: FormValues = {
   phone: "",
   isClient: false,
 };
+
+const FORM_ID = "user-form";
 
 export function UserFormDialog({
   open,
@@ -124,7 +126,7 @@ export function UserFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar usuario" : "Crear usuario"}
@@ -135,97 +137,124 @@ export function UserFormDialog({
               : "El usuario podrá iniciar sesión con la contraseña inicial 4321."}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-            noValidate
-          >
-            <FormField
-              control={form.control}
+
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(onSubmit)}
+          noValidate
+        >
+          <FieldGroup>
+            <Controller
               name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre *</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Nombre completo" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="user-name">
+                    Nombre <FieldRequiredMark />
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="user-name"
+                    aria-invalid={fieldState.invalid}
+                    placeholder="Nombre completo"
+                    autoComplete="off"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Controller
                 name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail (usuario) *</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="usuario@empresa.com"
-                        disabled={isEditing}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="user-email">
+                      E-mail (usuario) <FieldRequiredMark />
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="user-email"
+                      type="email"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="usuario@empresa.com"
+                      disabled={isEditing}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
-                control={form.control}
+              <Controller
                 name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="user-phone">Teléfono</FieldLabel>
+                    <Input
+                      {...field}
+                      id="user-phone"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
+            <Controller
               name="isClient"
+              control={form.control}
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>Cliente</FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Activado: el usuario es un cliente. Desactivado: administrador.
-                    </p>
+                <Field
+                  orientation="horizontal"
+                  className="justify-between rounded-lg border p-3"
+                >
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="user-is-client">Cliente</FieldLabel>
+                    <FieldDescription>
+                      Activado: el usuario es un cliente. Desactivado:
+                      administrador.
+                    </FieldDescription>
                   </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
+                  <Switch
+                    id="user-is-client"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </Field>
               )}
             />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cerrar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : isEditing ? (
-                  "Actualizar"
-                ) : (
-                  "Guardar"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </FieldGroup>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cerrar
+          </Button>
+          <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando…
+              </>
+            ) : isEditing ? (
+              "Actualizar"
+            ) : (
+              "Guardar"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

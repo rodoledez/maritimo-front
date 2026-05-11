@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -17,13 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldRequiredMark,
+  FieldSectionTitle,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,6 +62,8 @@ const empty: FormValues = {
   description: "",
   active: true,
 };
+
+const FORM_ID = "shipping-company-form";
 
 export function ShippingCompanyFormDialog({
   open,
@@ -134,7 +136,7 @@ export function ShippingCompanyFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar naviera" : "Crear naviera"}</DialogTitle>
           <DialogDescription>
@@ -143,141 +145,205 @@ export function ShippingCompanyFormDialog({
               : "Registra una nueva naviera (shipping company)."}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-            noValidate
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre *</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Ej. Maersk" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
+
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-8"
+          noValidate
+        >
+          <section className="space-y-5">
+            <FieldSectionTitle>Datos de la naviera</FieldSectionTitle>
+            <FieldGroup>
+              <Controller
+                name="name"
                 control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="email" placeholder="contacto@empresa.com" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="+56…" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="website"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sitio web</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="https://…" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contactPerson"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Persona de contacto</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dirección</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} rows={2} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} rows={2} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={(v) => field.onChange(v === true)}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="naviera-name">
+                      Nombre <FieldRequiredMark />
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="naviera-name"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Ej. Maersk"
+                      autoComplete="off"
                     />
-                  </FormControl>
-                  <FormLabel className="font-normal">Activa</FormLabel>
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cerrar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : isEditing ? (
-                  "Actualizar"
-                ) : (
-                  "Guardar"
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              />
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Controller
+                  name="website"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="naviera-website">Sitio web</FieldLabel>
+                      <Input
+                        {...field}
+                        id="naviera-website"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="https://…"
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="active"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field orientation="horizontal" className="justify-start self-end pb-2">
+                      <Checkbox
+                        id="naviera-active"
+                        checked={field.value}
+                        onCheckedChange={(v) => field.onChange(v === true)}
+                      />
+                      <FieldLabel
+                        htmlFor="naviera-active"
+                        className="font-normal"
+                      >
+                        Activa
+                      </FieldLabel>
+                    </Field>
+                  )}
+                />
+              </div>
+            </FieldGroup>
+          </section>
+
+          <section className="space-y-5">
+            <FieldSectionTitle>Contacto</FieldSectionTitle>
+            <FieldGroup>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Controller
+                  name="email"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="naviera-email">Email</FieldLabel>
+                      <Input
+                        {...field}
+                        id="naviera-email"
+                        type="email"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="contacto@empresa.com"
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="phone"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="naviera-phone">Teléfono</FieldLabel>
+                      <Input
+                        {...field}
+                        id="naviera-phone"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="+56…"
+                        autoComplete="off"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+              <Controller
+                name="contactPerson"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="naviera-contact-person">
+                      Persona de contacto
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="naviera-contact-person"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="address"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="naviera-address">Dirección</FieldLabel>
+                    <Textarea
+                      {...field}
+                      id="naviera-address"
+                      rows={2}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="description"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="naviera-description">
+                      Descripción
+                    </FieldLabel>
+                    <Textarea
+                      {...field}
+                      id="naviera-description"
+                      rows={2}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+          </section>
+        </form>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cerrar
+          </Button>
+          <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando…
+              </>
+            ) : isEditing ? (
+              "Actualizar"
+            ) : (
+              "Guardar"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
