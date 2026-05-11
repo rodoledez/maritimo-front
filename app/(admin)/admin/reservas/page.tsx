@@ -35,6 +35,15 @@ import { BookingConfirmDialog } from "./booking-confirm-dialog";
 import { BookingDetailDialog } from "./booking-detail-dialog";
 import { BookingEditDialog } from "./booking-edit-dialog";
 
+type BookingFilter = "all" | "Pendiente" | "Confirmado" | "Cancelado";
+
+const BOOKING_FILTER_OPTIONS: FilterOption<BookingFilter>[] = [
+  { value: "all", label: "Todas" },
+  { value: "Pendiente", label: "Pendientes" },
+  { value: "Confirmado", label: "Confirmadas" },
+  { value: "Cancelado", label: "Canceladas" },
+];
+
 export default function ReservasPage() {
   const { data, isLoading, error, refetch, isFetching } = useBookings();
 
@@ -42,11 +51,18 @@ export default function ReservasPage() {
   const [editing, setEditing] = useState<Booking | null>(null);
   const [confirming, setConfirming] = useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState<Booking | null>(null);
+  const [statusFilter, setStatusFilter] = useState<BookingFilter>("all");
 
   const onView = useCallback((b: Booking) => setDetail(b), []);
   const onEdit = useCallback((b: Booking) => setEditing(b), []);
   const onConfirm = useCallback((b: Booking) => setConfirming(b), []);
   const onCancel = useCallback((b: Booking) => setCancelling(b), []);
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    if (statusFilter === "all") return data;
+    return data.filter((b) => b.status === statusFilter);
+  }, [data, statusFilter]);
 
   const columns = useMemo<ColumnDef<Booking>[]>(
     () => [
@@ -59,7 +75,7 @@ export default function ReservasPage() {
       {
         accessorKey: "Client.name",
         header: "Cliente",
-        cell: ({ row }) => row.original.Client?.name ?? "—",
+        cell: ({ row }) => <IdentityCell name={row.original.Client?.name} />,
       },
       {
         accessorKey: "Itinerary.weekNo",
@@ -166,9 +182,18 @@ export default function ReservasPage() {
       ) : null}
       <DataTable
         columns={columns}
-        data={data ?? []}
+        data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por cliente, naviera, especie…"
+        toolbarRight={
+          <FilterPopover
+            label="Estado"
+            value={statusFilter}
+            defaultValue="all"
+            options={BOOKING_FILTER_OPTIONS}
+            onChange={setStatusFilter}
+          />
+        }
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <ClipboardList className="h-8 w-8" />

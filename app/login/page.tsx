@@ -65,31 +65,32 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-secondary via-brand-azuldark to-primary px-4 py-10">
-      <Card className="w-full max-w-4xl overflow-hidden border-0 shadow-2xl">
+      <Card className="w-full max-w-4xl gap-0 overflow-hidden border-0 py-0 shadow-2xl">
         <div className="grid md:grid-cols-2">
-          <div className="hidden bg-brand-celeste p-10 md:flex md:flex-col md:items-center md:justify-center">
+          <div className="hidden bg-brand-celeste md:flex md:flex-col md:items-center md:justify-center">
             <Image
               src="/login-illustration.svg"
               alt="Reservas marítimas"
               width={420}
               height={420}
               priority
-              className="h-auto w-full max-w-sm"
+              className="h-auto w-full"
             />
           </div>
-          <CardContent className="flex flex-col gap-6 p-8 md:p-10">
-            <div className="flex justify-center">
-              <Image
-                src="/logo.png"
-                alt="Acosta y Aguayo"
-                width={180}
-                height={70}
-                priority
-                className="h-16 w-auto object-contain"
-              />
-            </div>
+          <CardContent className="flex flex-col p-8 md:p-10">
+            <div className="flex flex-1 flex-col justify-center gap-6">
+              <div className="flex justify-center">
+                <Image
+                  src="/logo.png"
+                  alt="Acosta y Aguayo"
+                  width={180}
+                  height={70}
+                  priority
+                  className="h-16 w-auto object-contain"
+                />
+              </div>
 
-            <Form {...form}>
+              <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="flex flex-col gap-4"
@@ -188,8 +189,9 @@ export default function LoginPage() {
                 </Button>
               </form>
             </Form>
+            </div>
 
-            <p className="mt-auto text-center text-xs text-muted-foreground">
+            <p className="mt-6 text-center text-xs text-muted-foreground">
               © Copyright Acosta &amp; Aguayo Intermodal Logistic Services
             </p>
           </CardContent>
