@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
@@ -17,13 +17,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   useCreateClient,
@@ -86,6 +84,24 @@ function explainError(error: unknown, fallback: string): string {
   }
   return data?.message ?? error.message ?? fallback;
 }
+
+function RequiredMark() {
+  return (
+    <span className="opacity-60" aria-hidden>
+      *
+    </span>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="border-b pb-2 text-sm font-semibold text-secondary">
+      {children}
+    </h3>
+  );
+}
+
+const FORM_ID = "client-form";
 
 export function ClientFormDialog({
   open,
@@ -157,7 +173,7 @@ export function ClientFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar cliente" : "Crear cliente"}
@@ -169,121 +185,155 @@ export function ClientFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4"
-            noValidate
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Empresa *</FormLabel>
-                  <FormControl>
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-8"
+          noValidate
+        >
+          <section className="space-y-5">
+            <SectionTitle>Datos de la empresa</SectionTitle>
+            <FieldGroup className="grid gap-8 sm:grid-cols-2">
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="client-name">
+                      Empresa <RequiredMark />
+                    </FieldLabel>
                     <Input
                       {...field}
+                      id="client-name"
+                      aria-invalid={fieldState.invalid}
                       placeholder="Ingrese el nombre de la empresa"
+                      autoComplete="off"
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="username"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="client-username">
+                      Usuario (email) <RequiredMark />
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="client-username"
+                      type="email"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="usuario@empresa.com"
+                      disabled={isEditing}
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+          </section>
+
+          <section className="space-y-5">
+            <SectionTitle>Contacto principal</SectionTitle>
+            <FieldGroup className="grid gap-8 sm:grid-cols-2">
+              <Controller
+                name="contactName"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="client-contact-name">
+                      Nombre contacto <RequiredMark />
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="client-contact-name"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Nombre del contacto"
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="contactEmail"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="client-contact-email">
+                      Email contacto <RequiredMark />
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="client-contact-email"
+                      type="email"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="contacto@empresa.com"
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+            <Controller
+              name="contactEmail2"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="client-contact-email-2">
+                    Email adicional
+                  </FieldLabel>
+                  <Input
+                    {...field}
+                    id="client-contact-email-2"
+                    type="email"
+                    aria-invalid={fieldState.invalid}
+                    placeholder="opcional"
+                    autoComplete="off"
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
               )}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Usuario (email) *</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="usuario@empresa.com"
-                        disabled={isEditing}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contactEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email contacto *</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="contacto@empresa.com"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="contactName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre contacto *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Nombre del contacto" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contactEmail2"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email adicional</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder="opcional"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          </section>
+        </form>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : isEditing ? (
-                  "Actualizar"
-                ) : (
-                  "Guardar"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando…
+              </>
+            ) : isEditing ? (
+              "Actualizar"
+            ) : (
+              "Guardar"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
