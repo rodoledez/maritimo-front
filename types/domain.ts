@@ -97,6 +97,44 @@ export type Itinerary = {
 
 export type BookingStatus = "Pendiente" | "Confirmado" | "Cancelado";
 
+export type ShipmentTrackingStatus =
+  | "Registrado"
+  | "EnTransito"
+  | "Llegado"
+  | "Entregado"
+  | "Error"
+  | string;
+
+export type ShipmentTracking = {
+  id: number | string;
+  bookingId: number | string;
+  status?: ShipmentTrackingStatus | null;
+  carrier?: string | null;
+  carrierName?: string | null;
+  containerNumber?: string | null;
+  vessel?: string | null;
+  voyageNo?: string | null;
+  bookingNumber?: string | null;
+  bl?: string | null;
+  portOfLoading?: string | null;
+  portOfDischarge?: string | null;
+  etd?: string | null;
+  eta?: string | null;
+  lastUpdated?: string | null;
+  followers?: string[] | null;
+  tags?: string[] | null;
+  shipsgoId?: number | string | null;
+  Booking?: Booking | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+export type TrackingCarrier = {
+  scac?: string;
+  code?: string;
+  name: string;
+};
+
 export type Booking = {
   id: number | string;
   status: BookingStatus;
