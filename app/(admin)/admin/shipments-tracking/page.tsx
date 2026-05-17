@@ -12,7 +12,7 @@ import {
   type FilterOption,
 } from "@/components/data-table/filter-popover";
 import { IdentityCell } from "@/components/data-table/identity-cell";
-import { StatusBadge, type StatusTone } from "@/components/status-badge";
+import { StatusBadge } from "@/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -45,49 +45,28 @@ import {
 } from "@/lib/hooks/use-shipments-tracking";
 import { errorMessage } from "@/lib/utils/errors";
 import { formatDate } from "@/lib/utils/format";
-import type { ShipmentTracking } from "@/types/domain";
+import type { ShipmentTracking, ShipmentTrackingStatus } from "@/types/domain";
 
+import {
+  shipmentStatusLabel,
+  shipmentStatusTone,
+} from "./_status";
 import { TrackingDetailDialog } from "./tracking-detail-dialog";
 import { TrackingFormDialog } from "./tracking-form-dialog";
 
-type StatusFilter =
-  | "all"
-  | "Registrado"
-  | "EnTransito"
-  | "Llegado"
-  | "Entregado"
-  | "Error";
+type StatusFilter = "all" | ShipmentTrackingStatus;
 
 const STATUS_OPTIONS: FilterOption<StatusFilter>[] = [
   { value: "all", label: "Todos" },
-  { value: "Registrado", label: "Registrados" },
-  { value: "EnTransito", label: "En tránsito" },
-  { value: "Llegado", label: "Llegados" },
-  { value: "Entregado", label: "Entregados" },
-  { value: "Error", label: "Con error" },
+  { value: "NEW", label: "Nuevos" },
+  { value: "INPROGRESS", label: "En proceso" },
+  { value: "BOOKED", label: "Reservados" },
+  { value: "LOADED", label: "Cargados" },
+  { value: "SAILING", label: "Navegando" },
+  { value: "ARRIVED", label: "Llegados" },
+  { value: "DISCHARGED", label: "Descargados" },
+  { value: "UNTRACKED", label: "Sin tracking" },
 ];
-
-function statusTone(status?: string | null): StatusTone {
-  switch (status) {
-    case "Entregado":
-    case "Llegado":
-      return "success";
-    case "EnTransito":
-      return "warning";
-    case "Registrado":
-      return "pending";
-    case "Error":
-      return "danger";
-    default:
-      return "neutral";
-  }
-}
-
-function statusLabel(status?: string | null): string {
-  if (!status) return "—";
-  if (status === "EnTransito") return "En tránsito";
-  return status;
-}
 
 export default function ShipmentsTrackingPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -100,26 +79,37 @@ export default function ShipmentsTrackingPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState<ShipmentTracking | null>(null);
-  const [detail, setDetail] = useState<ShipmentTracking | null>(null);
+  const [detailBookingId, setDetailBookingId] = useState<
+    number | string | null
+  >(null);
 
   const onCreate = () => setFormOpen(true);
 
   const onSync = async () => {
     try {
-      await syncMutation.mutateAsync();
-      toast.success("Trackings sincronizados desde ShipsGo");
+      const result = await syncMutation.mutateAsync();
+      toast.success(
+        `Sincronización: ${result.fetched} traídos · ${result.created} creados · ${result.updated} actualizados`
+      );
     } catch (e) {
       toast.error(errorMessage(e, "No se pudo sincronizar con ShipsGo"));
     }
   };
 
-  const onView = useCallback(
-    (item: ShipmentTracking) => setDetail(item),
-    []
-  );
+  const onView = useCallback((item: ShipmentTracking) => {
+    if (item.bookingId === null) {
+      toast.warning("Este tracking no tiene booking local asociado");
+      return;
+    }
+    setDetailBookingId(item.bookingId);
+  }, []);
 
   const onRefresh = useCallback(
     async (item: ShipmentTracking) => {
+      if (item.bookingId === null) {
+        toast.warning("Sólo se puede refrescar trackings con booking asociado");
+        return;
+      }
       try {
         await refreshMutation.mutateAsync(item.bookingId);
         toast.success("Tracking actualizado desde ShipsGo");
@@ -145,49 +135,75 @@ export default function ShipmentsTrackingPage() {
     () => [
       { accessorKey: "id", header: "ID", meta: { align: "right" } },
       {
-        accessorKey: "bookingId",
-        header: "Booking",
+        accessorKey: "reference",
+        header: "Referencia",
         cell: ({ row }) => {
-          const b = row.original.Booking;
+          const t = row.original;
           const label =
-            row.original.bookingNumber ||
-            (b ? `#${b.id}${b.Client?.name ? ` · ${b.Client.name}` : ""}` : `#${row.original.bookingId}`);
-          return <IdentityCell name={label} />;
+            t.reference ||
+            t.bookingNumber ||
+            (t.bookingId !== null ? `Booking #${t.bookingId}` : `ShipsGo ${t.shipsgoId}`);
+          return (
+            <div className="flex flex-col gap-0.5">
+              <IdentityCell name={label} />
+              {t.bookingId === null ? (
+                <span className="ml-9 text-xs text-muted-foreground">
+                  Sin booking local
+                </span>
+              ) : null}
+            </div>
+          );
         },
       },
       {
-        accessorKey: "carrier",
-        header: "Carrier",
-        cell: ({ row }) =>
-          row.original.carrierName ?? row.original.carrier ?? "—",
-      },
-      {
-        accessorKey: "containerNumber",
-        header: "Contenedor",
+        accessorKey: "carrierScac",
+        header: "SCAC",
         cell: ({ row }) => (
           <span className="font-mono text-xs">
-            {row.original.containerNumber ?? "—"}
+            {row.original.carrierScac ?? "—"}
           </span>
         ),
       },
       {
-        accessorKey: "vessel",
+        accessorKey: "containerNumber",
+        header: "Contenedor",
+        cell: ({ row }) => {
+          const t = row.original;
+          if (!t.containerNumber) return "—";
+          return (
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-xs">{t.containerNumber}</span>
+              {t.containerCount && t.containerCount > 1 ? (
+                <span className="text-xs text-muted-foreground">
+                  +{t.containerCount - 1}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "currentVessel",
         header: "M/N · Viaje",
         cell: ({ row }) => {
-          const v = row.original.vessel;
-          const t = row.original.voyageNo;
-          if (!v && !t) return "—";
-          return [v, t].filter(Boolean).join(" · ");
+          const t = row.original;
+          if (!t.currentVessel && !t.currentVoyage) return "—";
+          return [t.currentVessel, t.currentVoyage].filter(Boolean).join(" · ");
         },
       },
       {
         accessorKey: "portOfLoading",
         header: "POL → POD",
         cell: ({ row }) => {
-          const pol = row.original.portOfLoading;
-          const pod = row.original.portOfDischarge;
+          const t = row.original;
+          const pol = t.polCode ?? t.portOfLoading;
+          const pod = t.podCode ?? t.portOfDischarge;
           if (!pol && !pod) return "—";
-          return `${pol ?? "—"} → ${pod ?? "—"}`;
+          return (
+            <span className="font-mono text-xs">
+              {pol ?? "—"} → {pod ?? "—"}
+            </span>
+          );
         },
       },
       {
@@ -203,11 +219,32 @@ export default function ShipmentsTrackingPage() {
         meta: { align: "right" },
       },
       {
+        accessorKey: "transitPercentage",
+        header: "Progreso",
+        cell: ({ row }) => {
+          const p = row.original.transitPercentage;
+          if (p === null || p === undefined) return "—";
+          return (
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary"
+                  style={{ width: `${Math.min(100, Math.max(0, p))}%` }}
+                />
+              </div>
+              <span className="tabular-nums text-xs text-muted-foreground">
+                {Math.round(p)}%
+              </span>
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "status",
         header: "Estado",
         cell: ({ row }) => (
-          <StatusBadge tone={statusTone(row.original.status)} icon={null}>
-            {statusLabel(row.original.status)}
+          <StatusBadge tone={shipmentStatusTone(row.original.status)} icon={null}>
+            {shipmentStatusLabel(row.original.status)}
           </StatusBadge>
         ),
       },
@@ -217,6 +254,11 @@ export default function ShipmentsTrackingPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const item = row.original;
+          const hasBooking = item.bookingId !== null;
+          const mapUrl =
+            item.mapToken && item.shipsgoId
+              ? `https://map.shipsgo.com/ocean/shipments/${item.shipsgoId}?token=${item.mapToken}`
+              : null;
           return (
             <div className="flex justify-end">
               <DropdownMenu>
@@ -231,17 +273,32 @@ export default function ShipmentsTrackingPage() {
                   </TooltipTrigger>
                   <TooltipContent>Acciones</TooltipContent>
                 </Tooltip>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => onView(item)}>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => onView(item)}
+                    disabled={!hasBooking}
+                  >
                     Ver detalle
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onRefresh(item)}
-                    disabled={refreshMutation.isPending}
+                    disabled={!hasBooking || refreshMutation.isPending}
                   >
                     <RefreshCw className="h-4 w-4" />
                     Refrescar desde ShipsGo
                   </DropdownMenuItem>
+                  {mapUrl ? (
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        Ver mapa en ShipsGo
+                      </a>
+                    </DropdownMenuItem>
+                  ) : null}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
@@ -263,7 +320,7 @@ export default function ShipmentsTrackingPage() {
     <div className="space-y-6">
       <PageHeader
         title="Tracking de envíos"
-        description="Seguimiento de bookings vía ShipsGo (carrier + contenedor + ETA)."
+        description="Seguimiento de bookings vía ShipsGo (carrier · contenedor · ETA · vessel)."
       />
 
       {error ? (
@@ -287,7 +344,7 @@ export default function ShipmentsTrackingPage() {
         columns={columns}
         data={data ?? []}
         isLoading={isLoading}
-        searchPlaceholder="Buscar por contenedor, M/N, booking…"
+        searchPlaceholder="Buscar por referencia, contenedor, M/N…"
         toolbarLeft={
           <>
             <Button onClick={onCreate}>
@@ -337,9 +394,9 @@ export default function ShipmentsTrackingPage() {
       <TrackingFormDialog open={formOpen} onOpenChange={setFormOpen} />
 
       <TrackingDetailDialog
-        open={!!detail}
-        onOpenChange={(open) => !open && setDetail(null)}
-        tracking={detail}
+        open={detailBookingId !== null}
+        onOpenChange={(open) => !open && setDetailBookingId(null)}
+        bookingId={detailBookingId}
       />
 
       <AlertDialog
@@ -350,12 +407,14 @@ export default function ShipmentsTrackingPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar tracking?</AlertDialogTitle>
             <AlertDialogDescription>
-              Se detendrá el seguimiento del booking{" "}
+              Se detendrá el seguimiento del shipment{" "}
               <span className="font-semibold text-foreground">
-                #{deleting?.bookingId}
+                ShipsGo #{deleting?.shipsgoId}
               </span>{" "}
-              y se eliminará el shipment en ShipsGo. Esta acción no se puede
-              deshacer.
+              {deleting?.bookingId !== null && deleting?.bookingId !== undefined
+                ? `(booking #${deleting.bookingId}) `
+                : ""}
+              y se eliminará en ShipsGo. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

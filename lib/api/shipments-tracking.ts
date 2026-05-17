@@ -1,15 +1,21 @@
 import { apiDelete, apiGet, apiPost } from "@/lib/api/client";
 import { unwrapList, unwrapOne } from "@/lib/api/_shared";
-import type { ShipmentTracking, TrackingCarrier } from "@/types/domain";
+import type {
+  ShipmentDetailResponse,
+  ShipmentTracking,
+  ShipmentTrackingStatus,
+  SyncResult,
+  TrackingCarrier,
+} from "@/types/domain";
 
 export type TrackingPayload = {
-  bookingId: number | string;
+  bookingId: number;
   followers?: string[];
   tags?: string[];
 };
 
 export type TrackingListQuery = {
-  status?: string;
+  status?: ShipmentTrackingStatus | string;
   carrier?: string;
   skip?: number;
   take?: number;
@@ -36,6 +42,18 @@ export async function getShipmentTrackingByBooking(
   );
 }
 
+export async function getShipmentTrackingDetail(
+  bookingId: number | string,
+  refresh = false
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiGet<ShipmentDetailResponse | { data: ShipmentDetailResponse }>(
+      `/shipments-tracking/${bookingId}/detail`,
+      { params: { refresh: refresh ? "true" : "false" } }
+    )
+  );
+}
+
 export async function refreshShipmentTracking(
   bookingId: number | string
 ): Promise<ShipmentTracking> {
@@ -57,14 +75,16 @@ export async function createShipmentTracking(
   );
 }
 
-export async function deleteShipmentTracking(
-  id: number | string
-): Promise<void> {
+export async function deleteShipmentTracking(id: number | string): Promise<void> {
   await apiDelete<void>(`/shipments-tracking/${id}`);
 }
 
-export async function syncShipmentsTracking(): Promise<unknown> {
-  return apiPost("/shipments-tracking/sync");
+export async function syncShipmentsTracking(): Promise<SyncResult> {
+  return unwrapOne(
+    await apiPost<SyncResult | { data: SyncResult }>(
+      "/shipments-tracking/sync"
+    )
+  );
 }
 
 export async function listTrackingCarriers(): Promise<TrackingCarrier[]> {

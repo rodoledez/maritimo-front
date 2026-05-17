@@ -98,42 +98,125 @@ export type Itinerary = {
 export type BookingStatus = "Pendiente" | "Confirmado" | "Cancelado";
 
 export type ShipmentTrackingStatus =
-  | "Registrado"
-  | "EnTransito"
-  | "Llegado"
-  | "Entregado"
-  | "Error"
-  | string;
+  | "NEW"
+  | "INPROGRESS"
+  | "BOOKED"
+  | "LOADED"
+  | "SAILING"
+  | "ARRIVED"
+  | "DISCHARGED"
+  | "UNTRACKED";
 
 export type ShipmentTracking = {
-  id: number | string;
-  bookingId: number | string;
-  status?: ShipmentTrackingStatus | null;
-  carrier?: string | null;
-  carrierName?: string | null;
-  containerNumber?: string | null;
-  vessel?: string | null;
-  voyageNo?: string | null;
-  bookingNumber?: string | null;
-  bl?: string | null;
-  portOfLoading?: string | null;
-  portOfDischarge?: string | null;
-  etd?: string | null;
-  eta?: string | null;
-  lastUpdated?: string | null;
-  followers?: string[] | null;
-  tags?: string[] | null;
-  shipsgoId?: number | string | null;
-  Booking?: Booking | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
+  id: number;
+  bookingId: number | null;
+  shipsgoId: string;
+  reference: string | null;
+  bookingNumber: string | null;
+  carrierScac: string | null;
+  containerNumber: string | null;
+  containerCount: number | null;
+  status: ShipmentTrackingStatus;
+  portOfLoading: string | null;
+  polCode: string | null;
+  portOfDischarge: string | null;
+  podCode: string | null;
+  etd: string | null;
+  eta: string | null;
+  dateOfLoadingInitial: string | null;
+  dateOfDischargeInitial: string | null;
+  transitTime: number | null;
+  transitPercentage: number | null;
+  co2Emission: number | null;
+  mapToken: string | null;
+  currentVessel: string | null;
+  currentVesselImo: number | null;
+  currentVoyage: string | null;
+  checkedAt: string | null;
+  discardedAt: string | null;
+  lastPayload?: Record<string, unknown> | null;
+  lastSyncedAt: string | null;
+};
+
+export type ShipsgoCountry = {
+  code: string;
+  name: string;
+};
+
+export type ShipsgoLocation = {
+  code: string;
+  name: string;
+  timezone?: string;
+  country?: ShipsgoCountry;
+};
+
+export type ShipsgoVessel = {
+  imo: number | null;
+  name: string;
+};
+
+export type ShipsgoMovementEvent =
+  | "EMSH"
+  | "GTIN"
+  | "LOAD"
+  | "DEPA"
+  | "ARRV"
+  | "DISC"
+  | "GTOT"
+  | "EMRT";
+
+export type ShipsgoMovementStatus = "EST" | "ACT";
+
+export type ShipsgoMovement = {
+  event: ShipsgoMovementEvent;
+  status: ShipsgoMovementStatus;
+  location: ShipsgoLocation;
+  vessel: ShipsgoVessel | null;
+  voyage: string | null;
+  timestamp: string;
+};
+
+export type ShipsgoContainerStatus =
+  | "EMPTY_SHIPPER"
+  | "GATE_IN"
+  | "LOADED"
+  | "SAILING"
+  | "ARRIVED"
+  | "DISCHARGED"
+  | "GATE_OUT"
+  | "EMPTY_RETURN"
+  | "UNKNOWN";
+
+export type ShipsgoContainer = {
+  number: string;
+  status: ShipsgoContainerStatus;
+  size: number | null;
+  type: string | null;
+  movements: ShipsgoMovement[];
+};
+
+export type ShipsgoFollower = {
+  id: number;
+  email: string;
+};
+
+export type ShipmentDetailResponse = {
+  tracking: ShipmentTracking;
+  containers: ShipsgoContainer[];
+  followers: ShipsgoFollower[];
+};
+
+export type SyncResult = {
+  fetched: number;
+  created: number;
+  updated: number;
 };
 
 export type TrackingCarrier = {
   scac?: string;
   code?: string;
   name: string;
-};
+} & Record<string, unknown>;
 
 export type Booking = {
   id: number | string;

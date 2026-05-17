@@ -10,6 +10,7 @@ import {
   createShipmentTracking,
   deleteShipmentTracking,
   getShipmentTrackingByBooking,
+  getShipmentTrackingDetail,
   listShipmentsTracking,
   listTrackingCarriers,
   refreshShipmentTracking,
@@ -34,6 +35,20 @@ export function useShipmentTracking(bookingId: number | string | undefined) {
     queryFn: () =>
       getShipmentTrackingByBooking(bookingId as number | string),
     enabled: bookingId !== undefined && bookingId !== null,
+  });
+}
+
+export function useShipmentTrackingDetail(
+  bookingId: number | string | undefined,
+  options: { refresh?: boolean; enabled?: boolean } = {}
+) {
+  const { refresh = false, enabled = true } = options;
+  return useQuery({
+    queryKey: [...KEY, "detail", bookingId, refresh] as const,
+    queryFn: () =>
+      getShipmentTrackingDetail(bookingId as number | string, refresh),
+    enabled:
+      enabled && bookingId !== undefined && bookingId !== null,
   });
 }
 
