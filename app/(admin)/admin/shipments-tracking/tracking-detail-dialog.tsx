@@ -27,6 +27,7 @@ import {
 import { errorMessage } from "@/lib/utils/errors";
 import { formatDate, formatDateTime } from "@/lib/utils/format";
 import type {
+  ShipmentTracking,
   ShipsgoContainer,
   ShipsgoMovement,
 } from "@/types/domain";
@@ -135,25 +136,26 @@ function ContainerCard({ c }: { c: ShipsgoContainer }) {
 export function TrackingDetailDialog({
   open,
   onOpenChange,
-  bookingId,
+  tracking,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  bookingId: number | string | null;
+  tracking: ShipmentTracking | null;
 }) {
-  const { data, isFetching, isLoading } = useShipmentTrackingDetail(
-    bookingId ?? undefined,
-    { enabled: open }
+  const shipmentId = tracking?.id ?? null;
+  const { data, isFetching } = useShipmentTrackingDetail(
+    shipmentId ?? undefined,
+    { enabled: open && shipmentId !== null }
   );
   const refreshMutation = useRefreshShipmentTracking();
-  const t = data?.tracking;
+  const t = data?.tracking ?? tracking;
   const containers = data?.containers ?? [];
   const followers = data?.followers ?? [];
 
   const onRefresh = async () => {
-    if (bookingId === null) return;
+    if (shipmentId === null) return;
     try {
-      await refreshMutation.mutateAsync(bookingId);
+      await refreshMutation.mutateAsync(shipmentId);
       toast.success("Tracking actualizado desde ShipsGo");
     } catch (e) {
       toast.error(errorMessage(e, "No se pudo refrescar el tracking"));
@@ -165,13 +167,15 @@ export function TrackingDetailDialog({
       ? `https://map.shipsgo.com/ocean/shipments/${t.shipsgoId}?token=${t.mapToken}`
       : null;
 
+  const title = t
+    ? `Tracking · ShipsGo #${t.shipsgoId}${t.bookingId !== null ? ` · Booking #${t.bookingId}` : ""}`
+    : "Tracking";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>
-            Tracking · Booking #{bookingId ?? "—"}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             Datos obtenidos desde ShipsGo.{" "}
             {t?.lastSyncedAt ? (
@@ -182,14 +186,15 @@ export function TrackingDetailDialog({
                 </span>
               </>
             ) : null}
+            {t && t.bookingId === null ? (
+              <span className="ml-1 text-muted-foreground">
+                · Sin booking local asociado.
+              </span>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading || (!t && isFetching) ? (
-          <div className="flex items-center justify-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-          </div>
-        ) : !t ? (
+        {!t ? (
           <div className="py-10 text-center text-sm text-muted-foreground">
             Sin datos de tracking.
           </div>
@@ -313,6 +318,13 @@ export function TrackingDetailDialog({
               </div>
             </section>
 
+            {isFetching && !containers.length ? (
+              <div className="flex items-center justify-center py-6 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="ml-2 text-sm">Cargando contenedores…</span>
+              </div>
+            ) : null}
+
             {containers.length ? (
               <section className="space-y-3">
                 <SectionTitle>
@@ -369,7 +381,7 @@ export function TrackingDetailDialog({
           <Button
             type="button"
             onClick={onRefresh}
-            disabled={bookingId === null || refreshMutation.isPending}
+            disabled={shipmentId === null || refreshMutation.isPending}
           >
             {refreshMutation.isPending ? (
               <>

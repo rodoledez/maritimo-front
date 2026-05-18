@@ -9,12 +9,15 @@ import {
 import {
   createShipmentTracking,
   deleteShipmentTracking,
-  getShipmentTrackingByBooking,
+  getDashboardKpis,
+  getShipmentTracking,
   getShipmentTrackingDetail,
+  listActiveShipments,
   listShipmentsTracking,
   listTrackingCarriers,
   refreshShipmentTracking,
   syncShipmentsTracking,
+  type ActiveShipmentsQuery,
   type TrackingListQuery,
   type TrackingPayload,
 } from "@/lib/api/shipments-tracking";
@@ -29,26 +32,39 @@ export function useShipmentsTracking(query: TrackingListQuery = {}) {
   });
 }
 
-export function useShipmentTracking(bookingId: number | string | undefined) {
+export function useShipmentTracking(shipmentId: number | string | undefined) {
   return useQuery({
-    queryKey: [...KEY, "by-booking", bookingId] as const,
-    queryFn: () =>
-      getShipmentTrackingByBooking(bookingId as number | string),
-    enabled: bookingId !== undefined && bookingId !== null,
+    queryKey: [...KEY, "by-id", shipmentId] as const,
+    queryFn: () => getShipmentTracking(shipmentId as number | string),
+    enabled: shipmentId !== undefined && shipmentId !== null,
   });
 }
 
 export function useShipmentTrackingDetail(
-  bookingId: number | string | undefined,
+  shipmentId: number | string | undefined,
   options: { refresh?: boolean; enabled?: boolean } = {}
 ) {
   const { refresh = false, enabled = true } = options;
   return useQuery({
-    queryKey: [...KEY, "detail", bookingId, refresh] as const,
+    queryKey: [...KEY, "detail", shipmentId, refresh] as const,
     queryFn: () =>
-      getShipmentTrackingDetail(bookingId as number | string, refresh),
+      getShipmentTrackingDetail(shipmentId as number | string, refresh),
     enabled:
-      enabled && bookingId !== undefined && bookingId !== null,
+      enabled && shipmentId !== undefined && shipmentId !== null,
+  });
+}
+
+export function useDashboardKpis() {
+  return useQuery({
+    queryKey: [...KEY, "dashboard", "kpis"] as const,
+    queryFn: getDashboardKpis,
+  });
+}
+
+export function useActiveShipments(query: ActiveShipmentsQuery = {}) {
+  return useQuery({
+    queryKey: [...KEY, "dashboard", "active", query] as const,
+    queryFn: () => listActiveShipments(query),
   });
 }
 
@@ -71,8 +87,8 @@ export function useCreateShipmentTracking() {
 export function useRefreshShipmentTracking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (bookingId: number | string) =>
-      refreshShipmentTracking(bookingId),
+    mutationFn: (shipmentId: number | string) =>
+      refreshShipmentTracking(shipmentId),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }
@@ -88,7 +104,8 @@ export function useSyncShipmentsTracking() {
 export function useDeleteShipmentTracking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: ShipmentTracking["id"]) => deleteShipmentTracking(id),
+    mutationFn: (shipmentId: ShipmentTracking["id"]) =>
+      deleteShipmentTracking(shipmentId),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

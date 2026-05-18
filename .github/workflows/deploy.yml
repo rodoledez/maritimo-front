@@ -1,0 +1,150 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        type: choice
+        required: true
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ inputs.environment || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Package release
+        run: |
+          mkdir release
+          cp -r dist package.json package-lock.json ecosystem.config.js release/
+          tar -czf release.tar.gz -C release .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release.tar.gz
+          retention-days: 7
+
+  deploy-staging:
+    needs: build
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/staging') ||
+      (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://pre-maritimo.acostayaguayo.cl
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+
+      - name: Copy release to instance
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: release.tar.gz
+          target: /home/maritimo/deploy-tmp
+          overwrite: true
+
+      - name: Activate release
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: GITHUB_SHA
+          script: |
+            set -euo pipefail
+            export NVM_DIR="$HOME/.nvm"
+            . "$NVM_DIR/nvm.sh"
+            nvm use 22
+            APP_ROOT=/home/maritimo/apps/maritimo-back
+            TAR=/home/maritimo/deploy-tmp/release.tar.gz
+            REL="$APP_ROOT/releases/$(date +%Y-%m-%d-%H%M%S)-${GITHUB_SHA:0:7}"
+            mkdir -p "$REL"
+            tar -xzf "$TAR" -C "$REL"
+            cd "$REL"
+            npm ci --omit=dev
+            ln -sfn "$APP_ROOT/shared/.env" "$REL/.env"
+            ln -sfn "$REL" "$APP_ROOT/current"
+            pm2 reload "$APP_ROOT/current/ecosystem.config.js" --update-env \
+              || pm2 start "$APP_ROOT/current/ecosystem.config.js"
+            pm2 save
+            ls -1dt "$APP_ROOT/releases"/*/ | tail -n +6 | xargs -r rm -rf
+            rm -f "$TAR"
+
+  deploy-production:
+    needs: build
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://maritimo.acostayaguayo.cl
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+
+      - name: Copy release to instance
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: release.tar.gz
+          target: /home/maritimo/deploy-tmp
+          overwrite: true
+
+      - name: Activate release
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: GITHUB_SHA
+          script: |
+            set -euo pipefail
+            export NVM_DIR="$HOME/.nvm"
+            . "$NVM_DIR/nvm.sh"
+            nvm use 22
+            APP_ROOT=/home/maritimo/apps/maritimo-back
+            TAR=/home/maritimo/deploy-tmp/release.tar.gz
+            REL="$APP_ROOT/releases/$(date +%Y-%m-%d-%H%M%S)-${GITHUB_SHA:0:7}"
+            mkdir -p "$REL"
+            tar -xzf "$TAR" -C "$REL"
+            cd "$REL"
+            npm ci --omit=dev
+            ln -sfn "$APP_ROOT/shared/.env" "$REL/.env"
+            ln -sfn "$REL" "$APP_ROOT/current"
+            pm2 reload "$APP_ROOT/current/ecosystem.config.js" --update-env \
+              || pm2 start "$APP_ROOT/current/ecosystem.config.js"
+            pm2 save
+            ls -1dt "$APP_ROOT/releases"/*/ | tail -n +6 | xargs -r rm -rf
+            rm -f "$TAR"

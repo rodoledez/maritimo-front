@@ -79,9 +79,7 @@ export default function ShipmentsTrackingPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState<ShipmentTracking | null>(null);
-  const [detailBookingId, setDetailBookingId] = useState<
-    number | string | null
-  >(null);
+  const [detail, setDetail] = useState<ShipmentTracking | null>(null);
 
   const onCreate = () => setFormOpen(true);
 
@@ -97,21 +95,13 @@ export default function ShipmentsTrackingPage() {
   };
 
   const onView = useCallback((item: ShipmentTracking) => {
-    if (item.bookingId === null) {
-      toast.warning("Este tracking no tiene booking local asociado");
-      return;
-    }
-    setDetailBookingId(item.bookingId);
+    setDetail(item);
   }, []);
 
   const onRefresh = useCallback(
     async (item: ShipmentTracking) => {
-      if (item.bookingId === null) {
-        toast.warning("Sólo se puede refrescar trackings con booking asociado");
-        return;
-      }
       try {
-        await refreshMutation.mutateAsync(item.bookingId);
+        await refreshMutation.mutateAsync(item.id);
         toast.success("Tracking actualizado desde ShipsGo");
       } catch (e) {
         toast.error(errorMessage(e, "No se pudo refrescar el tracking"));
@@ -254,7 +244,6 @@ export default function ShipmentsTrackingPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const item = row.original;
-          const hasBooking = item.bookingId !== null;
           const mapUrl =
             item.mapToken && item.shipsgoId
               ? `https://map.shipsgo.com/ocean/shipments/${item.shipsgoId}?token=${item.mapToken}`
@@ -274,15 +263,12 @@ export default function ShipmentsTrackingPage() {
                   <TooltipContent>Acciones</TooltipContent>
                 </Tooltip>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem
-                    onClick={() => onView(item)}
-                    disabled={!hasBooking}
-                  >
+                  <DropdownMenuItem onClick={() => onView(item)}>
                     Ver detalle
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onRefresh(item)}
-                    disabled={!hasBooking || refreshMutation.isPending}
+                    disabled={refreshMutation.isPending}
                   >
                     <RefreshCw className="h-4 w-4" />
                     Refrescar desde ShipsGo
@@ -394,9 +380,9 @@ export default function ShipmentsTrackingPage() {
       <TrackingFormDialog open={formOpen} onOpenChange={setFormOpen} />
 
       <TrackingDetailDialog
-        open={detailBookingId !== null}
-        onOpenChange={(open) => !open && setDetailBookingId(null)}
-        bookingId={detailBookingId}
+        open={!!detail}
+        onOpenChange={(open) => !open && setDetail(null)}
+        tracking={detail}
       />
 
       <AlertDialog

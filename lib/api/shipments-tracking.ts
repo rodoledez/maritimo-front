@@ -1,6 +1,9 @@
 import { apiDelete, apiGet, apiPost } from "@/lib/api/client";
 import { unwrapList, unwrapOne } from "@/lib/api/_shared";
 import type {
+  ActiveShipmentsListResponse,
+  AlertLevel,
+  DashboardKpisResponse,
   ShipmentDetailResponse,
   ShipmentTracking,
   ShipmentTrackingStatus,
@@ -32,34 +35,34 @@ export async function listShipmentsTracking(
   );
 }
 
-export async function getShipmentTrackingByBooking(
-  bookingId: number | string
+export async function getShipmentTracking(
+  shipmentId: number | string
 ): Promise<ShipmentTracking> {
   return unwrapOne(
     await apiGet<ShipmentTracking | { data: ShipmentTracking }>(
-      `/shipments-tracking/${bookingId}`
+      `/shipments-tracking/${shipmentId}`
     )
   );
 }
 
 export async function getShipmentTrackingDetail(
-  bookingId: number | string,
+  shipmentId: number | string,
   refresh = false
 ): Promise<ShipmentDetailResponse> {
   return unwrapOne(
     await apiGet<ShipmentDetailResponse | { data: ShipmentDetailResponse }>(
-      `/shipments-tracking/${bookingId}/detail`,
+      `/shipments-tracking/${shipmentId}/detail`,
       { params: { refresh: refresh ? "true" : "false" } }
     )
   );
 }
 
 export async function refreshShipmentTracking(
-  bookingId: number | string
+  shipmentId: number | string
 ): Promise<ShipmentTracking> {
   return unwrapOne(
     await apiGet<ShipmentTracking | { data: ShipmentTracking }>(
-      `/shipments-tracking/${bookingId}/refresh`
+      `/shipments-tracking/${shipmentId}/refresh`
     )
   );
 }
@@ -75,8 +78,10 @@ export async function createShipmentTracking(
   );
 }
 
-export async function deleteShipmentTracking(id: number | string): Promise<void> {
-  await apiDelete<void>(`/shipments-tracking/${id}`);
+export async function deleteShipmentTracking(
+  shipmentId: number | string
+): Promise<void> {
+  await apiDelete<void>(`/shipments-tracking/${shipmentId}`);
 }
 
 export async function syncShipmentsTracking(): Promise<SyncResult> {
@@ -84,6 +89,37 @@ export async function syncShipmentsTracking(): Promise<SyncResult> {
     await apiPost<SyncResult | { data: SyncResult }>(
       "/shipments-tracking/sync"
     )
+  );
+}
+
+export type ActiveShipmentsQuery = {
+  skip?: number;
+  take?: number;
+  orderBy?: "updatedAt" | "eta" | "status";
+  orderDir?: "ASC" | "DESC";
+  search?: string;
+  status?: string;
+  clientId?: number;
+  shippingCompanyId?: number;
+  alertLevel?: AlertLevel;
+  includeDiscarded?: boolean;
+};
+
+export async function getDashboardKpis(): Promise<DashboardKpisResponse> {
+  return unwrapOne(
+    await apiGet<DashboardKpisResponse | { data: DashboardKpisResponse }>(
+      "/shipments-tracking/dashboard/kpis"
+    )
+  );
+}
+
+export async function listActiveShipments(
+  query: ActiveShipmentsQuery = {}
+): Promise<ActiveShipmentsListResponse> {
+  return unwrapOne(
+    await apiGet<
+      ActiveShipmentsListResponse | { data: ActiveShipmentsListResponse }
+    >("/shipments-tracking/dashboard/active", { params: query })
   );
 }
 

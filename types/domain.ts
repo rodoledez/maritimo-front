@@ -218,6 +218,57 @@ export type TrackingCarrier = {
   name: string;
 } & Record<string, unknown>;
 
+export type AlertLevel = "CRITICAL" | "DELAYED" | "NORMAL";
+
+export type DashboardKpisResponse = {
+  inTransit: number;
+  criticalAlerts: number;
+  delayed: number;
+  upcomingEta: number;
+  freeDaysRisk: number;
+};
+
+export type ActiveRowLastStatus = {
+  code: string;
+  checkedAt: string | null;
+  alertLevel: AlertLevel;
+};
+
+export type ActiveRowEtaVsPlan = {
+  eta: string | null;
+  dateOfDischargeInitial: string | null;
+  transitPercentage: number | null;
+  deltaDays: number | null;
+};
+
+export type ActiveShipmentRow = {
+  trackingId: number;
+  opNumber: string | null;
+  shippingLine: string | null;
+  client: string | null;
+  bookingNumber: string | null;
+  numberOfContainers: number | null;
+  origin: string | null;
+  destination: string | null;
+  vessel: string | null;
+  vesselImo: number | null;
+  voyage: string | null;
+  lastStatus: ActiveRowLastStatus;
+  lastTransshipmentPort: string | null;
+  nextPort: string | null;
+  currentContainerLocation: string | null;
+  etaVsPlan: ActiveRowEtaVsPlan;
+  dischargeDate: string | null;
+  freeDaysRemaining: number | null;
+  alertLevel: AlertLevel;
+};
+
+export type ActiveShipmentsListResponse = {
+  rows: ActiveShipmentRow[];
+  total: number;
+  page: { skip: number; take: number };
+};
+
 export type Booking = {
   id: number | string;
   status: BookingStatus;
