@@ -1,3 +1,16 @@
+# Deploy maritimo-front-next (Next.js 16 + pnpm) to EC2 via PM2.
+#
+# Required GitHub secrets (Settings → Secrets and variables → Actions → Secrets):
+#   EC2_HOST       SSH host (e.g. ec2-xx-xx-xx-xx.compute.amazonaws.com)
+#   EC2_USER       SSH user (e.g. maritimo)
+#   EC2_SSH_KEY    Private key contents (PEM)
+#
+# Required per-environment variables (Settings → Environments → {staging|production} → Variables):
+#   NEXT_PUBLIC_API_BASE_URL    e.g. https://api.maritimo.acostayaguayo.cl
+#
+# NEXT_PUBLIC_* values are baked into the build, so each environment builds its
+# own bundle — that's why there is no shared "build" job.
+
 name: Deploy
 
 on:
@@ -18,33 +31,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-      - run: npm run build
-
-      - name: Package release
-        run: |
-          mkdir release
-          cp -r dist package.json package-lock.json ecosystem.config.js release/
-          tar -czf release.tar.gz -C release .
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release
-          path: release.tar.gz
-          retention-days: 7
-
   deploy-staging:
-    needs: build
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/staging') ||
       (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
@@ -52,10 +39,31 @@ jobs:
     environment:
       name: staging
       url: https://pre-maritimo.acostayaguayo.cl
+    env:
+      NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+      NEXT_PUBLIC_APP_ENV: staging
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
         with:
-          name: release
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build (staging)
+        run: pnpm build
+
+      - name: Package release
+        run: |
+          mkdir release
+          cp -r .next public package.json pnpm-lock.yaml next.config.ts ecosystem.config.js release/
+          tar -czf release.tar.gz -C release .
 
       - name: Copy release to instance
         uses: appleboy/scp-action@v0.1.7
@@ -81,13 +89,15 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             . "$NVM_DIR/nvm.sh"
             nvm use 22
-            APP_ROOT=/home/maritimo/apps/maritimo-back
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            APP_ROOT=/home/maritimo/apps/maritimo-front
             TAR=/home/maritimo/deploy-tmp/release.tar.gz
             REL="$APP_ROOT/releases/$(date +%Y-%m-%d-%H%M%S)-${GITHUB_SHA:0:7}"
             mkdir -p "$REL"
             tar -xzf "$TAR" -C "$REL"
             cd "$REL"
-            npm ci --omit=dev
+            pnpm install --prod --frozen-lockfile
             ln -sfn "$APP_ROOT/shared/.env" "$REL/.env"
             ln -sfn "$REL" "$APP_ROOT/current"
             pm2 reload "$APP_ROOT/current/ecosystem.config.js" --update-env \
@@ -97,18 +107,38 @@ jobs:
             rm -f "$TAR"
 
   deploy-production:
-    needs: build
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
     runs-on: ubuntu-latest
     environment:
       name: production
       url: https://maritimo.acostayaguayo.cl
+    env:
+      NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+      NEXT_PUBLIC_APP_ENV: production
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
         with:
-          name: release
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build (production)
+        run: pnpm build
+
+      - name: Package release
+        run: |
+          mkdir release
+          cp -r .next public package.json pnpm-lock.yaml next.config.ts ecosystem.config.js release/
+          tar -czf release.tar.gz -C release .
 
       - name: Copy release to instance
         uses: appleboy/scp-action@v0.1.7
@@ -134,13 +164,15 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             . "$NVM_DIR/nvm.sh"
             nvm use 22
-            APP_ROOT=/home/maritimo/apps/maritimo-back
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            APP_ROOT=/home/maritimo/apps/maritimo-front
             TAR=/home/maritimo/deploy-tmp/release.tar.gz
             REL="$APP_ROOT/releases/$(date +%Y-%m-%d-%H%M%S)-${GITHUB_SHA:0:7}"
             mkdir -p "$REL"
             tar -xzf "$TAR" -C "$REL"
             cd "$REL"
-            npm ci --omit=dev
+            pnpm install --prod --frozen-lockfile
             ln -sfn "$APP_ROOT/shared/.env" "$REL/.env"
             ln -sfn "$REL" "$APP_ROOT/current"
             pm2 reload "$APP_ROOT/current/ecosystem.config.js" --update-env \
