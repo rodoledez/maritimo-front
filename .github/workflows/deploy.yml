@@ -57,7 +57,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build (staging)
-        run: pnpm build
+        run: |
+          echo "Building staging with:"
+          echo "  NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL"
+          echo "  NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV"
+          pnpm build
+
+      - name: Verify NEXT_PUBLIC vars baked into the bundle
+        run: |
+          if [ -z "$NEXT_PUBLIC_API_BASE_URL" ]; then
+            echo "::error::NEXT_PUBLIC_API_BASE_URL is empty — set it in the 'staging' environment variables"
+            exit 1
+          fi
+          if grep -rqF "$NEXT_PUBLIC_API_BASE_URL" .next; then
+            echo "✓ NEXT_PUBLIC_API_BASE_URL ($NEXT_PUBLIC_API_BASE_URL) is in the build output"
+          else
+            echo "::error::$NEXT_PUBLIC_API_BASE_URL not found in .next — the var did not bake in"
+            exit 1
+          fi
 
       - name: Package release
         run: |
@@ -132,7 +149,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build (production)
-        run: pnpm build
+        run: |
+          echo "Building production with:"
+          echo "  NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL"
+          echo "  NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV"
+          pnpm build
+
+      - name: Verify NEXT_PUBLIC vars baked into the bundle
+        run: |
+          if [ -z "$NEXT_PUBLIC_API_BASE_URL" ]; then
+            echo "::error::NEXT_PUBLIC_API_BASE_URL is empty — set it in the 'production' environment variables"
+            exit 1
+          fi
+          if grep -rqF "$NEXT_PUBLIC_API_BASE_URL" .next; then
+            echo "✓ NEXT_PUBLIC_API_BASE_URL ($NEXT_PUBLIC_API_BASE_URL) is in the build output"
+          else
+            echo "::error::$NEXT_PUBLIC_API_BASE_URL not found in .next — the var did not bake in"
+            exit 1
+          fi
 
       - name: Package release
         run: |
