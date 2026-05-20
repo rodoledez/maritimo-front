@@ -117,8 +117,11 @@ jobs:
             pnpm install --prod --frozen-lockfile
             ln -sfn "$APP_ROOT/shared/.env" "$REL/.env"
             ln -sfn "$REL" "$APP_ROOT/current"
-            pm2 reload "$APP_ROOT/current/ecosystem.config.js" --update-env \
-              || pm2 start "$APP_ROOT/current/ecosystem.config.js"
+            # delete + start (not reload): PM2 pins cwd at process start, so a plain
+            # reload keeps serving the OLD release's .next. Re-creating the process
+            # makes PM2 read the new release's ecosystem.config.js and cwd.
+            pm2 delete maritimo-front 2>/dev/null || true
+            pm2 start "$APP_ROOT/current/ecosystem.config.js"
             pm2 save
             ls -1dt "$APP_ROOT/releases"/*/ | tail -n +6 | xargs -r rm -rf
             rm -f "$TAR"
@@ -209,8 +212,11 @@ jobs:
             pnpm install --prod --frozen-lockfile
             ln -sfn "$APP_ROOT/shared/.env" "$REL/.env"
             ln -sfn "$REL" "$APP_ROOT/current"
-            pm2 reload "$APP_ROOT/current/ecosystem.config.js" --update-env \
-              || pm2 start "$APP_ROOT/current/ecosystem.config.js"
+            # delete + start (not reload): PM2 pins cwd at process start, so a plain
+            # reload keeps serving the OLD release's .next. Re-creating the process
+            # makes PM2 read the new release's ecosystem.config.js and cwd.
+            pm2 delete maritimo-front 2>/dev/null || true
+            pm2 start "$APP_ROOT/current/ecosystem.config.js"
             pm2 save
             ls -1dt "$APP_ROOT/releases"/*/ | tail -n +6 | xargs -r rm -rf
             rm -f "$TAR"
