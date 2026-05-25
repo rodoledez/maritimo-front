@@ -221,11 +221,14 @@ export type TrackingCarrier = {
 export type AlertLevel = "CRITICAL" | "DELAYED" | "NORMAL";
 
 export type DashboardKpisResponse = {
-  inTransit: number;
-  criticalAlerts: number;
-  delayed: number;
-  upcomingEta: number;
-  freeDaysRisk: number;
+  /** Shipments that have sailed and have not yet arrived (status = SAILING). */
+  transit: number;
+  /** Containers delivered to the consignee at destination (container status = GATE_OUT). */
+  deliveryToCnee: number;
+  /** Containers returned to the empty depot at destination (container status = EMPTY_RETURN). */
+  emptyReturn: number;
+  /** Shipments where current ETA has slipped past the initial planned discharge date (eta > dateOfDischargeInitial). */
+  delay: number;
 };
 
 export type ActiveRowLastStatus = {

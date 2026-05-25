@@ -2,18 +2,17 @@
 
 import { useMemo, useState } from "react";
 import {
-  AlertTriangle,
   ArrowDownAZ,
   ArrowUpAZ,
-  CalendarClock,
   ClipboardList,
   Clock,
   Loader2,
   MoreHorizontal,
   PackageCheck,
+  PackageOpen,
   RefreshCw,
   Search,
-  Truck,
+  Ship,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -512,40 +511,33 @@ export default function ShipmentsDashboardPage() {
       </Card>
 
       {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          icon={Truck}
+          icon={Ship}
           iconClass="bg-primary/10 text-primary"
-          value={kpis?.inTransit}
+          value={kpis?.transit}
           label="En tránsito"
           isLoading={kpisLoading}
         />
         <KpiCard
-          icon={AlertTriangle}
-          iconClass="bg-brand-danger/10 text-brand-danger"
-          value={kpis?.criticalAlerts}
-          label="Alertas críticas"
+          icon={PackageCheck}
+          iconClass="bg-brand-success/10 text-brand-success"
+          value={kpis?.deliveryToCnee}
+          label="Entregados a consignatario"
+          isLoading={kpisLoading}
+        />
+        <KpiCard
+          icon={PackageOpen}
+          iconClass="bg-brand-celeste text-secondary"
+          value={kpis?.emptyReturn}
+          label="Vacíos retornados"
           isLoading={kpisLoading}
         />
         <KpiCard
           icon={Clock}
-          iconClass="bg-brand-warning/10 text-brand-warning"
-          value={kpis?.delayed}
-          label="Retrasadas"
-          isLoading={kpisLoading}
-        />
-        <KpiCard
-          icon={CalendarClock}
-          iconClass="bg-brand-pending/30 text-brand-warning"
-          value={kpis?.upcomingEta}
-          label="ETA próxima (7d)"
-          isLoading={kpisLoading}
-        />
-        <KpiCard
-          icon={PackageCheck}
-          iconClass="bg-brand-violeta/20 text-brand-violeta"
-          value={kpis?.freeDaysRisk}
-          label="Free days en riesgo"
+          iconClass="bg-brand-danger/10 text-brand-danger"
+          value={kpis?.delay}
+          label="Demoradas"
           isLoading={kpisLoading}
         />
       </div>
