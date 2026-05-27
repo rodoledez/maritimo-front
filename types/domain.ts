@@ -73,6 +73,16 @@ export type Port = {
 
 export type ItineraryStatus = "CO" | "PE";
 
+/**
+ * Loose shape for joined-row associations returned by the API
+ * (e.g. Itinerary.portDeparture may be a string OR a joined Port row).
+ */
+export type NamedAssoc = {
+  id?: number | string;
+  name?: string | null;
+  isoCode?: string | null;
+};
+
 export type Itinerary = {
   id: number | string;
   active: boolean;
@@ -83,10 +93,10 @@ export type Itinerary = {
   containerShip?: string | null;
   tripNo?: string | null;
   portOriginId?: number | string | null;
-  portDeparture?: string | null;
+  portDeparture?: string | NamedAssoc | null;
   portDestinationId?: number | string | null;
-  portDestination?: string | null;
-  countryDestination?: string | null;
+  portDestination?: string | NamedAssoc | null;
+  countryDestination?: string | NamedAssoc | null;
   etd?: string | null;
   eta?: string | null;
   transitTime?: number | null;

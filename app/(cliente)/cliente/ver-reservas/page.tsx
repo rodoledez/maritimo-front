@@ -13,7 +13,7 @@ import { BookingDetailDialog } from "@/app/(admin)/admin/reservas/booking-detail
 import { useAuth } from "@/lib/auth/auth-context";
 import { useBookingsByClient } from "@/lib/hooks/use-bookings";
 import { errorMessage } from "@/lib/utils/errors";
-import { formatDate } from "@/lib/utils/format";
+import { assocLabel, formatDate } from "@/lib/utils/format";
 import type { Booking } from "@/types/domain";
 
 export default function VerReservasPage() {
@@ -47,9 +47,11 @@ export default function VerReservasPage() {
         cell: ({ row }) => row.original.Itinerary?.tripNo ?? "—",
       },
       {
-        accessorKey: "Itinerary.portDestination",
+        id: "Itinerary.portDestination",
         header: "Pto. Destino",
-        cell: ({ row }) => row.original.Itinerary?.portDestination ?? "—",
+        accessorFn: (row) => assocLabel(row.Itinerary?.portDestination),
+        cell: ({ row }) =>
+          assocLabel(row.original.Itinerary?.portDestination) || "—",
       },
       {
         accessorKey: "Itinerary.etd",

@@ -50,7 +50,7 @@ import { useCommodities } from "@/lib/hooks/use-commodities";
 import { useTypeContainers } from "@/lib/hooks/use-type-containers";
 import { useCreateBooking } from "@/lib/hooks/use-bookings";
 import { errorMessage } from "@/lib/utils/errors";
-import { formatDate } from "@/lib/utils/format";
+import { assocLabel, formatDate } from "@/lib/utils/format";
 import type { Itinerary } from "@/types/domain";
 
 import { Stepper, type Step } from "./stepper";
@@ -117,8 +117,8 @@ export default function CrearSolicitudReservaPage() {
       Array.from(
         new Set(
           itineraries
-            .map((it) => it.countryDestination)
-            .filter((v): v is string => !!v)
+            .map((it) => assocLabel(it.countryDestination))
+            .filter((v) => v !== "")
         )
       ).sort(),
     [itineraries]
@@ -128,8 +128,8 @@ export default function CrearSolicitudReservaPage() {
       Array.from(
         new Set(
           itineraries
-            .map((it) => it.portDestination)
-            .filter((v): v is string => !!v)
+            .map((it) => assocLabel(it.portDestination))
+            .filter((v) => v !== "")
         )
       ).sort(),
     [itineraries]
@@ -144,10 +144,15 @@ export default function CrearSolicitudReservaPage() {
         const wn = Number(it.weekNo);
         if (Number.isNaN(wn)) return false;
         if (wn < (values.weekNo ?? 1) || wn > upper) return false;
-        if (values.country && it.countryDestination !== values.country) {
+        if (
+          values.country &&
+          assocLabel(it.countryDestination) !== values.country
+        ) {
           return false;
         }
-        if (values.port && it.portDestination !== values.port) return false;
+        if (values.port && assocLabel(it.portDestination) !== values.port) {
+          return false;
+        }
         return true;
       })
       .sort((a, b) => Number(a.weekNo) - Number(b.weekNo));
@@ -549,9 +554,9 @@ function Step2({
                   {it.tripNo ?? "—"}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {it.portDeparture ?? "—"}
+                  {assocLabel(it.portDeparture) || "—"}
                 </TableCell>
-                <TableCell>{it.portDestination ?? "—"}</TableCell>
+                <TableCell>{assocLabel(it.portDestination) || "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">
                   {formatDate(it.etd)}
                 </TableCell>
@@ -878,8 +883,11 @@ function Step4Review({
           <Field label="Naviera" value={itinerary?.carrier} />
           <Field label="M/N" value={itinerary?.containerShip} />
           <Field label="Viaje" value={itinerary?.tripNo} />
-          <Field label="Pto. Zarpe" value={itinerary?.portDeparture} />
-          <Field label="Pto. Destino" value={itinerary?.portDestination} />
+          <Field label="Pto. Zarpe" value={assocLabel(itinerary?.portDeparture)} />
+          <Field
+            label="Pto. Destino"
+            value={assocLabel(itinerary?.portDestination)}
+          />
           <Field label="ETD" value={formatDate(itinerary?.etd)} />
           <Field label="ETA" value={formatDate(itinerary?.eta)} />
           <Field

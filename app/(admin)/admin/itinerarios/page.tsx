@@ -46,7 +46,7 @@ import {
   useConfirmItinerary,
 } from "@/lib/hooks/use-itineraries";
 import { errorMessage } from "@/lib/utils/errors";
-import { formatDate } from "@/lib/utils/format";
+import { assocLabel, formatDate } from "@/lib/utils/format";
 import type { Itinerary } from "@/types/domain";
 
 import { ItineraryFormDialog } from "./itinerary-form-dialog";
@@ -129,9 +129,21 @@ export default function ItinerariosPage() {
       { accessorKey: "carrier", header: "Naviera" },
       { accessorKey: "containerShip", header: "M/N" },
       { accessorKey: "tripNo", header: "Viaje" },
-      { accessorKey: "portDeparture", header: "Pto. Zarpe" },
-      { accessorKey: "portDestination", header: "Pto. Destino" },
-      { accessorKey: "countryDestination", header: "País" },
+      {
+        id: "portDeparture",
+        header: "Pto. Zarpe",
+        accessorFn: (row) => assocLabel(row.portDeparture),
+      },
+      {
+        id: "portDestination",
+        header: "Pto. Destino",
+        accessorFn: (row) => assocLabel(row.portDestination),
+      },
+      {
+        id: "countryDestination",
+        header: "País",
+        accessorFn: (row) => assocLabel(row.countryDestination),
+      },
       {
         accessorKey: "etd",
         header: "ETD",

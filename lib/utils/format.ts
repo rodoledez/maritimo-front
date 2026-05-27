@@ -1,3 +1,16 @@
+/**
+ * Returns a display string for a value that may be a plain string OR a
+ * joined association row of shape { name }. Used for Itinerary.portDeparture,
+ * portDestination, countryDestination — whose API shape can vary.
+ */
+export function assocLabel(
+  value: string | { name?: string | null } | null | undefined
+): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  return value.name ?? "";
+}
+
 export function formatDate(value?: string | Date | null): string {
   if (!value) return "—";
   const date = typeof value === "string" ? new Date(value) : value;

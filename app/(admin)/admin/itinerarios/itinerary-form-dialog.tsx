@@ -40,6 +40,7 @@ import {
 } from "@/lib/hooks/use-itineraries";
 import type { ItineraryPayload } from "@/lib/api/itineraries";
 import { errorMessage } from "@/lib/utils/errors";
+import { assocLabel } from "@/lib/utils/format";
 import type { Itinerary } from "@/types/domain";
 
 const schema = z.object({
@@ -138,7 +139,7 @@ export function ItineraryFormDialog({
               portDestinationId: editing.portDestinationId
                 ? String(editing.portDestinationId)
                 : "",
-              countryDestination: editing.countryDestination ?? "",
+              countryDestination: assocLabel(editing.countryDestination),
               etd: editing.etd?.slice(0, 10) ?? "",
               eta: editing.eta?.slice(0, 10) ?? "",
               stacking: editing.stacking ?? "",

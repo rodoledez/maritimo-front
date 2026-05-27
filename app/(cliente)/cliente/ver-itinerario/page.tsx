@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useItineraries } from "@/lib/hooks/use-itineraries";
 import { errorMessage } from "@/lib/utils/errors";
-import { formatDate } from "@/lib/utils/format";
+import { assocLabel, formatDate } from "@/lib/utils/format";
 import type { Itinerary } from "@/types/domain";
 
 export default function VerItinerarioPage() {
@@ -24,9 +24,21 @@ export default function VerItinerarioPage() {
       { accessorKey: "carrier", header: "Naviera" },
       { accessorKey: "containerShip", header: "M/N" },
       { accessorKey: "tripNo", header: "Viaje" },
-      { accessorKey: "portDeparture", header: "Pto. Zarpe" },
-      { accessorKey: "portDestination", header: "Pto. Destino" },
-      { accessorKey: "countryDestination", header: "País destino" },
+      {
+        id: "portDeparture",
+        header: "Pto. Zarpe",
+        accessorFn: (row) => assocLabel(row.portDeparture),
+      },
+      {
+        id: "portDestination",
+        header: "Pto. Destino",
+        accessorFn: (row) => assocLabel(row.portDestination),
+      },
+      {
+        id: "countryDestination",
+        header: "País destino",
+        accessorFn: (row) => assocLabel(row.countryDestination),
+      },
       {
         accessorKey: "etd",
         header: "ETD",

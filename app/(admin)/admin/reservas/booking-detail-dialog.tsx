@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
-import { formatDate } from "@/lib/utils/format";
+import { assocLabel, formatDate } from "@/lib/utils/format";
 import type { Booking } from "@/types/domain";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -107,8 +107,11 @@ export function BookingDetailDialog({
             <Field label="Naviera" value={it?.carrier} />
             <Field label="M/N" value={it?.containerShip} />
             <Field label="Viaje" value={it?.tripNo} />
-            <Field label="Pto. Zarpe" value={it?.portDeparture} />
-            <Field label="Pto. Destino" value={it?.portDestination} />
+            <Field label="Pto. Zarpe" value={assocLabel(it?.portDeparture)} />
+            <Field
+              label="Pto. Destino"
+              value={assocLabel(it?.portDestination)}
+            />
             <Field label="ETD" value={formatDate(it?.etd)} />
             <Field label="ETA" value={formatDate(it?.eta)} />
             <Field
