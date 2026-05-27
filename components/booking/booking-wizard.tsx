@@ -138,6 +138,18 @@ export function BookingWizard({
 
   const values = useWatch({ control: form.control });
 
+  const availableWeeks = useMemo(() => {
+    const map = new Map<number, { weekNo: number; week: string | null }>();
+    for (const it of itineraries) {
+      const wn = Number(it.weekNo);
+      if (!Number.isFinite(wn) || wn < 1) continue;
+      if (!map.has(wn)) {
+        map.set(wn, { weekNo: wn, week: it.week ?? null });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.weekNo - b.weekNo);
+  }, [itineraries]);
+
   const countries = useMemo(
     () =>
       Array.from(
@@ -204,6 +216,11 @@ export function BookingWizard({
     if (step === 1) {
       const ok = await form.trigger([...step1Fields]);
       if (!ok) return;
+      const wn = Number(form.getValues("weekNo"));
+      if (!availableWeeks.some((w) => w.weekNo === wn)) {
+        toast.error("Selecciona una semana del listado");
+        return;
+      }
       setStep(2);
       return;
     }
@@ -329,6 +346,7 @@ export function BookingWizard({
           >
             {step === 1 ? (
               <Step1
+                weeks={availableWeeks}
                 countries={countries}
                 ports={destinationPorts}
                 itinerariesLoaded={itineraries.length > 0}
@@ -401,10 +419,12 @@ export function BookingWizard({
 // Step 1
 // ─────────────────────────────────────────────────────────
 function Step1({
+  weeks,
   countries,
   ports,
   itinerariesLoaded,
 }: {
+  weeks: Array<{ weekNo: number; week: string | null }>;
   countries: string[];
   ports: string[];
   itinerariesLoaded: boolean;
@@ -419,9 +439,24 @@ function Step1({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Semana *</FormLabel>
-              <FormControl>
-                <Input {...field} type="number" min={1} max={53} />
-              </FormControl>
+              <Select
+                value={field.value ? String(field.value) : ""}
+                onValueChange={(v) => field.onChange(Number(v))}
+                disabled={!itinerariesLoaded || weeks.length === 0}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona una semana" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {weeks.map((w) => (
+                    <SelectItem key={w.weekNo} value={String(w.weekNo)}>
+                      {w.week ? `${w.weekNo} · ${w.week}` : String(w.weekNo)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
