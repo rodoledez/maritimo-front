@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ClipboardList, MoreHorizontal } from "lucide-react";
+import { ClipboardList, MoreHorizontal, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
@@ -185,6 +186,14 @@ export default function ReservasPage() {
         data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por cliente, naviera, especie…"
+        toolbarLeft={
+          <Button asChild>
+            <Link href="/admin/reservas/crear">
+              <Plus className="h-4 w-4" />
+              Crear reserva
+            </Link>
+          </Button>
+        }
         toolbarRight={
           <FilterPopover
             label="Estado"
@@ -198,6 +207,12 @@ export default function ReservasPage() {
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <ClipboardList className="h-8 w-8" />
             <p className="text-sm">No hay reservas registradas.</p>
+            <Button asChild size="sm">
+              <Link href="/admin/reservas/crear">
+                <Plus className="h-4 w-4" />
+                Crear reserva
+              </Link>
+            </Button>
           </div>
         }
       />

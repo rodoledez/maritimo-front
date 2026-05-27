@@ -24,6 +24,7 @@ export const wizardSchema = z
     // Step 2
     itineraryId: z.coerce.number().optional(),
     // Step 3
+    clientId: z.coerce.number().optional(),
     commodityId: z.coerce.number().optional(),
     typeContainerId: z.coerce.number().optional(),
     typeFreight: z.string().optional().or(z.literal("")),
@@ -62,11 +63,16 @@ export const step3Fields = [
   "humidity",
 ] as const;
 
-export function validateStep3(v: WizardValues): string | null {
+export function validateStep3(
+  v: WizardValues,
+  opts: { requireClient?: boolean } = {}
+): string | null {
+  if (opts.requireClient && !v.clientId) return "Selecciona un cliente";
   if (!v.commodityId) return "Selecciona una especie";
   if (!v.typeContainerId) return "Selecciona un tipo de contenedor";
   if (!v.typeFreight) return "Selecciona un tipo de flete";
-  if (!v.qtyContainers || v.qtyContainers < 1) return "Cantidad de contenedores >= 1";
+  if (!v.qtyContainers || v.qtyContainers < 1)
+    return "Cantidad de contenedores >= 1";
   if (!v.bl) return "Selecciona la emisión BL";
   if (!v.vgm) return "Selecciona VGM";
   if (v.isCheckHumidity && (!v.humidity || v.humidity < 1)) {
