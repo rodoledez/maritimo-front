@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Ship } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, Ship } from "lucide-react";
 
 import {
   Sidebar,
@@ -14,17 +15,43 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import type { NavLink } from "./nav-links";
+
+function matchPath(pathname: string, href: string): boolean {
+  if (href === "/admin" || href === "/cliente") {
+    return pathname === href;
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function groupHasActiveChild(pathname: string, link: NavLink): boolean {
+  return (
+    link.children?.some(
+      (child) => child.href !== undefined && matchPath(pathname, child.href)
+    ) ?? false
+  );
+}
 
 export function AppSidebar({ links }: { links: NavLink[] }) {
   const pathname = usePathname();
 
-  const isActive = (href: string) => {
-    if (href === "/admin" || href === "/cliente") {
-      return pathname === href;
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    for (const link of links) {
+      if (link.children) {
+        initial[link.label] = groupHasActiveChild(pathname, link);
+      }
     }
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return initial;
+  });
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
   return (
@@ -47,12 +74,61 @@ export function AppSidebar({ links }: { links: NavLink[] }) {
           <SidebarGroupContent>
             <SidebarMenu>
               {links.map((link) => {
+                if (link.children && link.children.length > 0) {
+                  const Icon = link.icon;
+                  const isOpen = openGroups[link.label] ?? false;
+                  const hasActive = groupHasActiveChild(pathname, link);
+                  const submenuId = `submenu-${link.label
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`;
+                  return (
+                    <SidebarMenuItem key={link.label}>
+                      <SidebarMenuButton
+                        onClick={() => toggleGroup(link.label)}
+                        isActive={hasActive}
+                        tooltip={link.label}
+                        aria-expanded={isOpen}
+                        aria-controls={submenuId}
+                      >
+                        <Icon />
+                        <span>{link.label}</span>
+                        <ChevronRight
+                          className={cn(
+                            "ml-auto transition-transform group-data-[collapsible=icon]:hidden",
+                            isOpen && "rotate-90"
+                          )}
+                        />
+                      </SidebarMenuButton>
+                      {isOpen ? (
+                        <SidebarMenuSub id={submenuId}>
+                          {link.children.map((child) => {
+                            if (!child.href) return null;
+                            return (
+                              <SidebarMenuSubItem key={child.href}>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={matchPath(pathname, child.href)}
+                                >
+                                  <Link href={child.href}>
+                                    <span>{child.label}</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            );
+                          })}
+                        </SidebarMenuSub>
+                      ) : null}
+                    </SidebarMenuItem>
+                  );
+                }
+
+                if (!link.href) return null;
                 const Icon = link.icon;
                 return (
                   <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive(link.href)}
+                      isActive={matchPath(pathname, link.href)}
                       tooltip={link.label}
                     >
                       <Link href={link.href}>

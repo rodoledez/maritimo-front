@@ -12,6 +12,7 @@ import {
   Flag,
   Home,
   Inbox,
+  Library,
   MapPin,
   Package,
   Ship,
@@ -22,8 +23,9 @@ import {
 
 export type NavLink = {
   label: string;
-  href: string;
+  href?: string;
   icon: LucideIcon;
+  children?: NavLink[];
 };
 
 export const adminLinks: NavLink[] = [
@@ -33,31 +35,47 @@ export const adminLinks: NavLink[] = [
   { label: "Tracking", href: "/admin/shipments-tracking", icon: MapPin },
   { label: "Itinerarios", href: "/admin/itinerarios", icon: CalendarRange },
   {
-    label: "Plantillas notif.",
-    href: "/admin/notifications/templates",
-    icon: BookOpen,
-  },
-  {
-    label: "Reglas notif.",
-    href: "/admin/notifications/rules",
+    label: "Notificaciones",
     icon: Bell,
+    children: [
+      {
+        label: "Plantillas",
+        href: "/admin/notifications/templates",
+        icon: BookOpen,
+      },
+      {
+        label: "Reglas",
+        href: "/admin/notifications/rules",
+        icon: Bell,
+      },
+      {
+        label: "Free days",
+        href: "/admin/notifications/free-days",
+        icon: CalendarClock,
+      },
+      {
+        label: "Log",
+        href: "/admin/notifications/log",
+        icon: Inbox,
+      },
+    ],
   },
   {
-    label: "Free days",
-    href: "/admin/notifications/free-days",
-    icon: CalendarClock,
-  },
-  {
-    label: "Log notif.",
-    href: "/admin/notifications/log",
-    icon: Inbox,
+    label: "Catálogos",
+    icon: Library,
+    children: [
+      { label: "Navieras", href: "/admin/shipping-companies", icon: Ship },
+      { label: "Puertos", href: "/admin/ports", icon: Anchor },
+      { label: "Países", href: "/admin/countries", icon: Flag },
+      { label: "Commodities", href: "/admin/commodities", icon: Package },
+      {
+        label: "Contenedores",
+        href: "/admin/type-containers",
+        icon: Container,
+      },
+    ],
   },
   { label: "Usuarios", href: "/admin/usuarios", icon: UserCog },
-  { label: "Commodities", href: "/admin/commodities", icon: Package },
-  { label: "Contenedores", href: "/admin/type-containers", icon: Container },
-  { label: "Puertos", href: "/admin/ports", icon: Anchor },
-  { label: "Países", href: "/admin/countries", icon: Flag },
-  { label: "Navieras", href: "/admin/shipping-companies", icon: Ship },
 ];
 
 export const clienteLinks: NavLink[] = [
