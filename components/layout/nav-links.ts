@@ -12,7 +12,6 @@ import {
   Flag,
   Home,
   Inbox,
-  LayoutDashboard,
   MapPin,
   Package,
   Ship,
@@ -31,11 +30,6 @@ export const adminLinks: NavLink[] = [
   { label: "Inicio", href: "/admin", icon: Home },
   { label: "Clientes", href: "/admin/clientes", icon: Users },
   { label: "Reservas", href: "/admin/reservas", icon: ClipboardList },
-  {
-    label: "Dashboard embarques",
-    href: "/admin/shipments-dashboard",
-    icon: LayoutDashboard,
-  },
   { label: "Tracking", href: "/admin/shipments-tracking", icon: MapPin },
   { label: "Itinerarios", href: "/admin/itinerarios", icon: CalendarRange },
   {

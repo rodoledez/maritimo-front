@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/page-header";
 import { StatusBadge, type StatusTone } from "@/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -252,7 +251,7 @@ function LastStatusCell({ row }: { row: ActiveShipmentRow }) {
   );
 }
 
-export default function ShipmentsDashboardPage() {
+export function ShipmentsDashboard() {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState<number>(25);
   const [search, setSearch] = useState("");
@@ -336,32 +335,30 @@ export default function ShipmentsDashboardPage() {
     setPageIndex(0);
   };
 
-
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Dashboard de embarques"
-        description="Monitoreo operacional de embarques activos (ShipsGo)."
-        actions={
-          <Button
-            variant="outline"
-            onClick={onSync}
-            disabled={syncMutation.isPending}
-          >
-            {syncMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Sincronizando…
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4" />
-                Sincronizar ShipsGo
-              </>
-            )}
-          </Button>
-        }
-      />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">
+          Monitoreo operacional de embarques activos (ShipsGo).
+        </p>
+        <Button
+          variant="outline"
+          onClick={onSync}
+          disabled={syncMutation.isPending}
+        >
+          {syncMutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Sincronizando…
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4" />
+              Sincronizar ShipsGo
+            </>
+          )}
+        </Button>
+      </div>
 
       {/* Filter bar */}
       <Card size="sm">
@@ -576,10 +573,7 @@ export default function ShipmentsDashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableHead
-                    label="OP Number"
-                    active={false}
-                  />
+                  <SortableHead label="OP Number" active={false} />
                   <TableHead className="px-3">Naviera</TableHead>
                   <TableHead className="px-3">Cliente</TableHead>
                   <TableHead className="px-3">Booking</TableHead>
