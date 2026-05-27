@@ -272,6 +272,101 @@ export type ActiveShipmentsListResponse = {
   page: { skip: number; take: number };
 };
 
+export type NotificationEventType =
+  | "GATE_OUT"
+  | "GATE_IN"
+  | "DEPARTURE"
+  | "TRANSSHIPMENT"
+  | "ARRIVAL"
+  | "POD_GATE_OUT"
+  | "EMPTY_RETURN";
+
+export type NotificationTriggerType =
+  | "BEFORE_REFERENCE"
+  | "AFTER_REFERENCE"
+  | "AT_TIME_OF_DAY"
+  | "ON_EVENT"
+  | "PERIODIC";
+
+export type NotificationReferenceField =
+  | "CUTOFF"
+  | "LATE_ARRIVAL"
+  | "ETD"
+  | "ETA"
+  | "DEPARTURE_ACTUAL";
+
+export type NotificationLogStatus = "SENT" | "FAILED" | "SKIPPED";
+
+export type NotificationTemplate = {
+  id: number;
+  eventType: NotificationEventType;
+  clientId: number | null;
+  subject: string;
+  bodyHtml: string;
+  bodyText: string | null;
+  isActive: boolean;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NotificationRule = {
+  id: number;
+  eventType: NotificationEventType;
+  clientId: number | null;
+  name: string;
+  triggerType: NotificationTriggerType;
+  referenceField: NotificationReferenceField | null;
+  offsetHours: number | null;
+  atTimeOfDay: string | null;
+  recurrenceHours: number | null;
+  maxRecurrences: number | null;
+  conditionJson: Record<string, unknown> | null;
+  isActive: boolean;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FreeDaysConfig = {
+  id: number;
+  clientId: number | null;
+  bookingId: number | null;
+  demurrageDays: number | null;
+  detentionDays: number | null;
+  reeferPlugInDays: number | null;
+  demurrageAlertHours: number | null;
+  detentionAlertHours: number | null;
+  reeferAlertHours: number | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NotificationLog = {
+  id: number;
+  shipmentTrackingId: number | null;
+  bookingId: number | null;
+  eventType: NotificationEventType;
+  templateId: number | null;
+  ruleId: number | null;
+  recipientEmail: string;
+  ccEmails: string | null;
+  subject: string;
+  bodyPreview: string | null;
+  status: NotificationLogStatus;
+  errorMessage: string | null;
+  dedupeKey: string | null;
+  sentAt: string | null;
+  createdAt: string;
+};
+
+export type PaginatedResponse<T> = {
+  rows: T[];
+  total: number;
+  page: { skip: number; take: number };
+};
+
 export type Booking = {
   id: number | string;
   status: BookingStatus;
