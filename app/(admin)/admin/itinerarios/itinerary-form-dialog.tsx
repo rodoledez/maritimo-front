@@ -336,7 +336,10 @@ export function ItineraryFormDialog({
                         searchPlaceholder="Buscar puerto…"
                         options={originPorts.map((p) => ({
                           value: String(p.id),
-                          label: p.name,
+                          label: p.Country?.name
+                            ? `${p.name} - ${p.Country.name}`
+                            : p.name,
+                          keywords: p.Country?.name ?? "",
                         }))}
                       />
                       {fieldState.invalid && (
@@ -373,7 +376,10 @@ export function ItineraryFormDialog({
                         searchPlaceholder="Buscar puerto…"
                         options={destinationPorts.map((p) => ({
                           value: String(p.id),
-                          label: p.name,
+                          label: p.Country?.name
+                            ? `${p.name} - ${p.Country.name}`
+                            : p.name,
+                          keywords: p.Country?.name ?? "",
                         }))}
                       />
                       {fieldState.invalid && (
