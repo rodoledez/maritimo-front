@@ -1,6 +1,7 @@
 import {
   apiDelete,
   apiGet,
+  apiPatch,
   apiPost,
   apiPut,
   api,
@@ -38,7 +39,7 @@ export async function updateItinerary(
   payload: Partial<ItineraryPayload>
 ): Promise<Itinerary> {
   return unwrapOne(
-    await apiPut<Itinerary | { data: Itinerary }>(
+    await apiPatch<Itinerary | { data: Itinerary }>(
       `/itineraries/${id}`,
       payload
     )
