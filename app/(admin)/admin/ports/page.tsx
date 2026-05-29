@@ -124,7 +124,7 @@ export default function PortsPage() {
         accessorKey: "countryId",
         header: "País",
         cell: ({ row }) => {
-          const fromRel = row.original.Country?.name;
+          const fromRel = row.original.country?.name;
           const fromMap = row.original.countryId
             ? countryById.get(String(row.original.countryId))
             : null;

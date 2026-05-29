@@ -166,7 +166,7 @@ export function ItineraryFormDialog({
       portDestinationId: Number(values.portDestinationId),
       portDestination: destination?.name ?? null,
       countryDestination:
-        values.countryDestination || destination?.Country?.name || null,
+        values.countryDestination || destination?.country?.name || null,
       etd: values.etd,
       eta: values.eta,
       transitTime: transit ?? null,
@@ -336,10 +336,10 @@ export function ItineraryFormDialog({
                         searchPlaceholder="Buscar puerto…"
                         options={originPorts.map((p) => ({
                           value: String(p.id),
-                          label: p.Country?.name
-                            ? `${p.name} - ${p.Country.name}`
+                          label: p.country?.name
+                            ? `${p.name} - ${p.country.name}`
                             : p.name,
-                          keywords: p.Country?.name ?? "",
+                          keywords: p.country?.name ?? "",
                         }))}
                       />
                       {fieldState.invalid && (
@@ -364,10 +364,10 @@ export function ItineraryFormDialog({
                           const dest = destinationPorts.find(
                             (p) => String(p.id) === v
                           );
-                          if (dest?.Country?.name) {
+                          if (dest?.country?.name) {
                             form.setValue(
                               "countryDestination",
-                              dest.Country.name
+                              dest.country.name
                             );
                           }
                         }}
@@ -376,10 +376,10 @@ export function ItineraryFormDialog({
                         searchPlaceholder="Buscar puerto…"
                         options={destinationPorts.map((p) => ({
                           value: String(p.id),
-                          label: p.Country?.name
-                            ? `${p.name} - ${p.Country.name}`
+                          label: p.country?.name
+                            ? `${p.name} - ${p.country.name}`
                             : p.name,
-                          keywords: p.Country?.name ?? "",
+                          keywords: p.country?.name ?? "",
                         }))}
                       />
                       {fieldState.invalid && (

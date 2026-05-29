@@ -64,7 +64,7 @@ export type Port = {
   id: number | string;
   name: string;
   countryId: number | string | null;
-  Country?: { id: number | string; name: string } | null;
+  country?: { id: number | string; name: string; isoCode?: string | null } | null;
   description?: string | null;
   isOrigin: boolean;
   isDestination: boolean;
