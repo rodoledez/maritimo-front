@@ -464,15 +464,30 @@ function Step1({
         <FormField
           control={form.control}
           name="additionalWeeks"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Semanas adicionales *</FormLabel>
-              <FormControl>
-                <Input {...field} type="number" min={1} max={8} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const current = Number(field.value);
+            return (
+              <FormItem>
+                <FormLabel>Semanas adicionales *</FormLabel>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4].map((n) => (
+                    <Button
+                      key={n}
+                      type="button"
+                      size="sm"
+                      variant={current === n ? "default" : "outline"}
+                      onClick={() => field.onChange(n)}
+                      aria-pressed={current === n}
+                      className="w-12 tabular-nums"
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

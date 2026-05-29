@@ -18,7 +18,7 @@ export const wizardSchema = z
   .object({
     // Step 1
     weekNo: z.coerce.number().int().min(1, "Semana requerida"),
-    additionalWeeks: z.coerce.number().int().min(1).max(8),
+    additionalWeeks: z.coerce.number().int().min(1).max(4),
     country: z.string().optional().or(z.literal("")),
     port: z.string().optional().or(z.literal("")),
     // Step 2
