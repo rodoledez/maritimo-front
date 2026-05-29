@@ -162,17 +162,20 @@ export function BookingWizard({
       ).sort(),
     [itineraries]
   );
-  const destinationPorts = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          itineraries
-            .map((it) => assocLabel(it.portDestination))
-            .filter((v) => v !== "")
-        )
-      ).sort(),
-    [itineraries]
-  );
+  const destinationPorts = useMemo(() => {
+    const map = new Map<string, { name: string; country: string | null }>();
+    for (const it of itineraries) {
+      const name = assocLabel(it.portDestination);
+      if (!name) continue;
+      if (!map.has(name)) {
+        const country = assocLabel(it.countryDestination) || null;
+        map.set(name, { name, country });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [itineraries]);
 
   const filteredItineraries = useMemo<Itinerary[]>(() => {
     if (!values.weekNo) return [];
@@ -427,7 +430,7 @@ function Step1({
 }: {
   weeks: Array<{ weekNo: number; week: string | null }>;
   countries: string[];
-  ports: string[];
+  ports: Array<{ name: string; country: string | null }>;
   itinerariesLoaded: boolean;
 }) {
   const form = useFormFromCtx();
@@ -528,7 +531,11 @@ function Step1({
                   disabled={!itinerariesLoaded}
                   placeholder="Selecciona…"
                   searchPlaceholder="Buscar puerto…"
-                  options={ports.map((p) => ({ value: p, label: p }))}
+                  options={ports.map((p) => ({
+                    value: p.name,
+                    label: p.country ? `${p.name} - ${p.country}` : p.name,
+                    keywords: p.country ?? "",
+                  }))}
                 />
               </FormControl>
               <FormMessage />
