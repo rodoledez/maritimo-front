@@ -25,13 +25,7 @@ import {
   FieldRequiredMark,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useBookings } from "@/lib/hooks/use-bookings";
 import { useCreateShipmentTracking } from "@/lib/hooks/use-shipments-tracking";
 import { errorMessage } from "@/lib/utils/errors";
@@ -119,39 +113,42 @@ export function TrackingFormDialog({
                   <FieldLabel htmlFor="tracking-booking">
                     Booking <FieldRequiredMark />
                   </FieldLabel>
-                  <Select
+                  <SearchableSelect
+                    id="tracking-booking"
                     value={field.value}
                     onValueChange={field.onChange}
                     disabled={bookingsLoading}
-                  >
-                    <SelectTrigger
-                      id="tracking-booking"
-                      aria-invalid={fieldState.invalid}
-                      className="w-full"
-                    >
-                      <SelectValue
-                        placeholder={
-                          bookingsLoading
-                            ? "Cargando bookings…"
-                            : "Selecciona un booking confirmado"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {trackeableBookings.map((b) => (
-                        <SelectItem key={b.id} value={String(b.id)}>
-                          #{b.id} ·{" "}
-                          {b.Client?.name ?? "Sin cliente"}
-                          {b.Itinerary?.carrier
-                            ? ` · ${b.Itinerary.carrier}`
-                            : ""}
-                          {b.Itinerary?.containerShip
-                            ? ` · ${b.Itinerary.containerShip}`
-                            : ""}  Booking #{b.booking ?? "N/A"  } Bl #{b.blNo ?? "N/A"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    aria-invalid={fieldState.invalid}
+                    placeholder={
+                      bookingsLoading
+                        ? "Cargando bookings…"
+                        : "Selecciona un booking confirmado"
+                    }
+                    searchPlaceholder="Buscar booking, cliente, naviera, M/N, BL…"
+                    options={trackeableBookings.map((b) => {
+                      const parts = [
+                        `#${b.id}`,
+                        b.Client?.name ?? "Sin cliente",
+                      ];
+                      if (b.Itinerary?.carrier) parts.push(b.Itinerary.carrier);
+                      if (b.Itinerary?.containerShip)
+                        parts.push(b.Itinerary.containerShip);
+                      const label = `${parts.join(" · ")}  Booking #${b.booking ?? "N/A"} BL #${b.blNo ?? "N/A"}`;
+                      return {
+                        value: String(b.id),
+                        label,
+                        keywords: [
+                          b.Client?.name,
+                          b.Itinerary?.carrier,
+                          b.Itinerary?.containerShip,
+                          b.booking,
+                          b.blNo,
+                        ]
+                          .filter(Boolean)
+                          .join(" "),
+                      };
+                    })}
+                  />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}

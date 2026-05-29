@@ -25,13 +25,7 @@ import {
   FieldSectionTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { usePorts } from "@/lib/hooks/use-ports";
 import { useShippingCompanies } from "@/lib/hooks/use-shipping-companies";
 import {
@@ -257,22 +251,18 @@ export function ItineraryFormDialog({
                       <FieldLabel htmlFor="itin-shipping">
                         Naviera <FieldRequiredMark />
                       </FieldLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger
-                          id="itin-shipping"
-                          aria-invalid={fieldState.invalid}
-                          className="w-full"
-                        >
-                          <SelectValue placeholder="Selecciona…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {activeCompanies.map((c) => (
-                            <SelectItem key={c.id} value={String(c.id)}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        id="itin-shipping"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        aria-invalid={fieldState.invalid}
+                        placeholder="Selecciona…"
+                        searchPlaceholder="Buscar naviera…"
+                        options={activeCompanies.map((c) => ({
+                          value: String(c.id),
+                          label: c.name,
+                        }))}
+                      />
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}
@@ -337,22 +327,18 @@ export function ItineraryFormDialog({
                       <FieldLabel htmlFor="itin-port-origin">
                         Puerto de zarpe <FieldRequiredMark />
                       </FieldLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger
-                          id="itin-port-origin"
-                          aria-invalid={fieldState.invalid}
-                          className="w-full"
-                        >
-                          <SelectValue placeholder="Selecciona…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {originPorts.map((p) => (
-                            <SelectItem key={p.id} value={String(p.id)}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        id="itin-port-origin"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        aria-invalid={fieldState.invalid}
+                        placeholder="Selecciona…"
+                        searchPlaceholder="Buscar puerto…"
+                        options={originPorts.map((p) => ({
+                          value: String(p.id),
+                          label: p.name,
+                        }))}
+                      />
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}
@@ -367,7 +353,8 @@ export function ItineraryFormDialog({
                       <FieldLabel htmlFor="itin-port-destination">
                         Puerto de destino <FieldRequiredMark />
                       </FieldLabel>
-                      <Select
+                      <SearchableSelect
+                        id="itin-port-destination"
                         value={field.value}
                         onValueChange={(v) => {
                           field.onChange(v);
@@ -381,22 +368,14 @@ export function ItineraryFormDialog({
                             );
                           }
                         }}
-                      >
-                        <SelectTrigger
-                          id="itin-port-destination"
-                          aria-invalid={fieldState.invalid}
-                          className="w-full"
-                        >
-                          <SelectValue placeholder="Selecciona…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {destinationPorts.map((p) => (
-                            <SelectItem key={p.id} value={String(p.id)}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        aria-invalid={fieldState.invalid}
+                        placeholder="Selecciona…"
+                        searchPlaceholder="Buscar puerto…"
+                        options={destinationPorts.map((p) => ({
+                          value: String(p.id),
+                          label: p.name,
+                        }))}
+                      />
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}

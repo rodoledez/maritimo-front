@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useBookings } from "@/lib/hooks/use-bookings";
 import { useClients } from "@/lib/hooks/use-clients";
 import {
@@ -265,32 +266,37 @@ export function FreeDaysFormDialog({
                       {scope === "client" ? "Cliente" : "Booking"}{" "}
                       <FieldRequiredMark />
                     </FieldLabel>
-                    <Select
+                    <SearchableSelect
+                      id="fd-scope-id"
                       value={field.value}
                       onValueChange={field.onChange}
                       disabled={isEditing}
-                    >
-                      <SelectTrigger id="fd-scope-id">
-                        <SelectValue placeholder="Selecciona…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {scope === "client"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Selecciona…"
+                      searchPlaceholder={
+                        scope === "client"
+                          ? "Buscar cliente…"
+                          : "Buscar booking…"
+                      }
+                      options={
+                        scope === "client"
                           ? clients
                               .filter((c) => c.active)
-                              .map((c) => (
-                                <SelectItem key={c.id} value={String(c.id)}>
-                                  {c.name}
-                                </SelectItem>
-                              ))
-                          : bookings.map((b) => (
-                              <SelectItem key={b.id} value={String(b.id)}>
-                                #{b.id} ·{" "}
-                                {b.Client?.name ?? "Sin cliente"}
-                                {b.booking ? ` · ${b.booking}` : ""}
-                              </SelectItem>
-                            ))}
-                      </SelectContent>
-                    </Select>
+                              .map((c) => ({
+                                value: String(c.id),
+                                label: c.name,
+                              }))
+                          : bookings.map((b) => ({
+                              value: String(b.id),
+                              label: `#${b.id} · ${b.Client?.name ?? "Sin cliente"}${
+                                b.booking ? ` · ${b.booking}` : ""
+                              }`,
+                              keywords: [b.Client?.name, b.booking]
+                                .filter(Boolean)
+                                .join(" "),
+                            }))
+                      }
+                    />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}

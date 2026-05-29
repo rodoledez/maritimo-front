@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useUpdateBooking } from "@/lib/hooks/use-bookings";
 import { useCommodities } from "@/lib/hooks/use-commodities";
 import { useTypeContainers } from "@/lib/hooks/use-type-containers";
@@ -186,20 +187,18 @@ export function BookingEditDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Especie</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona…" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {commodityNames.map((name) => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                        placeholder="Selecciona…"
+                        searchPlaceholder="Buscar especie…"
+                        options={commodityNames.map((name) => ({
+                          value: name,
+                          label: name,
+                        }))}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -210,20 +209,18 @@ export function BookingEditDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contenedor</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecciona…" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {containerNames.map((name) => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                        placeholder="Selecciona…"
+                        searchPlaceholder="Buscar contenedor…"
+                        options={containerNames.map((name) => ({
+                          value: name,
+                          label: name,
+                        }))}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useClients } from "@/lib/hooks/use-clients";
 import {
@@ -231,27 +232,23 @@ export function TemplateFormDialog({
                       <FieldLabel htmlFor="template-client">
                         Cliente
                       </FieldLabel>
-                      <Select
+                      <SearchableSelect
+                        id="template-client"
                         value={field.value}
                         onValueChange={field.onChange}
                         disabled={isEditing}
-                      >
-                        <SelectTrigger id="template-client">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={GLOBAL_SCOPE}>
-                            Plantilla global
-                          </SelectItem>
-                          {clients
+                        placeholder="Selecciona…"
+                        searchPlaceholder="Buscar cliente…"
+                        options={[
+                          { value: GLOBAL_SCOPE, label: "Plantilla global" },
+                          ...clients
                             .filter((c) => c.active)
-                            .map((c) => (
-                              <SelectItem key={c.id} value={String(c.id)}>
-                                {c.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                            .map((c) => ({
+                              value: String(c.id),
+                              label: c.name,
+                            })),
+                        ]}
+                      />
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}

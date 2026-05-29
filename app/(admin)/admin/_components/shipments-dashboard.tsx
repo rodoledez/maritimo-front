@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -389,54 +390,44 @@ export function ShipmentsDashboard() {
             <label className="text-xs font-medium text-muted-foreground">
               Naviera
             </label>
-            <Select
+            <SearchableSelect
+              className="w-44"
               value={shippingFilter}
               onValueChange={(v) => {
                 setShippingFilter(v);
                 setPageIndex(0);
               }}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {companies
+              placeholder="Todas"
+              searchPlaceholder="Buscar naviera…"
+              options={[
+                { value: "all", label: "Todas" },
+                ...companies
                   .filter((c) => c.active)
-                  .map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+                  .map((c) => ({ value: String(c.id), label: c.name })),
+              ]}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-muted-foreground">
               Cliente
             </label>
-            <Select
+            <SearchableSelect
+              className="w-44"
               value={clientFilter}
               onValueChange={(v) => {
                 setClientFilter(v);
                 setPageIndex(0);
               }}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {clients
+              placeholder="Todos"
+              searchPlaceholder="Buscar cliente…"
+              options={[
+                { value: "all", label: "Todos" },
+                ...clients
                   .filter((c) => c.active)
-                  .map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+                  .map((c) => ({ value: String(c.id), label: c.name })),
+              ]}
+            />
           </div>
 
           <div className="flex flex-col gap-1">

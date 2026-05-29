@@ -26,13 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useCountries } from "@/lib/hooks/use-countries";
 import {
   useCreatePort,
@@ -180,30 +174,22 @@ export function PortFormDialog({
                     <FieldLabel htmlFor="port-country">
                       País <FieldRequiredMark />
                     </FieldLabel>
-                    <Select
+                    <SearchableSelect
+                      id="port-country"
                       value={field.value}
                       onValueChange={field.onChange}
                       disabled={countriesLoading}
-                    >
-                      <SelectTrigger
-                        id="port-country"
-                        aria-invalid={fieldState.invalid}
-                        className="w-full"
-                      >
-                        <SelectValue
-                          placeholder={
-                            countriesLoading ? "Cargando…" : "Selecciona un país"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((c) => (
-                          <SelectItem key={c.id} value={String(c.id)}>
-                            {c.name} ({c.isoCode})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      aria-invalid={fieldState.invalid}
+                      placeholder={
+                        countriesLoading ? "Cargando…" : "Selecciona un país"
+                      }
+                      searchPlaceholder="Buscar país…"
+                      options={countries.map((c) => ({
+                        value: String(c.id),
+                        label: `${c.name} (${c.isoCode})`,
+                        keywords: c.isoCode,
+                      }))}
+                    />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}

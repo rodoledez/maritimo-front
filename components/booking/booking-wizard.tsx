@@ -37,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Table,
   TableBody,
@@ -439,24 +440,21 @@ function Step1({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Semana *</FormLabel>
-              <Select
-                value={field.value ? String(field.value) : ""}
-                onValueChange={(v) => field.onChange(Number(v))}
-                disabled={!itinerariesLoaded || weeks.length === 0}
-              >
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona una semana" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {weeks.map((w) => (
-                    <SelectItem key={w.weekNo} value={String(w.weekNo)}>
-                      {w.week ? `${w.weekNo} · ${w.week}` : String(w.weekNo)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  value={field.value ? String(field.value) : ""}
+                  onValueChange={(v) => field.onChange(Number(v))}
+                  disabled={!itinerariesLoaded || weeks.length === 0}
+                  placeholder="Selecciona una semana"
+                  searchPlaceholder="Buscar semana…"
+                  options={weeks.map((w) => ({
+                    value: String(w.weekNo),
+                    label: w.week
+                      ? `${w.weekNo} · ${w.week}`
+                      : String(w.weekNo),
+                  }))}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -497,27 +495,19 @@ function Step1({
           render={({ field }) => (
             <FormItem>
               <FormLabel>País destino</FormLabel>
-              <Select
-                value={field.value ?? ""}
-                onValueChange={(v) => {
-                  field.onChange(v);
-                  form.setValue("port", "");
-                }}
-                disabled={!itinerariesLoaded}
-              >
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona…" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {countries.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  value={field.value ?? ""}
+                  onValueChange={(v) => {
+                    field.onChange(v);
+                    form.setValue("port", "");
+                  }}
+                  disabled={!itinerariesLoaded}
+                  placeholder="Selecciona…"
+                  searchPlaceholder="Buscar país…"
+                  options={countries.map((c) => ({ value: c, label: c }))}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -528,27 +518,19 @@ function Step1({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Puerto destino</FormLabel>
-              <Select
-                value={field.value ?? ""}
-                onValueChange={(v) => {
-                  field.onChange(v);
-                  form.setValue("country", "");
-                }}
-                disabled={!itinerariesLoaded}
-              >
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona…" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {ports.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  value={field.value ?? ""}
+                  onValueChange={(v) => {
+                    field.onChange(v);
+                    form.setValue("country", "");
+                  }}
+                  disabled={!itinerariesLoaded}
+                  placeholder="Selecciona…"
+                  searchPlaceholder="Buscar puerto…"
+                  options={ports.map((p) => ({ value: p, label: p }))}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -686,23 +668,18 @@ function Step3({ mode }: { mode: "admin" | "client" }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente *</FormLabel>
-              <Select
-                value={field.value ? String(field.value) : ""}
-                onValueChange={(v) => field.onChange(Number(v))}
-              >
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona el cliente para esta reserva" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {activeClients.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  value={field.value ? String(field.value) : ""}
+                  onValueChange={(v) => field.onChange(Number(v))}
+                  placeholder="Selecciona el cliente para esta reserva"
+                  searchPlaceholder="Buscar cliente…"
+                  options={activeClients.map((c) => ({
+                    value: String(c.id),
+                    label: c.name,
+                  }))}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -717,23 +694,18 @@ function Step3({ mode }: { mode: "admin" | "client" }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Especie *</FormLabel>
-                <Select
-                  value={field.value ? String(field.value) : ""}
-                  onValueChange={(v) => field.onChange(Number(v))}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecciona…" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {activeCommodities.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    placeholder="Selecciona…"
+                    searchPlaceholder="Buscar especie…"
+                    options={activeCommodities.map((c) => ({
+                      value: String(c.id),
+                      label: c.name,
+                    }))}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -744,23 +716,18 @@ function Step3({ mode }: { mode: "admin" | "client" }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo de contenedor *</FormLabel>
-                <Select
-                  value={field.value ? String(field.value) : ""}
-                  onValueChange={(v) => field.onChange(Number(v))}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecciona…" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {activeContainers.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <SearchableSelect
+                    value={field.value ? String(field.value) : ""}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    placeholder="Selecciona…"
+                    searchPlaceholder="Buscar contenedor…"
+                    options={activeContainers.map((c) => ({
+                      value: String(c.id),
+                      label: c.name,
+                    }))}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
