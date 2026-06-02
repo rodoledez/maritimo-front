@@ -407,5 +407,9 @@ export type Booking = {
   depot?: string | null;
   stacking?: string | null;
   cutOff?: string | null;
+  lateArrival?: string | null;
+  demurrageDays?: number | null;
+  detentionDays?: number | null;
+  reeferPlugInDays?: number | null;
   createdAt?: string | null;
 };

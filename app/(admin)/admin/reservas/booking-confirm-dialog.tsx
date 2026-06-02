@@ -36,6 +36,10 @@ const schema = z.object({
   depot: z.string().optional().or(z.literal("")),
   stacking: z.string().optional().or(z.literal("")),
   cutOff: z.string().optional().or(z.literal("")),
+  lateArrival: z.string().optional().or(z.literal("")),
+  demurrageDays: z.coerce.number().int().min(0).optional(),
+  detentionDays: z.coerce.number().int().min(0).optional(),
+  reeferPlugInDays: z.coerce.number().int().min(0).optional(),
   statusNotes: z.string().optional().or(z.literal("")),
 });
 
@@ -78,6 +82,10 @@ export function BookingConfirmDialog({
       depot: "",
       stacking: "",
       cutOff: "",
+      lateArrival: "",
+      demurrageDays: undefined,
+      detentionDays: undefined,
+      reeferPlugInDays: undefined,
       statusNotes: "",
     },
     mode: "onBlur",
@@ -94,6 +102,10 @@ export function BookingConfirmDialog({
         cutOff: toDatetimeLocal(
           booking.cutOff ?? booking.Itinerary?.documentClosure ?? ""
         ),
+        lateArrival: toDatetimeLocal(booking.lateArrival ?? ""),
+        demurrageDays: booking.demurrageDays ?? undefined,
+        detentionDays: booking.detentionDays ?? undefined,
+        reeferPlugInDays: booking.reeferPlugInDays ?? undefined,
         statusNotes: booking.statusNotes ?? "",
       });
     }
@@ -110,6 +122,10 @@ export function BookingConfirmDialog({
           depot: values.depot || undefined,
           stacking: values.stacking || undefined,
           cutOff: fromDatetimeLocal(values.cutOff ?? ""),
+          lateArrival: fromDatetimeLocal(values.lateArrival ?? ""),
+          demurrageDays: values.demurrageDays,
+          detentionDays: values.detentionDays,
+          reeferPlugInDays: values.reeferPlugInDays,
           statusNotes: values.statusNotes || undefined,
         },
       });
@@ -194,10 +210,80 @@ export function BookingConfirmDialog({
                 control={form.control}
                 name="cutOff"
                 render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
+                  <FormItem>
                     <FormLabel>Corte documental</FormLabel>
                     <FormControl>
                       <Input {...field} type="datetime-local" step={60} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lateArrival"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Late arrival</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="datetime-local" step={60} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="demurrageDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Demurrage (días)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        type="number"
+                        min={0}
+                        step={1}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="detentionDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Detention (días)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        type="number"
+                        min={0}
+                        step={1}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="reeferPlugInDays"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Días de enchufe</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        type="number"
+                        min={0}
+                        step={1}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

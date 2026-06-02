@@ -17,6 +17,10 @@ export type BookingConfirmPayload = {
   depot?: string;
   stacking?: string;
   cutOff?: string;
+  lateArrival?: string;
+  demurrageDays?: number;
+  detentionDays?: number;
+  reeferPlugInDays?: number;
   statusNotes?: string;
 };
 
