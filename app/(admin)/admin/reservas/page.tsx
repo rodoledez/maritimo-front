@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ClipboardList, MoreHorizontal, Plus } from "lucide-react";
+import { Bell, ClipboardList, MoreHorizontal, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
 import { useBookings } from "@/lib/hooks/use-bookings";
+import { useTriggerBookingNotification } from "@/lib/hooks/use-notifications";
 import { errorMessage } from "@/lib/utils/errors";
 import type { Booking } from "@/types/domain";
 
@@ -54,10 +56,30 @@ export default function ReservasPage() {
   const [cancelling, setCancelling] = useState<Booking | null>(null);
   const [statusFilter, setStatusFilter] = useState<BookingFilter>("all");
 
+  const triggerMutation = useTriggerBookingNotification();
+
   const onView = useCallback((b: Booking) => setDetail(b), []);
   const onEdit = useCallback((b: Booking) => setEditing(b), []);
   const onConfirm = useCallback((b: Booking) => setConfirming(b), []);
   const onCancel = useCallback((b: Booking) => setCancelling(b), []);
+  const onNotify = useCallback(
+    async (b: Booking) => {
+      try {
+        const result = await triggerMutation.mutateAsync(b.id);
+        const summary = `${result.sent} enviadas · ${result.skipped} omitidas · ${result.failed} fallidas`;
+        if (result.failed > 0) {
+          toast.warning(`Reserva #${b.id}: ${summary}`);
+        } else if (result.sent === 0 && result.skipped > 0) {
+          toast.info(`Reserva #${b.id}: ${summary}`);
+        } else {
+          toast.success(`Reserva #${b.id}: ${summary}`);
+        }
+      } catch (e) {
+        toast.error(errorMessage(e, "No se pudo enviar la notificación"));
+      }
+    },
+    [triggerMutation]
+  );
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -115,6 +137,7 @@ export default function ReservasPage() {
         cell: ({ row }) => {
           const b = row.original;
           const isPending = b.status === "Pendiente";
+          const isConfirmed = b.status === "Confirmado";
           return (
             <div className="flex justify-end">
               <DropdownMenu>
@@ -129,7 +152,7 @@ export default function ReservasPage() {
                   </TooltipTrigger>
                   <TooltipContent>Acciones</TooltipContent>
                 </Tooltip>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuItem onClick={() => onView(b)}>
                     Ver detalle
                   </DropdownMenuItem>
@@ -154,6 +177,18 @@ export default function ReservasPage() {
                   >
                     Cancelar
                   </DropdownMenuItem>
+                  {isConfirmed ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onNotify(b)}
+                        disabled={triggerMutation.isPending}
+                      >
+                        <Bell className="h-4 w-4" />
+                        Enviar notificación
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -161,7 +196,7 @@ export default function ReservasPage() {
         },
       },
     ],
-    [onView, onEdit, onConfirm, onCancel]
+    [onView, onEdit, onConfirm, onCancel, onNotify, triggerMutation.isPending]
   );
 
   return (

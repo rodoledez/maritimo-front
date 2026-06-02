@@ -17,6 +17,7 @@ import {
   listLogs,
   listRules,
   listTemplates,
+  triggerBookingNotification,
   updateFreeDays,
   updateRule,
   updateTemplate,
@@ -157,5 +158,16 @@ export function useNotificationLogs(params: LogListParams = {}) {
   return useQuery({
     queryKey: [LOGS_KEY, params] as const,
     queryFn: () => listLogs(params),
+  });
+}
+
+// --- Trigger ---
+
+export function useTriggerBookingNotification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (bookingId: number | string) =>
+      triggerBookingNotification(bookingId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [LOGS_KEY] }),
   });
 }

@@ -301,3 +301,28 @@ export async function getLog(id: number): Promise<NotificationLog> {
     )
   );
 }
+
+// --- Trigger ---
+
+export type TriggerResultRow = {
+  eventType: NotificationEventType;
+  status: NotificationLogStatus;
+  reason?: string | null;
+  notificationLogId?: number | null;
+  recipientEmail?: string | null;
+  subject?: string | null;
+};
+
+export type TriggerResult = {
+  bookingId: number;
+  results: TriggerResultRow[];
+  sent: number;
+  skipped: number;
+  failed: number;
+};
+
+export async function triggerBookingNotification(
+  bookingId: number | string
+): Promise<TriggerResult> {
+  return apiPost<TriggerResult>(`/notifications/trigger/${bookingId}`);
+}
