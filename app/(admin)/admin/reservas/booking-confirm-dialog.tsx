@@ -41,6 +41,26 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+function toDatetimeLocal(value: string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    // Fallback: if it's already roughly "YYYY-MM-DDTHH:mm", let it through.
+    return typeof value === "string" ? value.slice(0, 16) : "";
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+function fromDatetimeLocal(value: string): string | undefined {
+  if (!value) return undefined;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toISOString();
+}
+
 export function BookingConfirmDialog({
   open,
   onOpenChange,
@@ -71,7 +91,9 @@ export function BookingConfirmDialog({
         blNo: booking.blNo ?? "",
         depot: booking.depot ?? "",
         stacking: booking.stacking ?? booking.Itinerary?.stacking ?? "",
-        cutOff: booking.cutOff ?? booking.Itinerary?.documentClosure ?? "",
+        cutOff: toDatetimeLocal(
+          booking.cutOff ?? booking.Itinerary?.documentClosure ?? ""
+        ),
         statusNotes: booking.statusNotes ?? "",
       });
     }
@@ -87,7 +109,7 @@ export function BookingConfirmDialog({
           blNo: values.blNo || undefined,
           depot: values.depot || undefined,
           stacking: values.stacking || undefined,
-          cutOff: values.cutOff || undefined,
+          cutOff: fromDatetimeLocal(values.cutOff ?? ""),
           statusNotes: values.statusNotes || undefined,
         },
       });
@@ -175,7 +197,7 @@ export function BookingConfirmDialog({
                   <FormItem className="sm:col-span-2">
                     <FormLabel>Corte documental</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} type="datetime-local" step={60} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
