@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Inbox,
   XCircle,
@@ -22,9 +23,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { pickKpi, useKpis } from "@/lib/hooks/use-kpis";
+import {
+  countByStatus,
+  pickBucket,
+  totalCount,
+  useKpis,
+  type KpiPeriod,
+} from "@/lib/hooks/use-kpis";
 import { useRecentReservas } from "@/lib/hooks/use-reservas";
 import type { Booking } from "@/types/domain";
+
+const PERIOD_OPTIONS: Array<{ value: KpiPeriod; label: string }> = [
+  { value: "today", label: "Hoy" },
+  { value: "week", label: "Semana" },
+  { value: "month", label: "Mes" },
+];
 
 type Tone = "warning" | "success" | "danger" | "muted";
 
@@ -93,6 +106,11 @@ function formatDate(value: string | null | undefined) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return dateFormatter.format(date);
+}
+
+function formatRange(from: string | undefined, to: string | undefined): string {
+  if (!from || !to) return "";
+  return `${formatDate(from)} – ${formatDate(to)}`;
 }
 
 function RecentReservasCard() {
@@ -196,38 +214,63 @@ function RecentReservasCard() {
 
 export function ReservasDashboard() {
   const { data, isLoading } = useKpis();
+  const [period, setPeriod] = useState<KpiPeriod>("today");
+  const bucket = pickBucket(data, period);
+  const subtitle = formatRange(bucket?.dateFrom, bucket?.dateTo);
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2">
+          {PERIOD_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              type="button"
+              size="sm"
+              variant={period === opt.value ? "default" : "outline"}
+              onClick={() => setPeriod(opt.value)}
+              aria-pressed={period === opt.value}
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+        {subtitle ? (
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {subtitle}
+          </span>
+        ) : null}
+      </div>
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Reservas pendientes"
-          subtitle="Hoy"
-          value={pickKpi(data, "Today", "Pendiente")}
-          icon={AlertTriangle}
+          title="Total reservas"
+          subtitle={subtitle}
+          value={totalCount(bucket)}
+          icon={ClipboardList}
+          tone="muted"
+          loading={isLoading}
+        />
+        <StatCard
+          title="Pendientes"
+          subtitle={subtitle}
+          value={countByStatus(bucket, "PENDIENTE")}
+          icon={Clock}
           tone="warning"
           loading={isLoading}
         />
         <StatCard
-          title="Reservas confirmadas"
-          subtitle="Hoy"
-          value={pickKpi(data, "Today", "Confirmado")}
+          title="Confirmadas"
+          subtitle={subtitle}
+          value={countByStatus(bucket, "CONFIRMADO")}
           icon={CheckCircle2}
           tone="success"
           loading={isLoading}
         />
         <StatCard
-          title="Reservas pendientes"
-          subtitle="Total"
-          value={pickKpi(data, "Total", "Pendiente")}
-          icon={Clock}
-          tone="muted"
-          loading={isLoading}
-        />
-        <StatCard
-          title="Reservas canceladas"
-          subtitle="Total"
-          value={pickKpi(data, "Total", "Cancelado")}
+          title="Canceladas"
+          subtitle={subtitle}
+          value={countByStatus(bucket, "CANCELADO")}
           icon={XCircle}
           tone="danger"
           loading={isLoading}
