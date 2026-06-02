@@ -60,7 +60,7 @@ export function confirmBooking(
   id: Booking["id"],
   payload: BookingConfirmPayload
 ): Promise<unknown> {
-  return apiPut<unknown>(`/bookings/${id}/confirm`, payload);
+  return apiPut<unknown>(`/bookings/${id}/confirm`, { id, ...payload });
 }
 
 export function cancelBooking(
