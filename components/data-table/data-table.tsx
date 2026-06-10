@@ -142,6 +142,7 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   const align = readAlign(header.column.columnDef.meta);
+                  const isActions = header.column.id === "actions";
                   return (
                     <TableHead
                       key={header.id}
@@ -149,6 +150,8 @@ export function DataTable<TData, TValue>({
                         "h-11 px-3",
                         align === "right" && "text-right",
                         align === "center" && "text-center",
+                        isActions &&
+                          "sticky right-0 z-20 bg-card shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)]",
                       )}
                     >
                       {header.isPlaceholder ? null : canSort ? (
@@ -191,9 +194,10 @@ export function DataTable<TData, TValue>({
               ))
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} className="group">
                   {row.getVisibleCells().map((cell) => {
                     const align = readAlign(cell.column.columnDef.meta);
+                    const isActions = cell.column.id === "actions";
                     return (
                       <TableCell
                         key={cell.id}
@@ -201,6 +205,8 @@ export function DataTable<TData, TValue>({
                           "px-3 py-2",
                           align === "right" && "text-right tabular-nums",
                           align === "center" && "text-center",
+                          isActions &&
+                            "sticky right-0 z-10 bg-card shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.15)] group-hover:bg-muted/50",
                         )}
                       >
                         {flexRender(
