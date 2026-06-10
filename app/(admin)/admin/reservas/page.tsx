@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Bell, ClipboardList, MoreHorizontal, Plus } from "lucide-react";
+import { Bell, ClipboardList, Copy, MoreHorizontal, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -35,6 +35,7 @@ import type { Booking } from "@/types/domain";
 
 import { BookingCancelDialog } from "./booking-cancel-dialog";
 import { BookingConfirmDialog } from "./booking-confirm-dialog";
+import { BookingCopyDialog } from "./booking-copy-dialog";
 import { BookingDetailDialog } from "./booking-detail-dialog";
 import { BookingEditDialog } from "./booking-edit-dialog";
 
@@ -54,6 +55,7 @@ export default function ReservasPage() {
   const [editing, setEditing] = useState<Booking | null>(null);
   const [confirming, setConfirming] = useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState<Booking | null>(null);
+  const [copying, setCopying] = useState<Booking | null>(null);
   const [statusFilter, setStatusFilter] = useState<BookingFilter>("all");
 
   const triggerMutation = useTriggerBookingNotification();
@@ -62,6 +64,7 @@ export default function ReservasPage() {
   const onEdit = useCallback((b: Booking) => setEditing(b), []);
   const onConfirm = useCallback((b: Booking) => setConfirming(b), []);
   const onCancel = useCallback((b: Booking) => setCancelling(b), []);
+  const onCopy = useCallback((b: Booking) => setCopying(b), []);
   const onNotify = useCallback(
     async (b: Booking) => {
       try {
@@ -138,6 +141,7 @@ export default function ReservasPage() {
           const b = row.original;
           const isPending = b.status === "Pendiente";
           const isConfirmed = b.status === "Confirmado";
+          const canCopy = isPending || isConfirmed;
           return (
             <div className="flex justify-end">
               <DropdownMenu>
@@ -161,6 +165,13 @@ export default function ReservasPage() {
                     disabled={!isPending}
                   >
                     Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onCopy(b)}
+                    disabled={!canCopy}
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copiar reserva
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -196,7 +207,15 @@ export default function ReservasPage() {
         },
       },
     ],
-    [onView, onEdit, onConfirm, onCancel, onNotify, triggerMutation.isPending]
+    [
+      onView,
+      onEdit,
+      onCopy,
+      onConfirm,
+      onCancel,
+      onNotify,
+      triggerMutation.isPending,
+    ]
   );
 
   return (
@@ -271,6 +290,11 @@ export default function ReservasPage() {
         open={!!cancelling}
         onOpenChange={(open) => !open && setCancelling(null)}
         booking={cancelling}
+      />
+      <BookingCopyDialog
+        open={!!copying}
+        onOpenChange={(open) => !open && setCopying(null)}
+        booking={copying}
       />
     </div>
   );

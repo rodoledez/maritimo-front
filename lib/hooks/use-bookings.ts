@@ -9,6 +9,7 @@ import {
 import {
   cancelBooking,
   confirmBooking,
+  copyBooking,
   createBooking,
   listBookings,
   listBookingsByClient,
@@ -30,6 +31,23 @@ export function useBookingsByClient(clientId: number | string | undefined | null
     queryKey: ["bookings", "by-client", clientId] as const,
     queryFn: () => listBookingsByClient(clientId as number | string),
     enabled: !!clientId,
+  });
+}
+
+/**
+ * Carga el borrador copiable de una reserva (`GET /bookings/:id/copy`).
+ * Solo se activa cuando `enabled` es true (p.ej. al abrir el diálogo de copia).
+ */
+export function useBookingCopyDraft(
+  id: Booking["id"] | undefined | null,
+  enabled: boolean
+) {
+  return useQuery({
+    queryKey: ["bookings", "copy", id] as const,
+    queryFn: () => copyBooking(id as Booking["id"]),
+    enabled: !!id && enabled,
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

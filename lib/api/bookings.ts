@@ -33,6 +33,14 @@ export type BookingCancelPayload = {
   statusNotes: string;
 };
 
+/**
+ * Borrador devuelto por `GET /bookings/:id/copy`. Contiene únicamente la
+ * información comercial/operacional copiable (carga + itinerario), lista para
+ * crear una nueva reserva. Los campos dinámicos (booking, BL, stacking, corte
+ * documental, depósito, etc.) NO vienen incluidos.
+ */
+export type BookingCopyDraft = BookingPayload;
+
 export async function listBookings(): Promise<Booking[]> {
   return unwrapList(await apiGet<Booking[] | { data: Booking[] }>("/bookings"));
 }
@@ -58,6 +66,16 @@ export async function updateBooking(
 ): Promise<Booking> {
   return unwrapOne(
     await apiPut<Booking | { data: Booking }>(`/bookings/${id}`, payload)
+  );
+}
+
+export async function copyBooking(
+  id: Booking["id"]
+): Promise<BookingCopyDraft> {
+  return unwrapOne(
+    await apiGet<BookingCopyDraft | { data: BookingCopyDraft }>(
+      `/bookings/${id}/copy`
+    )
   );
 }
 

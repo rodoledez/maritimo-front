@@ -7,7 +7,8 @@
       "Bash(grep -rn 'isClient\\\\|$auth.user\\\\|loggedIn' /mnt/c/Users/rodod/Projects/clients/acosta/source/maritimo-front/middleware/ /mnt/c/Users/rodod/Projects/clients/acosta/source/maritimo-front/store/ /mnt/c/Users/rodod/Projects/clients/acosta/source/maritimo-front/layouts/)",
       "Bash(pnpm exec *)",
       "Bash(python3 *)",
-      "Bash(pnpm lint *)"
+      "Bash(pnpm lint *)",
+      "WebFetch(domain:pre-maritimo.acostayaguayo.cl)"
     ]
   }
 }
