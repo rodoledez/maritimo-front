@@ -405,7 +405,11 @@ export type Booking = {
   booking?: string | null;
   blNo?: string | null;
   depot?: string | null;
-  stacking?: string | null;
+  stackingMode?: "CONTINUOUS" | "DAILY" | null;
+  stackingStart?: string | null;
+  stackingEnd?: string | null;
+  stackingOpenTime?: string | null;
+  stackingCloseTime?: string | null;
   cutOff?: string | null;
   lateArrival?: string | null;
   demurrageDays?: number | null;

@@ -15,7 +15,11 @@ export type BookingConfirmPayload = {
   booking?: string;
   blNo?: string;
   depot?: string;
-  stacking?: string;
+  stackingMode?: "CONTINUOUS" | "DAILY";
+  stackingStart?: string;
+  stackingEnd?: string;
+  stackingOpenTime?: string;
+  stackingCloseTime?: string;
   cutOff?: string;
   lateArrival?: string;
   demurrageDays?: number;

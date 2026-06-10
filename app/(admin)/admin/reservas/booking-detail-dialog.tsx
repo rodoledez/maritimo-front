@@ -32,6 +32,39 @@ function YesNo({ value }: { value?: boolean }) {
   );
 }
 
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${formatDate(value)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatStacking(booking: Booking): string | null {
+  const mode = booking.stackingMode;
+  if (!mode) return null;
+  if (mode === "CONTINUOUS") {
+    if (!booking.stackingStart || !booking.stackingEnd) return null;
+    return `Continuo: ${formatDateTime(booking.stackingStart)} → ${formatDateTime(
+      booking.stackingEnd
+    )}`;
+  }
+  if (mode === "DAILY") {
+    if (
+      !booking.stackingStart ||
+      !booking.stackingEnd ||
+      !booking.stackingOpenTime ||
+      !booking.stackingCloseTime
+    ) {
+      return null;
+    }
+    return `Diario: ${formatDate(booking.stackingStart)} – ${formatDate(
+      booking.stackingEnd
+    )}, ${booking.stackingOpenTime} a ${booking.stackingCloseTime}`;
+  }
+  return null;
+}
+
 export function BookingDetailDialog({
   open,
   onOpenChange,
@@ -122,7 +155,10 @@ export function BookingDetailDialog({
                   : "—"
               }
             />
-            <Field label="Stacking" value={booking.stacking ?? it?.stacking} />
+            <Field
+              label="Stacking"
+              value={formatStacking(booking) ?? it?.stacking ?? "—"}
+            />
             <Field
               label="Corte doc."
               value={booking.cutOff ?? it?.documentClosure}
