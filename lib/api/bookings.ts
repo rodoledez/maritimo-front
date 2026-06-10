@@ -14,7 +14,8 @@ export type BookingPayload = Partial<Booking> & {
 export type BookingConfirmPayload = {
   booking?: string;
   blNo?: string;
-  depot?: string;
+  depotId?: number;
+  terminalId?: number;
   stackingMode?: "CONTINUOUS" | "DAILY";
   stackingStart?: string;
   stackingEnd?: string;

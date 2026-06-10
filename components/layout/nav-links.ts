@@ -18,6 +18,7 @@ import {
   Ship,
   UserCog,
   Users,
+  Warehouse,
   type LucideIcon,
 } from "lucide-react";
 
@@ -72,6 +73,11 @@ export const adminLinks: NavLink[] = [
         label: "Contenedores",
         href: "/admin/type-containers",
         icon: Container,
+      },
+      {
+        label: "Depósitos y terminales",
+        href: "/admin/facilities",
+        icon: Warehouse,
       },
     ],
   },

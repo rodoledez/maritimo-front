@@ -10,8 +10,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
+import { useFacilities } from "@/lib/hooks/use-facilities";
 import { assocLabel, formatDate } from "@/lib/utils/format";
-import type { Booking } from "@/types/domain";
+import type { Booking, Facility } from "@/types/domain";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -38,6 +39,23 @@ function formatDateTime(value: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return "—";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${formatDate(value)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function facilityLabel(
+  facilities: Facility[],
+  id: number | string | null | undefined,
+  joined: Booking["depot"] | Booking["terminal"] | null | undefined
+): string {
+  if (joined && typeof joined === "object" && "name" in joined && joined.name) {
+    return joined.name;
+  }
+  if (typeof joined === "string" && joined) return joined;
+  if (id !== null && id !== undefined) {
+    const match = facilities.find((f) => String(f.id) === String(id));
+    if (match) return match.active ? match.name : `${match.name} (inactivo)`;
+    return `#${id}`;
+  }
+  return "—";
 }
 
 function formatStacking(booking: Booking): string | null {
@@ -74,8 +92,11 @@ export function BookingDetailDialog({
   onOpenChange: (open: boolean) => void;
   booking: Booking | null;
 }) {
+  const { data: facilities = [] } = useFacilities();
   if (!booking) return null;
   const it = booking.Itinerary;
+  const terminalLabel = facilityLabel(facilities, booking.terminalId, booking.terminal);
+  const depotLabel = facilityLabel(facilities, booking.depotId, booking.depot);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -177,7 +198,8 @@ export function BookingDetailDialog({
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field label="Booking" value={booking.booking} />
                   <Field label="BL Nº" value={booking.blNo} />
-                  <Field label="Depot" value={booking.depot} />
+                  <Field label="Terminal" value={terminalLabel} />
+                  <Field label="Depósito" value={depotLabel} />
                 </div>
               ) : null}
               {booking.statusNotes ? (

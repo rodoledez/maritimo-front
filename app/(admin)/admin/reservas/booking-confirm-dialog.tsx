@@ -26,9 +26,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useConfirmBooking } from "@/lib/hooks/use-bookings";
+import { useFacilities } from "@/lib/hooks/use-facilities";
 import { errorMessage } from "@/lib/utils/errors";
-import type { Booking } from "@/types/domain";
+import type { Booking, Facility } from "@/types/domain";
 
 const TIME_HHMM = /^\d{2}:\d{2}$/;
 
@@ -39,7 +41,8 @@ const schema = z
   .object({
     booking: z.string().min(1, "Debe ingresar booking"),
     blNo: z.string().optional().or(z.literal("")),
-    depot: z.string().optional().or(z.literal("")),
+    depotId: z.string().optional().or(z.literal("")),
+    terminalId: z.string().optional().or(z.literal("")),
     stackingMode: z.enum(STACKING_MODES).optional(),
     stackingStart: z.string().optional().or(z.literal("")),
     stackingEnd: z.string().optional().or(z.literal("")),
@@ -192,7 +195,8 @@ export function BookingConfirmDialog({
     defaultValues: {
       booking: "",
       blNo: "",
-      depot: "",
+      depotId: "",
+      terminalId: "",
       stackingMode: undefined,
       stackingStart: "",
       stackingEnd: "",
@@ -208,6 +212,25 @@ export function BookingConfirmDialog({
     mode: "onBlur",
   });
   const mutation = useConfirmBooking();
+  const { data: facilities = [] } = useFacilities();
+
+  const facilityOptions = (
+    kind: "DEPOT" | "TERMINAL",
+    selectedId: number | string | null | undefined
+  ): Array<{ value: string; label: string; keywords?: string }> => {
+    const selected = selectedId !== null && selectedId !== undefined ? String(selectedId) : null;
+    return facilities
+      .filter(
+        (f: Facility) =>
+          f.type === kind && (f.active || String(f.id) === selected)
+      )
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((f) => ({
+        value: String(f.id),
+        label: f.active ? f.name : `${f.name} (inactivo)`,
+        keywords: [f.city, f.region].filter(Boolean).join(" "),
+      }));
+  };
 
   useEffect(() => {
     if (open && booking) {
@@ -215,7 +238,14 @@ export function BookingConfirmDialog({
       form.reset({
         booking: booking.booking ?? "",
         blNo: booking.blNo ?? "",
-        depot: booking.depot ?? "",
+        depotId:
+          booking.depotId !== null && booking.depotId !== undefined
+            ? String(booking.depotId)
+            : "",
+        terminalId:
+          booking.terminalId !== null && booking.terminalId !== undefined
+            ? String(booking.terminalId)
+            : "",
         stackingMode: mode,
         stackingStart:
           mode === "DAILY"
@@ -265,7 +295,8 @@ export function BookingConfirmDialog({
         payload: {
           booking: values.booking,
           blNo: values.blNo || undefined,
-          depot: values.depot || undefined,
+          depotId: values.depotId ? Number(values.depotId) : undefined,
+          terminalId: values.terminalId ? Number(values.terminalId) : undefined,
           stackingMode: mode,
           stackingStart,
           stackingEnd,
@@ -332,12 +363,40 @@ export function BookingConfirmDialog({
               />
               <FormField
                 control={form.control}
-                name="depot"
+                name="terminalId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Depot</FormLabel>
+                    <FormLabel>Terminal</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <SearchableSelect
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                        placeholder="Selecciona terminal…"
+                        searchPlaceholder="Buscar terminal…"
+                        options={facilityOptions(
+                          "TERMINAL",
+                          booking?.terminalId
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="depotId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Depósito</FormLabel>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                        placeholder="Selecciona depósito…"
+                        searchPlaceholder="Buscar depósito…"
+                        options={facilityOptions("DEPOT", booking?.depotId)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

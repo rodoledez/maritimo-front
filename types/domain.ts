@@ -71,6 +71,19 @@ export type Port = {
   active: boolean;
 };
 
+export type FacilityType = "TERMINAL" | "DEPOT";
+
+export type Facility = {
+  id: number | string;
+  name: string;
+  type: FacilityType;
+  city?: string | null;
+  region?: string | null;
+  active: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 export type ItineraryStatus = "CO" | "PE";
 
 /**
@@ -404,7 +417,10 @@ export type Booking = {
   description?: string | null;
   booking?: string | null;
   blNo?: string | null;
-  depot?: string | null;
+  depot?: string | { id: number | string; name: string } | null;
+  depotId?: number | string | null;
+  terminal?: { id: number | string; name: string } | null;
+  terminalId?: number | string | null;
   stackingMode?: "CONTINUOUS" | "DAILY" | null;
   stackingStart?: string | null;
   stackingEnd?: string | null;
