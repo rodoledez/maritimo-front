@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
+import {
+  useFieldArray,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +42,12 @@ const TIME_HHMM = /^\d{2}:\d{2}$/;
 const STACKING_MODES = ["CONTINUOUS", "DAILY"] as const;
 type StackingMode = (typeof STACKING_MODES)[number];
 
+const scheduleRowSchema = z.object({
+  day: z.string().optional().or(z.literal("")),
+  startTime: z.string().optional().or(z.literal("")),
+  endTime: z.string().optional().or(z.literal("")),
+});
+
 const schema = z
   .object({
     booking: z.string().min(1, "Debe ingresar booking"),
@@ -46,8 +57,7 @@ const schema = z
     stackingMode: z.enum(STACKING_MODES).optional(),
     stackingStart: z.string().optional().or(z.literal("")),
     stackingEnd: z.string().optional().or(z.literal("")),
-    stackingOpenTime: z.string().optional().or(z.literal("")),
-    stackingCloseTime: z.string().optional().or(z.literal("")),
+    stackingSchedule: z.array(scheduleRowSchema).optional(),
     cutOff: z.string().optional().or(z.literal("")),
     lateArrival: z.string().optional().or(z.literal("")),
     demurrageDays: z.coerce.number().int().min(0).optional(),
@@ -85,54 +95,50 @@ const schema = z
       }
     }
     if (v.stackingMode === "DAILY") {
-      if (!v.stackingStart) {
+      const rows = v.stackingSchedule ?? [];
+      if (rows.length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["stackingStart"],
-          message: "Debe ingresar el primer día",
+          path: ["stackingSchedule"],
+          message: "Debe agregar al menos un día",
         });
       }
-      if (!v.stackingEnd) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["stackingEnd"],
-          message: "Debe ingresar el último día",
-        });
-      }
-      if (v.stackingStart && v.stackingEnd && v.stackingStart > v.stackingEnd) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["stackingEnd"],
-          message: "El último día debe ser posterior al primero",
-        });
-      }
-      if (!v.stackingOpenTime || !TIME_HHMM.test(v.stackingOpenTime)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["stackingOpenTime"],
-          message: "Formato HH:mm",
-        });
-      }
-      if (!v.stackingCloseTime || !TIME_HHMM.test(v.stackingCloseTime)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["stackingCloseTime"],
-          message: "Formato HH:mm",
-        });
-      }
-      if (
-        v.stackingOpenTime &&
-        v.stackingCloseTime &&
-        TIME_HHMM.test(v.stackingOpenTime) &&
-        TIME_HHMM.test(v.stackingCloseTime) &&
-        v.stackingOpenTime >= v.stackingCloseTime
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["stackingCloseTime"],
-          message: "La hora de cierre debe ser posterior a la apertura",
-        });
-      }
+      rows.forEach((row, i) => {
+        if (!row.day) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["stackingSchedule", i, "day"],
+            message: "Día requerido",
+          });
+        }
+        if (!row.startTime || !TIME_HHMM.test(row.startTime)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["stackingSchedule", i, "startTime"],
+            message: "HH:mm",
+          });
+        }
+        if (!row.endTime || !TIME_HHMM.test(row.endTime)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["stackingSchedule", i, "endTime"],
+            message: "HH:mm",
+          });
+        }
+        if (
+          row.startTime &&
+          row.endTime &&
+          TIME_HHMM.test(row.startTime) &&
+          TIME_HHMM.test(row.endTime) &&
+          row.startTime >= row.endTime
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["stackingSchedule", i, "endTime"],
+            message: "El cierre debe ser posterior a la apertura",
+          });
+        }
+      });
     }
   });
 
@@ -168,13 +174,6 @@ function toDateOnly(value: string | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function fromDateOnly(value: string): string | undefined {
-  if (!value) return undefined;
-  const d = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toISOString();
-}
-
 function toTimeHHMM(value: string | null | undefined): string {
   if (!value) return "";
   if (TIME_HHMM.test(value)) return value;
@@ -200,8 +199,7 @@ export function BookingConfirmDialog({
       stackingMode: undefined,
       stackingStart: "",
       stackingEnd: "",
-      stackingOpenTime: "",
-      stackingCloseTime: "",
+      stackingSchedule: [],
       cutOff: "",
       lateArrival: "",
       demurrageDays: undefined,
@@ -248,15 +246,21 @@ export function BookingConfirmDialog({
             : "",
         stackingMode: mode,
         stackingStart:
-          mode === "DAILY"
-            ? toDateOnly(booking.stackingStart ?? "")
-            : toDatetimeLocal(booking.stackingStart ?? ""),
+          mode === "CONTINUOUS"
+            ? toDatetimeLocal(booking.stackingStart ?? "")
+            : "",
         stackingEnd:
+          mode === "CONTINUOUS"
+            ? toDatetimeLocal(booking.stackingEnd ?? "")
+            : "",
+        stackingSchedule:
           mode === "DAILY"
-            ? toDateOnly(booking.stackingEnd ?? "")
-            : toDatetimeLocal(booking.stackingEnd ?? ""),
-        stackingOpenTime: toTimeHHMM(booking.stackingOpenTime ?? ""),
-        stackingCloseTime: toTimeHHMM(booking.stackingCloseTime ?? ""),
+            ? (booking.stackingSchedule ?? []).map((s) => ({
+                day: toDateOnly(s.day ?? ""),
+                startTime: toTimeHHMM(s.startTime ?? ""),
+                endTime: toTimeHHMM(s.endTime ?? ""),
+              }))
+            : [],
         cutOff: toDatetimeLocal(
           booking.cutOff ?? booking.Itinerary?.documentClosure ?? ""
         ),
@@ -276,19 +280,19 @@ export function BookingConfirmDialog({
       const stackingStart =
         mode === "CONTINUOUS"
           ? fromDatetimeLocal(values.stackingStart ?? "")
-          : mode === "DAILY"
-            ? fromDateOnly(values.stackingStart ?? "")
-            : undefined;
+          : undefined;
       const stackingEnd =
         mode === "CONTINUOUS"
           ? fromDatetimeLocal(values.stackingEnd ?? "")
-          : mode === "DAILY"
-            ? fromDateOnly(values.stackingEnd ?? "")
-            : undefined;
-      const stackingOpenTime =
-        mode === "DAILY" ? values.stackingOpenTime || undefined : undefined;
-      const stackingCloseTime =
-        mode === "DAILY" ? values.stackingCloseTime || undefined : undefined;
+          : undefined;
+      const stackingSchedule =
+        mode === "DAILY"
+          ? (values.stackingSchedule ?? []).map((row) => ({
+              day: row.day ?? "",
+              startTime: row.startTime ?? "",
+              endTime: row.endTime ?? "",
+            }))
+          : undefined;
 
       await mutation.mutateAsync({
         id: booking.id,
@@ -300,8 +304,7 @@ export function BookingConfirmDialog({
           stackingMode: mode,
           stackingStart,
           stackingEnd,
-          stackingOpenTime,
-          stackingCloseTime,
+          stackingSchedule,
           cutOff: fromDatetimeLocal(values.cutOff ?? ""),
           lateArrival: fromDatetimeLocal(values.lateArrival ?? ""),
           demurrageDays: values.demurrageDays,
@@ -532,19 +535,21 @@ const STACKING_OPTIONS: Array<{ value: StackingMode; label: string }> = [
 function StackingSection() {
   const form = useFormContext<FormValues>();
   const mode = useWatch({ control: form.control, name: "stackingMode" });
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "stackingSchedule",
+  });
 
   const switchMode = (next: StackingMode | undefined) => {
     form.setValue("stackingMode", next, { shouldValidate: false });
     form.setValue("stackingStart", "", { shouldValidate: false });
     form.setValue("stackingEnd", "", { shouldValidate: false });
-    form.setValue("stackingOpenTime", "", { shouldValidate: false });
-    form.setValue("stackingCloseTime", "", { shouldValidate: false });
-    form.clearErrors([
-      "stackingStart",
-      "stackingEnd",
-      "stackingOpenTime",
-      "stackingCloseTime",
-    ]);
+    form.setValue(
+      "stackingSchedule",
+      next === "DAILY" ? [{ day: "", startTime: "", endTime: "" }] : [],
+      { shouldValidate: false }
+    );
+    form.clearErrors(["stackingStart", "stackingEnd", "stackingSchedule"]);
   };
 
   return (
@@ -616,77 +621,98 @@ function StackingSection() {
       ) : null}
 
       {mode === "DAILY" ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="stackingStart"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Primer día *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value ?? ""}
-                    type="date"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="stackingEnd"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Último día *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value ?? ""}
-                    type="date"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="stackingOpenTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Hora apertura *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value ?? ""}
-                    type="time"
-                    step={60}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="stackingCloseTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Hora cierre *</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value ?? ""}
-                    type="time"
-                    step={60}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Agrega cada día con su propio rango horario.
+          </p>
+          <div className="space-y-2">
+            {fields.map((row, index) => (
+              <div
+                key={row.id}
+                className="flex flex-wrap items-start gap-3 rounded-md border p-3 sm:flex-nowrap"
+              >
+                <FormField
+                  control={form.control}
+                  name={`stackingSchedule.${index}.day`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-[140px]">
+                      <FormLabel>Día *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          type="date"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`stackingSchedule.${index}.startTime`}
+                  render={({ field }) => (
+                    <FormItem className="w-[120px]">
+                      <FormLabel>Apertura *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          type="time"
+                          step={60}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`stackingSchedule.${index}.endTime`}
+                  render={({ field }) => (
+                    <FormItem className="w-[120px]">
+                      <FormLabel>Cierre *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          type="time"
+                          step={60}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="mt-6 shrink-0 text-destructive hover:text-destructive"
+                  onClick={() => remove(index)}
+                  disabled={fields.length <= 1}
+                  aria-label="Quitar día"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          {form.formState.errors.stackingSchedule &&
+          !Array.isArray(form.formState.errors.stackingSchedule) ? (
+            <p className="text-sm text-destructive">
+              {form.formState.errors.stackingSchedule.message}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => append({ day: "", startTime: "", endTime: "" })}
+          >
+            <Plus className="h-4 w-4" />
+            Agregar día
+          </Button>
         </div>
       ) : null}
     </div>

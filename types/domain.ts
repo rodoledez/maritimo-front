@@ -390,6 +390,13 @@ export type PaginatedResponse<T> = {
   page: { skip: number; take: number };
 };
 
+/** Un día del stacking diario, con su propio rango horario. */
+export type StackingDaySchedule = {
+  day: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+};
+
 export type Booking = {
   id: number | string;
   status: BookingStatus;
@@ -424,8 +431,7 @@ export type Booking = {
   stackingMode?: "CONTINUOUS" | "DAILY" | null;
   stackingStart?: string | null;
   stackingEnd?: string | null;
-  stackingOpenTime?: string | null;
-  stackingCloseTime?: string | null;
+  stackingSchedule?: StackingDaySchedule[] | null;
   cutOff?: string | null;
   lateArrival?: string | null;
   demurrageDays?: number | null;

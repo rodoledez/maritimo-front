@@ -68,17 +68,16 @@ function formatStacking(booking: Booking): string | null {
     )}`;
   }
   if (mode === "DAILY") {
-    if (
-      !booking.stackingStart ||
-      !booking.stackingEnd ||
-      !booking.stackingOpenTime ||
-      !booking.stackingCloseTime
-    ) {
-      return null;
-    }
-    return `Diario: ${formatDate(booking.stackingStart)} – ${formatDate(
-      booking.stackingEnd
-    )}, ${booking.stackingOpenTime} a ${booking.stackingCloseTime}`;
+    const schedule = booking.stackingSchedule ?? [];
+    if (schedule.length === 0) return null;
+    const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : "");
+    const days = schedule
+      .filter((s) => s.day)
+      .map(
+        (s) => `${formatDate(s.day)} ${hhmm(s.startTime)} a ${hhmm(s.endTime)}`
+      );
+    if (days.length === 0) return null;
+    return `Diario: ${days.join(" · ")}`;
   }
   return null;
 }

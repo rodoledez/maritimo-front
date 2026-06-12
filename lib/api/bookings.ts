@@ -4,7 +4,7 @@ import {
   apiPut,
 } from "@/lib/api/client";
 import { unwrapList, unwrapOne } from "@/lib/api/_shared";
-import type { Booking } from "@/types/domain";
+import type { Booking, StackingDaySchedule } from "@/types/domain";
 
 export type BookingPayload = Partial<Booking> & {
   itinerary_id?: number | string;
@@ -19,8 +19,7 @@ export type BookingConfirmPayload = {
   stackingMode?: "CONTINUOUS" | "DAILY";
   stackingStart?: string;
   stackingEnd?: string;
-  stackingOpenTime?: string;
-  stackingCloseTime?: string;
+  stackingSchedule?: StackingDaySchedule[];
   cutOff?: string;
   lateArrival?: string;
   demurrageDays?: number;
