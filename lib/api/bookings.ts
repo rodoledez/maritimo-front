@@ -28,6 +28,26 @@ export type BookingConfirmPayload = {
   statusNotes?: string;
 };
 
+/**
+ * Payload de `PUT /bookings/:id/update-confirmation`. A diferencia de
+ * `confirm`, permite reeditar TODOS los datos de una reserva ya confirmada
+ * (carga + logística + stacking) manteniendo el estado "Confirmado".
+ */
+export type BookingUpdateConfirmationPayload = BookingConfirmPayload & {
+  specie?: string | null;
+  typeContainer?: string | null;
+  typeFreight?: string;
+  qtyContainers?: number;
+  temperature?: number | null;
+  ventilation?: string | null;
+  bl?: string;
+  isATM?: boolean;
+  isColdTreatment?: boolean;
+  vgm?: string;
+  humidity?: number | null;
+  description?: string | null;
+};
+
 export type BookingCancelPayload = {
   statusNotes: string;
 };
@@ -83,6 +103,16 @@ export function confirmBooking(
   payload: BookingConfirmPayload
 ): Promise<unknown> {
   return apiPut<unknown>(`/bookings/${id}/confirm`, { id, ...payload });
+}
+
+export function updateConfirmation(
+  id: Booking["id"],
+  payload: BookingUpdateConfirmationPayload
+): Promise<unknown> {
+  return apiPut<unknown>(`/bookings/${id}/update-confirmation`, {
+    id,
+    ...payload,
+  });
 }
 
 export function cancelBooking(

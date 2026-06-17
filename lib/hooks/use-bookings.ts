@@ -14,9 +14,11 @@ import {
   listBookings,
   listBookingsByClient,
   updateBooking,
+  updateConfirmation,
   type BookingCancelPayload,
   type BookingConfirmPayload,
   type BookingPayload,
+  type BookingUpdateConfirmationPayload,
 } from "@/lib/api/bookings";
 import type { Booking } from "@/types/domain";
 
@@ -83,6 +85,20 @@ export function useConfirmBooking() {
       id: Booking["id"];
       payload: BookingConfirmPayload;
     }) => confirmBooking(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useUpdateConfirmation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: Booking["id"];
+      payload: BookingUpdateConfirmationPayload;
+    }) => updateConfirmation(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

@@ -38,6 +38,7 @@ import { BookingConfirmDialog } from "./booking-confirm-dialog";
 import { BookingCopyDialog } from "./booking-copy-dialog";
 import { BookingDetailDialog } from "./booking-detail-dialog";
 import { BookingEditDialog } from "./booking-edit-dialog";
+import { BookingUpdateConfirmationDialog } from "./booking-update-confirmation-dialog";
 
 type BookingFilter = "all" | "Pendiente" | "Confirmado" | "Cancelado";
 
@@ -54,6 +55,8 @@ export default function ReservasPage() {
   const [detail, setDetail] = useState<Booking | null>(null);
   const [editing, setEditing] = useState<Booking | null>(null);
   const [confirming, setConfirming] = useState<Booking | null>(null);
+  const [updatingConfirmation, setUpdatingConfirmation] =
+    useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState<Booking | null>(null);
   const [copying, setCopying] = useState<Booking | null>(null);
   const [statusFilter, setStatusFilter] = useState<BookingFilter>("all");
@@ -63,6 +66,10 @@ export default function ReservasPage() {
   const onView = useCallback((b: Booking) => setDetail(b), []);
   const onEdit = useCallback((b: Booking) => setEditing(b), []);
   const onConfirm = useCallback((b: Booking) => setConfirming(b), []);
+  const onUpdateConfirmation = useCallback(
+    (b: Booking) => setUpdatingConfirmation(b),
+    []
+  );
   const onCancel = useCallback((b: Booking) => setCancelling(b), []);
   const onCopy = useCallback((b: Booking) => setCopying(b), []);
   const onNotify = useCallback(
@@ -192,6 +199,12 @@ export default function ReservasPage() {
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
+                        onClick={() => onUpdateConfirmation(b)}
+                        className="text-brand-success focus:text-brand-success"
+                      >
+                        Actualizar confirmación
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => onNotify(b)}
                         disabled={triggerMutation.isPending}
                       >
@@ -212,6 +225,7 @@ export default function ReservasPage() {
       onEdit,
       onCopy,
       onConfirm,
+      onUpdateConfirmation,
       onCancel,
       onNotify,
       triggerMutation.isPending,
@@ -285,6 +299,11 @@ export default function ReservasPage() {
         open={!!confirming}
         onOpenChange={(open) => !open && setConfirming(null)}
         booking={confirming}
+      />
+      <BookingUpdateConfirmationDialog
+        open={!!updatingConfirmation}
+        onOpenChange={(open) => !open && setUpdatingConfirmation(null)}
+        booking={updatingConfirmation}
       />
       <BookingCancelDialog
         open={!!cancelling}
