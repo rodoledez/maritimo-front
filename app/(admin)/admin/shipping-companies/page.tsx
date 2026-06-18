@@ -182,6 +182,8 @@ export default function ShippingCompaniesPage() {
         data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por nombre, contacto, email…"
+        exportable
+        exportFileName="shipping-companies"
         toolbarLeft={
           <Button onClick={onCreate}>
             <Plus className="h-4 w-4" />

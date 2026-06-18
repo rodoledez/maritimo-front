@@ -185,6 +185,8 @@ export default function CommoditiesPage() {
         data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar…"
+        exportable
+        exportFileName="commodities"
         toolbarLeft={
           <Button onClick={onCreate}>
             <Plus className="h-4 w-4" />

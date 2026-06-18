@@ -210,6 +210,8 @@ export default function PortsPage() {
         data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por nombre…"
+        exportable
+        exportFileName="ports"
         toolbarLeft={
           <Button onClick={onCreate}>
             <Plus className="h-4 w-4" />

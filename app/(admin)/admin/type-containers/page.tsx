@@ -184,6 +184,8 @@ export default function TypeContainersPage() {
         data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar…"
+        exportable
+        exportFileName="type-containers"
         toolbarLeft={
           <Button onClick={onCreate}>
             <Plus className="h-4 w-4" />

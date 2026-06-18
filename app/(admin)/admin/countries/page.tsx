@@ -181,6 +181,8 @@ export default function CountriesPage() {
         data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar…"
+        exportable
+        exportFileName="countries"
         toolbarLeft={
           <Button onClick={onCreate}>
             <Plus className="h-4 w-4" />

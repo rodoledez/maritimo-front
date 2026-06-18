@@ -218,6 +218,8 @@ export default function ClientesPage() {
         data={filteredData}
         isLoading={isLoading}
         searchPlaceholder="Buscar por empresa, contacto, usuario…"
+        exportable
+        exportFileName="clientes"
         toolbarLeft={toolbarLeft}
         toolbarRight={toolbarRight}
         emptyState={

@@ -10,10 +10,11 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Inbox, Search } from "lucide-react";
+import { ArrowUpDown, Download, Inbox, Search } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { downloadCsv } from "@/lib/utils/export-csv";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -53,6 +54,8 @@ type DataTableProps<TData, TValue> = {
   emptyState?: React.ReactNode;
   isLoading?: boolean;
   skeletonRows?: number;
+  exportable?: boolean;
+  exportFileName?: string;
 };
 
 export function DataTable<TData, TValue>({
@@ -66,6 +69,8 @@ export function DataTable<TData, TValue>({
   emptyState,
   isLoading = false,
   skeletonRows = 6,
+  exportable = false,
+  exportFileName = "export",
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -96,6 +101,41 @@ export function DataTable<TData, TValue>({
   const rangeStart = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
   const rangeEnd = Math.min((pageIndex + 1) * pageSize, totalRows);
 
+  const handleExport = () => {
+    const exportColumns = table.getAllLeafColumns().filter(
+      (column) =>
+        column.accessorFn != null &&
+        column.id !== "actions" &&
+        typeof column.columnDef.header === "string"
+    );
+    const headers = exportColumns.map(
+      (column) => column.columnDef.header as string
+    );
+    const rows = table.getFilteredRowModel().rows.map((row) =>
+      exportColumns.map((column) => {
+        const value = row.getValue<unknown>(column.id);
+        if (typeof value === "boolean") return value ? "Sí" : "No";
+        if (value === null || value === undefined) return "";
+        return String(value);
+      })
+    );
+
+    const date = new Date().toISOString().slice(0, 10);
+    downloadCsv(`${exportFileName}-${date}`, headers, rows);
+  };
+
+  const exportButton = exportable ? (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleExport}
+      disabled={isLoading || totalRows === 0}
+    >
+      <Download className="h-4 w-4" />
+      Descargar CSV
+    </Button>
+  ) : null;
+
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -106,6 +146,7 @@ export function DataTable<TData, TValue>({
             </div>
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
               {toolbarRight}
+              {exportButton}
               <div className="relative w-full sm:w-64">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -130,7 +171,12 @@ export function DataTable<TData, TValue>({
                 aria-label={searchPlaceholder}
               />
             </div>
-            {toolbarRight}
+            {(toolbarRight || exportButton) ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {toolbarRight}
+                {exportButton}
+              </div>
+            ) : null}
           </>
         )}
       </div>
