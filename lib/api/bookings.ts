@@ -11,6 +11,31 @@ export type BookingPayload = Partial<Booking> & {
   client_id?: number | string;
 };
 
+/**
+ * La UI maneja `stackingMode` en MAYÚSCULAS (`CONTINUOUS` / `DAILY`), pero el
+ * backend valida/persiste en minúsculas (`continuous` / `daily`). Normalizamos
+ * en la frontera de la API: minúsculas al enviar, MAYÚSCULAS al recibir.
+ */
+function toWireStackingMode(
+  mode: "CONTINUOUS" | "DAILY" | null | undefined
+): "continuous" | "daily" | undefined {
+  if (mode === "CONTINUOUS") return "continuous";
+  if (mode === "DAILY") return "daily";
+  return undefined;
+}
+
+function fromWireStackingMode(mode: unknown): "CONTINUOUS" | "DAILY" | null {
+  const m = typeof mode === "string" ? mode.toUpperCase() : mode;
+  if (m === "CONTINUOUS") return "CONTINUOUS";
+  if (m === "DAILY") return "DAILY";
+  return null;
+}
+
+function normalizeBooking(booking: Booking): Booking {
+  if (booking?.stackingMode == null) return booking;
+  return { ...booking, stackingMode: fromWireStackingMode(booking.stackingMode) };
+}
+
 export type BookingConfirmPayload = {
   booking?: string;
   blNo?: string;
@@ -61,7 +86,9 @@ export type BookingCancelPayload = {
 export type BookingCopyDraft = BookingPayload;
 
 export async function listBookings(): Promise<Booking[]> {
-  return unwrapList(await apiGet<Booking[] | { data: Booking[] }>("/bookings"));
+  return unwrapList(
+    await apiGet<Booking[] | { data: Booking[] }>("/bookings")
+  ).map(normalizeBooking);
 }
 
 export async function listBookingsByClient(
@@ -70,9 +97,10 @@ export async function listBookingsByClient(
   const raw = await apiGet<
     Booking[] | { Bookings?: Booking[]; data?: Booking[] }
   >(`/clients/${clientId}/bookings`);
-  if (Array.isArray(raw)) return raw;
-  if (raw && "Bookings" in raw && Array.isArray(raw.Bookings)) return raw.Bookings;
-  return unwrapList(raw as { data: Booking[] });
+  if (Array.isArray(raw)) return raw.map(normalizeBooking);
+  if (raw && "Bookings" in raw && Array.isArray(raw.Bookings))
+    return raw.Bookings.map(normalizeBooking);
+  return unwrapList(raw as { data: Booking[] }).map(normalizeBooking);
 }
 
 export async function createBooking(payload: BookingPayload): Promise<Booking> {
@@ -102,7 +130,11 @@ export function confirmBooking(
   id: Booking["id"],
   payload: BookingConfirmPayload
 ): Promise<unknown> {
-  return apiPut<unknown>(`/bookings/${id}/confirm`, { id, ...payload });
+  return apiPut<unknown>(`/bookings/${id}/confirm`, {
+    id,
+    ...payload,
+    stackingMode: toWireStackingMode(payload.stackingMode),
+  });
 }
 
 export function updateConfirmation(
@@ -112,6 +144,7 @@ export function updateConfirmation(
   return apiPut<unknown>(`/bookings/${id}/update-confirmation`, {
     id,
     ...payload,
+    stackingMode: toWireStackingMode(payload.stackingMode),
   });
 }
 
