@@ -126,6 +126,22 @@ export async function copyBooking(
   );
 }
 
+/**
+ * El backend espera cada día del stacking como `{ date, openTime, closeTime }`
+ * (con `date` en formato ISO 8601), mientras que internamente usamos
+ * `{ day, startTime, endTime }`. Traducimos en el borde de la API.
+ */
+function toWireStackingSchedule(
+  schedule: StackingDaySchedule[] | undefined
+): { date: string; openTime: string; closeTime: string }[] | undefined {
+  if (!schedule) return undefined;
+  return schedule.map((row) => ({
+    date: row.day,
+    openTime: row.startTime,
+    closeTime: row.endTime,
+  }));
+}
+
 export function confirmBooking(
   id: Booking["id"],
   payload: BookingConfirmPayload
@@ -134,6 +150,7 @@ export function confirmBooking(
     id,
     ...payload,
     stackingMode: toWireStackingMode(payload.stackingMode),
+    stackingSchedule: toWireStackingSchedule(payload.stackingSchedule),
   });
 }
 
@@ -145,6 +162,7 @@ export function updateConfirmation(
     id,
     ...payload,
     stackingMode: toWireStackingMode(payload.stackingMode),
+    stackingSchedule: toWireStackingSchedule(payload.stackingSchedule),
   });
 }
 
