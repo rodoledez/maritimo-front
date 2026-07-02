@@ -46,7 +46,15 @@ const clientSchema = z.object({
     .email("E-mail inválido"),
   contactEmail2: z
     .string()
-    .email("E-mail inválido")
+    .refine(
+      (value) =>
+        value
+          .split(/[,;]/)
+          .map((email) => email.trim())
+          .filter((email) => email.length > 0)
+          .every((email) => z.string().email().safeParse(email).success),
+      "E-mail inválido. Separe varios correos con coma o punto y coma"
+    )
     .optional()
     .or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
@@ -285,9 +293,10 @@ export function ClientFormDialog({
                   <Input
                     {...field}
                     id="client-contact-email-2"
-                    type="email"
+                    type="text"
+                    inputMode="email"
                     aria-invalid={fieldState.invalid}
-                    placeholder="opcional"
+                    placeholder="opcional (separe con , o ;)"
                     autoComplete="off"
                   />
                   {fieldState.invalid && (
