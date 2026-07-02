@@ -8,7 +8,8 @@
       "Bash(pnpm exec *)",
       "Bash(python3 *)",
       "Bash(pnpm lint *)",
-      "WebFetch(domain:pre-maritimo.acostayaguayo.cl)"
+      "WebFetch(domain:pre-maritimo.acostayaguayo.cl)",
+      "Read(//c/Users/rodod/Projects/clients/acosta/source/maritimo-front/**)"
     ]
   }
 }
