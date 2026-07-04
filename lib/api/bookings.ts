@@ -15,7 +15,7 @@ export type BookingPayload = Partial<Booking> & {
   client_id?: number | string;
 };
 
-/** Parámetros de `GET /bookings` (paginado + búsqueda libre). */
+/** Parámetros de `GET /bookings` (paginado + búsqueda libre + filtro de estado). */
 export type BookingListParams = {
   /** Página 1-based. */
   page?: number;
@@ -26,6 +26,8 @@ export type BookingListParams = {
    * depósito/terminal.
    */
   search?: string;
+  /** Filtra por estado exacto. */
+  status?: "Pendiente" | "Confirmado" | "Cancelado";
 };
 
 /**

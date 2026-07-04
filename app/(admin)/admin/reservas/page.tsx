@@ -8,6 +8,10 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
+import {
+  FilterPopover,
+  type FilterOption,
+} from "@/components/data-table/filter-popover";
 import { IdentityCell } from "@/components/data-table/identity-cell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -32,6 +36,15 @@ import type { Booking } from "@/types/domain";
 
 const DEFAULT_PAGE_SIZE = 25;
 
+type BookingFilter = "all" | "Pendiente" | "Confirmado" | "Cancelado";
+
+const BOOKING_FILTER_OPTIONS: FilterOption<BookingFilter>[] = [
+  { value: "all", label: "Todas" },
+  { value: "Pendiente", label: "Pendientes" },
+  { value: "Confirmado", label: "Confirmadas" },
+  { value: "Cancelado", label: "Canceladas" },
+];
+
 import { BookingCancelDialog } from "./booking-cancel-dialog";
 import { BookingConfirmDialog } from "./booking-confirm-dialog";
 import { BookingCopyDialog } from "./booking-copy-dialog";
@@ -44,11 +57,13 @@ export default function ReservasPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchRaw, setSearchRaw] = useState("");
   const search = useDebouncedValue(searchRaw.trim(), 350);
+  const [statusFilter, setStatusFilter] = useState<BookingFilter>("all");
 
   const { data, isLoading, error, refetch, isFetching } = useBookingsPage({
     page: pageIndex + 1,
     pageSize,
     search: search || undefined,
+    status: statusFilter === "all" ? undefined : statusFilter,
   });
 
   const rows = data?.rows ?? [];
@@ -248,7 +263,7 @@ export default function ReservasPage() {
         columns={columns}
         data={rows}
         isLoading={isLoading}
-        searchPlaceholder="Buscar por cliente, naviera, especie, estado…"
+        searchPlaceholder="Buscar por cliente, naviera, especie…"
         serverSearch={{
           value: searchRaw,
           onChange: (value) => {
@@ -274,6 +289,18 @@ export default function ReservasPage() {
               Crear reserva
             </Link>
           </Button>
+        }
+        toolbarRight={
+          <FilterPopover
+            label="Estado"
+            value={statusFilter}
+            defaultValue="all"
+            options={BOOKING_FILTER_OPTIONS}
+            onChange={(value) => {
+              setStatusFilter(value);
+              setPageIndex(0);
+            }}
+          />
         }
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
