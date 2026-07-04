@@ -43,6 +43,25 @@ function readAlign(meta: unknown): ColumnAlign | undefined {
   return (meta as ColumnMeta | undefined)?.align;
 }
 
+/**
+ * Paginación server-side. Cuando se pasa, la tabla NO pagina/filtra en cliente:
+ * `data` ya es la página actual y los controles delegan en estos callbacks.
+ */
+type ServerPagination = {
+  pageIndex: number; // 0-based
+  pageSize: number;
+  total: number;
+  onPageChange: (pageIndex: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  isFetching?: boolean;
+};
+
+/** Búsqueda server-side controlada (reemplaza el filtro global en cliente). */
+type ServerSearch = {
+  value: string;
+  onChange: (value: string) => void;
+};
+
 type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -56,6 +75,8 @@ type DataTableProps<TData, TValue> = {
   skeletonRows?: number;
   exportable?: boolean;
   exportFileName?: string;
+  serverPagination?: ServerPagination;
+  serverSearch?: ServerSearch;
 };
 
 export function DataTable<TData, TValue>({
@@ -71,20 +92,29 @@ export function DataTable<TData, TValue>({
   skeletonRows = 6,
   exportable = false,
   exportFileName = "export",
+  serverPagination,
+  serverSearch,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  const isServer = !!serverPagination;
+
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, globalFilter },
+    // En modo server la búsqueda vive fuera: no filtramos en cliente.
+    state: { sorting, globalFilter: serverSearch ? "" : globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    // La ordenación por columna sólo afectaría a la página actual, así que la
+    // deshabilitamos en modo server para no confundir.
+    enableSorting: !isServer,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // En modo server `data` ya es la página: sin row model de paginación.
+    ...(isServer ? {} : { getPaginationRowModel: getPaginationRowModel() }),
     globalFilterFn: searchKey
       ? (row, _columnId, filterValue) => {
           const cell = row.getValue<unknown>(searchKey);
@@ -96,8 +126,34 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize: 10 } },
   });
 
-  const totalRows = table.getFilteredRowModel().rows.length;
-  const { pageIndex, pageSize } = table.getState().pagination;
+  const totalRows = isServer
+    ? serverPagination.total
+    : table.getFilteredRowModel().rows.length;
+  const pageIndex = isServer
+    ? serverPagination.pageIndex
+    : table.getState().pagination.pageIndex;
+  const pageSize = isServer
+    ? serverPagination.pageSize
+    : table.getState().pagination.pageSize;
+  const pageCount = isServer
+    ? Math.max(1, Math.ceil(totalRows / pageSize))
+    : table.getPageCount() || 1;
+  const canPrev = isServer
+    ? pageIndex > 0 && !serverPagination.isFetching
+    : table.getCanPreviousPage();
+  const canNext = isServer
+    ? pageIndex + 1 < pageCount && !serverPagination.isFetching
+    : table.getCanNextPage();
+  const goPrev = () =>
+    isServer ? serverPagination.onPageChange(pageIndex - 1) : table.previousPage();
+  const goNext = () =>
+    isServer ? serverPagination.onPageChange(pageIndex + 1) : table.nextPage();
+  const changePageSize = (v: number) =>
+    isServer ? serverPagination.onPageSizeChange(v) : table.setPageSize(v);
+  const searchValue = serverSearch ? serverSearch.value : globalFilter;
+  const onSearchChange = (v: string) =>
+    serverSearch ? serverSearch.onChange(v) : setGlobalFilter(v);
+
   const rangeStart = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
   const rangeEnd = Math.min((pageIndex + 1) * pageSize, totalRows);
 
@@ -151,8 +207,8 @@ export function DataTable<TData, TValue>({
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder={searchPlaceholder}
-                  value={globalFilter}
-                  onChange={(event) => setGlobalFilter(event.target.value)}
+                  value={searchValue}
+                  onChange={(event) => onSearchChange(event.target.value)}
                   className="pl-9"
                   aria-label={searchPlaceholder}
                 />
@@ -165,8 +221,8 @@ export function DataTable<TData, TValue>({
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={searchPlaceholder}
-                value={globalFilter}
-                onChange={(event) => setGlobalFilter(event.target.value)}
+                value={searchValue}
+                onChange={(event) => onSearchChange(event.target.value)}
                 className="pl-9"
                 aria-label={searchPlaceholder}
               />
@@ -287,7 +343,7 @@ export function DataTable<TData, TValue>({
           <span>Filas por página</span>
           <Select
             value={String(pageSize)}
-            onValueChange={(v) => table.setPageSize(Number(v))}
+            onValueChange={(v) => changePageSize(Number(v))}
           >
             <SelectTrigger
               className="h-8 w-[72px]"
@@ -311,22 +367,22 @@ export function DataTable<TData, TValue>({
               : `${rangeStart}–${rangeEnd} de ${totalRows}`}
           </span>
           <span className="tabular-nums">
-            Página {pageIndex + 1} de {table.getPageCount() || 1}
+            Página {pageIndex + 1} de {pageCount}
           </span>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              onClick={goPrev}
+              disabled={!canPrev}
             >
               Anterior
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              onClick={goNext}
+              disabled={!canNext}
             >
               Siguiente
             </Button>

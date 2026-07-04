@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -13,10 +14,12 @@ import {
   createBooking,
   listBookings,
   listBookingsByClient,
+  listBookingsPage,
   updateBooking,
   updateConfirmation,
   type BookingCancelPayload,
   type BookingConfirmPayload,
+  type BookingListParams,
   type BookingPayload,
   type BookingUpdateConfirmationPayload,
 } from "@/lib/api/bookings";
@@ -24,8 +27,21 @@ import type { Booking } from "@/types/domain";
 
 const KEY = ["bookings"] as const;
 
+/**
+ * Listado completo (recorre todas las páginas). Úsalo sólo como lookup — para
+ * la tabla de administración usa `useBookingsPage` (paginación server-side).
+ */
 export function useBookings() {
   return useQuery({ queryKey: KEY, queryFn: listBookings });
+}
+
+/** Una página de reservas con paginación + búsqueda server-side. */
+export function useBookingsPage(params: BookingListParams) {
+  return useQuery({
+    queryKey: [...KEY, "page", params] as const,
+    queryFn: () => listBookingsPage(params),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useBookingsByClient(clientId: number | string | undefined | null) {
