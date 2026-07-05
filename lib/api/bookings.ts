@@ -3,7 +3,7 @@ import {
   apiPost,
   apiPut,
 } from "@/lib/api/client";
-import { unwrapList, unwrapOne } from "@/lib/api/_shared";
+import { unwrapList, unwrapOne, unwrapPaginated } from "@/lib/api/_shared";
 import type {
   Booking,
   PaginatedResponse,
@@ -104,74 +104,14 @@ export type BookingCancelPayload = {
  */
 export type BookingCopyDraft = BookingPayload;
 
-function toNumber(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() !== "") {
-    const n = Number(value);
-    if (!Number.isNaN(n)) return n;
-  }
-  return undefined;
-}
-
-function buildQuery(params: Record<string, unknown>): string {
-  const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === "") continue;
-    search.append(key, String(value));
-  }
-  const qs = search.toString();
-  return qs ? `?${qs}` : "";
-}
-
-/**
- * El backend documenta la respuesta como un array plano, pero en runtime este
- * endpoint pagina. Aceptamos ambas formas (envoltorio `{ rows, total }` /
- * `{ data, total }` / `{ items }` o array plano) y normalizamos al contrato
- * `PaginatedResponse` que ya usa el resto de la app.
- */
-function unwrapPaginatedBookings(
-  value: unknown,
-  params: BookingListParams
-): PaginatedResponse<Booking> {
-  const pageSize = params.pageSize ?? 25;
-  const pageNo = params.page ?? 1;
-  const fallbackPage = { skip: (pageNo - 1) * pageSize, take: pageSize };
-
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    const obj = value as Record<string, unknown>;
-    const rowsRaw =
-      (Array.isArray(obj.rows) && obj.rows) ||
-      (Array.isArray(obj.data) && obj.data) ||
-      (Array.isArray(obj.items) && obj.items) ||
-      null;
-    if (rowsRaw) {
-      const rows = (rowsRaw as Booking[]).map(normalizeBooking);
-      const total =
-        toNumber(obj.total) ??
-        toNumber(obj.totalItems) ??
-        toNumber(obj.count) ??
-        rows.length;
-      const page =
-        obj.page && typeof obj.page === "object"
-          ? (obj.page as { skip: number; take: number })
-          : fallbackPage;
-      return { rows, total, page };
-    }
-  }
-
-  const rows = unwrapList(value as Booking[] | { data: Booking[] }).map(
-    normalizeBooking
-  );
-  return { rows, total: rows.length, page: fallbackPage };
-}
-
 /** Una página de reservas desde `GET /bookings` (paginado + búsqueda libre). */
 export async function listBookingsPage(
   params: BookingListParams = {}
 ): Promise<PaginatedResponse<Booking>> {
-  return unwrapPaginatedBookings(
-    await apiGet<unknown>(`/bookings${buildQuery(params)}`),
-    params
+  return unwrapPaginated<Booking>(
+    await apiGet<unknown>("/bookings", { params }),
+    params,
+    normalizeBooking
   );
 }
 

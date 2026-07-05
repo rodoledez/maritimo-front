@@ -8,12 +8,6 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { ActiveBadge } from "@/components/data-table/active-cell";
-import {
-  ACTIVE_FILTER_OPTIONS,
-  FilterPopover,
-  matchesActiveFilter,
-  type ActiveFilter,
-} from "@/components/data-table/filter-popover";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -41,10 +35,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   useDeleteItinerary,
-  useItineraries,
+  useItinerariesPage,
   useToggleItineraryActive,
   useConfirmItinerary,
 } from "@/lib/hooks/use-itineraries";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { errorMessage } from "@/lib/utils/errors";
 import { assocLabel, formatDate } from "@/lib/utils/format";
 import type { Itinerary } from "@/types/domain";
@@ -59,8 +54,23 @@ function ItineraryStatusBadge({ status }: { status?: Itinerary["status"] | null 
   return <StatusBadge tone="pending">Por confirmar</StatusBadge>;
 }
 
+const DEFAULT_PAGE_SIZE = 25;
+
 export default function ItinerariosPage() {
-  const { data, isLoading, error, refetch, isFetching } = useItineraries();
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [searchRaw, setSearchRaw] = useState("");
+  const search = useDebouncedValue(searchRaw.trim(), 350);
+
+  const { data, isLoading, error, refetch, isFetching } = useItinerariesPage({
+    page: pageIndex + 1,
+    pageSize,
+    search: search || undefined,
+  });
+
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
+
   const toggleMutation = useToggleItineraryActive();
   const confirmMutation = useConfirmItinerary();
   const deleteMutation = useDeleteItinerary();
@@ -70,12 +80,6 @@ export default function ItinerariosPage() {
   const [editing, setEditing] = useState<Itinerary | null>(null);
   const [deleting, setDeleting] = useState<Itinerary | null>(null);
   const [confirming, setConfirming] = useState<Itinerary | null>(null);
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
-
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    return data.filter((i) => matchesActiveFilter(activeFilter, i.active ?? true));
-  }, [data, activeFilter]);
 
   const onCreate = () => {
     setEditing(null);
@@ -246,9 +250,27 @@ export default function ItinerariosPage() {
       ) : null}
       <DataTable
         columns={columns}
-        data={filteredData}
+        data={rows}
         isLoading={isLoading}
         searchPlaceholder="Buscar por naviera, M/N, puerto…"
+        serverSearch={{
+          value: searchRaw,
+          onChange: (value) => {
+            setSearchRaw(value);
+            setPageIndex(0);
+          },
+        }}
+        serverPagination={{
+          pageIndex,
+          pageSize,
+          total,
+          onPageChange: setPageIndex,
+          onPageSizeChange: (size) => {
+            setPageSize(size);
+            setPageIndex(0);
+          },
+          isFetching,
+        }}
         toolbarLeft={
           <>
             <Button variant="outline" onClick={() => setImportOpen(true)}>
@@ -260,15 +282,6 @@ export default function ItinerariosPage() {
               Crear itinerario
             </Button>
           </>
-        }
-        toolbarRight={
-          <FilterPopover
-            label="Estado"
-            value={activeFilter}
-            defaultValue="all"
-            options={ACTIVE_FILTER_OPTIONS}
-            onChange={setActiveFilter}
-          />
         }
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
