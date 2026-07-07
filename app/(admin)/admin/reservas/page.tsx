@@ -159,6 +159,7 @@ export default function ReservasPage() {
           const isPending = b.status === "Pendiente";
           const isConfirmed = b.status === "Confirmado";
           const canCopy = isPending || isConfirmed;
+          const canCancel = isPending || isConfirmed;
           return (
             <div className="flex justify-end">
               <DropdownMenu>
@@ -200,7 +201,7 @@ export default function ReservasPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onCancel(b)}
-                    disabled={!isPending}
+                    disabled={!canCancel}
                     className="text-destructive focus:text-destructive"
                   >
                     Cancelar
