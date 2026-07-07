@@ -186,12 +186,21 @@ type FormValues = z.infer<typeof schema>;
 // wall-clock digits. We never parse through `Date`, so nothing is ever
 // shifted by the browser's timezone in either direction.
 const DATETIME_RE = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/;
+// El backend persiste `cutOff` / `lateArrival` en formato español
+// `dd/mm/yyyy hh:mm` (o solo `dd/mm/yyyy`). Debemos reconocerlo al recargar,
+// o el `<input type="datetime-local">` no puede interpretarlo y queda vacío.
+const ES_DATETIME_RE = /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2}))?/;
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})/;
 
 function toDatetimeLocal(value: string | null | undefined): string {
   if (!value) return "";
   const m = DATETIME_RE.exec(value);
   if (m) return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}`;
+  const es = ES_DATETIME_RE.exec(value);
+  if (es) {
+    const [, d, mo, y, hh = "00", mm = "00"] = es;
+    return `${y}-${mo}-${d}T${hh}:${mm}`;
+  }
   return value.slice(0, 16);
 }
 
@@ -294,8 +303,10 @@ export function BookingUpdateConfirmationDialog({
         temperature: booking.temperature ?? undefined,
         ventilation: booking.ventilation ?? "",
         bl: booking.bl ?? "",
-        isATM: booking.isATM ?? booking.isAtm ?? false,
-        isColdTreatment: booking.isColdTreatment ?? false,
+        // El listado llega con `raw: true`, así que MySQL devuelve los booleanos
+        // como 0/1 (números). Forzamos a booleano para que el Checkbox los lea.
+        isATM: Boolean(booking.isATM ?? booking.isAtm ?? false),
+        isColdTreatment: Boolean(booking.isColdTreatment ?? false),
         vgm: booking.vgm ?? "",
         humidity: booking.humidity ?? undefined,
         description: booking.description ?? "",

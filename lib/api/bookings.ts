@@ -50,9 +50,40 @@ function fromWireStackingMode(mode: unknown): "CONTINUOUS" | "DAILY" | null {
   return null;
 }
 
+/**
+ * El backend persiste cada día del stacking como `{ date, openTime, closeTime }`
+ * (ver `toWireStackingSchedule`), pero internamente usamos
+ * `{ day, startTime, endTime }`. Traducimos de vuelta al recibir para que los
+ * diálogos (detalle / actualizar confirmación) lean los campos correctos.
+ */
+function fromWireStackingSchedule(
+  schedule: Booking["stackingSchedule"]
+): StackingDaySchedule[] | null | undefined {
+  if (!Array.isArray(schedule)) return schedule;
+  return schedule.map((row) => {
+    const r = row as Partial<StackingDaySchedule> & {
+      date?: string;
+      openTime?: string;
+      closeTime?: string;
+    };
+    return {
+      day: r.day ?? r.date ?? "",
+      startTime: r.startTime ?? r.openTime ?? "",
+      endTime: r.endTime ?? r.closeTime ?? "",
+    };
+  });
+}
+
 function normalizeBooking(booking: Booking): Booking {
-  if (booking?.stackingMode == null) return booking;
-  return { ...booking, stackingMode: fromWireStackingMode(booking.stackingMode) };
+  if (booking == null) return booking;
+  const next: Booking = { ...booking };
+  if (booking.stackingMode != null) {
+    next.stackingMode = fromWireStackingMode(booking.stackingMode);
+  }
+  if (booking.stackingSchedule != null) {
+    next.stackingSchedule = fromWireStackingSchedule(booking.stackingSchedule);
+  }
+  return next;
 }
 
 export type BookingConfirmPayload = {
