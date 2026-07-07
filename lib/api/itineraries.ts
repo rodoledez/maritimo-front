@@ -7,8 +7,8 @@ import {
   api,
   normalizeApiError,
 } from "@/lib/api/client";
-import { unwrapList, unwrapOne } from "@/lib/api/_shared";
-import type { Itinerary } from "@/types/domain";
+import { unwrapOne, unwrapPaginated } from "@/lib/api/_shared";
+import type { Itinerary, PaginatedResponse } from "@/types/domain";
 
 export type ItineraryPayload = Omit<Itinerary, "id">;
 
@@ -16,14 +16,42 @@ export type ItineraryQuery = {
   vigent?: "Y" | "N";
 };
 
+/** Parámetros de `GET /itineraries` (paginado + búsqueda libre). */
+export type ItineraryListParams = ItineraryQuery & {
+  /** Página 1-based. */
+  page?: number;
+  /** Filas por página (default backend 25). */
+  pageSize?: number;
+  /** Búsqueda libre (naviera, M/N, viaje, puerto, etc.). */
+  search?: string;
+};
+
+/** Una página de itinerarios desde `GET /itineraries`. */
+export async function listItinerariesPage(
+  params: ItineraryListParams = {}
+): Promise<PaginatedResponse<Itinerary>> {
+  return unwrapPaginated<Itinerary>(
+    await apiGet<unknown>("/itineraries", { params }),
+    params
+  );
+}
+
+/**
+ * Todos los itinerarios, recorriendo internamente las páginas. Se usa donde la
+ * UI necesita el listado completo como lookup (selección en el wizard de
+ * reservas, vista de itinerarios del cliente) y no una tabla paginada.
+ */
 export async function listItineraries(
   query?: ItineraryQuery
 ): Promise<Itinerary[]> {
-  return unwrapList(
-    await apiGet<Itinerary[] | { data: Itinerary[] }>("/itineraries", {
-      params: query,
-    })
-  );
+  const pageSize = 200;
+  const all: Itinerary[] = [];
+  for (let page = 1; page <= 50; page++) {
+    const res = await listItinerariesPage({ ...query, page, pageSize });
+    all.push(...res.rows);
+    if (res.rows.length < pageSize || all.length >= res.total) break;
+  }
+  return all;
 }
 
 export async function createItinerary(

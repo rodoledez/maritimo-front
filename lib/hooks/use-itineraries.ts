@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -14,7 +15,9 @@ import {
   deleteItinerary,
   importItineraryExcel,
   listItineraries,
+  listItinerariesPage,
   updateItinerary,
+  type ItineraryListParams,
   type ItineraryPayload,
   type ItineraryQuery,
 } from "@/lib/api/itineraries";
@@ -22,10 +25,23 @@ import type { Itinerary } from "@/types/domain";
 
 const KEY = ["itineraries"] as const;
 
+/**
+ * Listado completo (recorre todas las páginas). Úsalo sólo como lookup — para
+ * la tabla de administración usa `useItinerariesPage` (paginación server-side).
+ */
 export function useItineraries(query?: ItineraryQuery) {
   return useQuery({
     queryKey: [...KEY, query] as const,
     queryFn: () => listItineraries(query),
+  });
+}
+
+/** Una página de itinerarios con paginación + búsqueda server-side. */
+export function useItinerariesPage(params: ItineraryListParams) {
+  return useQuery({
+    queryKey: [...KEY, "page", params] as const,
+    queryFn: () => listItinerariesPage(params),
+    placeholderData: keepPreviousData,
   });
 }
 
