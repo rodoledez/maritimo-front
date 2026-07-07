@@ -182,33 +182,33 @@ const schema = z
 
 type FormValues = z.infer<typeof schema>;
 
+// Timezone-free helpers: the entered/stored value is treated as literal
+// wall-clock digits. We never parse through `Date`, so nothing is ever
+// shifted by the browser's timezone in either direction.
+const DATETIME_RE = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/;
+const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})/;
+
 function toDatetimeLocal(value: string | null | undefined): string {
   if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) {
-    return typeof value === "string" ? value.slice(0, 16) : "";
-  }
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
+  const m = DATETIME_RE.exec(value);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}`;
+  return value.slice(0, 16);
 }
 
 function fromDatetimeLocal(value: string): string | undefined {
   if (!value) return undefined;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toISOString();
+  const m = DATETIME_RE.exec(value);
+  // Keep the exact digits the user entered; mark as UTC so the backend
+  // stores them verbatim instead of applying a timezone offset.
+  if (m) return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00.000Z`;
+  return value;
 }
 
 function toDateOnly(value: string | null | undefined): string {
   if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) {
-    return typeof value === "string" ? value.slice(0, 10) : "";
-  }
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const m = DATE_RE.exec(value);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return value.slice(0, 10);
 }
 
 function toTimeHHMM(value: string | null | undefined): string {

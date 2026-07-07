@@ -38,7 +38,11 @@ function formatDateTime(value: string | null | undefined): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${formatDate(value)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // Use UTC getters (matching formatDate) so the stored wall-clock digits are
+  // shown verbatim, without shifting by the browser's timezone.
+  return `${formatDate(value)} ${pad(d.getUTCHours())}:${pad(
+    d.getUTCMinutes()
+  )}`;
 }
 
 function facilityLabel(
