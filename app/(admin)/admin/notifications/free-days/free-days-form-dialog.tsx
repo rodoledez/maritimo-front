@@ -64,9 +64,6 @@ const freeDaysSchema = z
   .object({
     scope: z.enum(["client", "booking"]),
     scopeId: z.string().min(1, "Debe seleccionar"),
-    demurrageDays: optionalIntString,
-    detentionDays: optionalIntString,
-    reeferPlugInDays: optionalIntString,
     demurrageAlertHours: optionalIntString,
     detentionAlertHours: optionalIntString,
     reeferAlertHours: optionalIntString,
@@ -79,9 +76,6 @@ function emptyValues(scope: FreeDaysScope): FreeDaysFormValues {
   return {
     scope,
     scopeId: "",
-    demurrageDays: "",
-    detentionDays: "",
-    reeferPlugInDays: "",
     demurrageAlertHours: "",
     detentionAlertHours: "",
     reeferAlertHours: "",
@@ -133,14 +127,6 @@ export function FreeDaysFormDialog({
         form.reset({
           scope,
           scopeId,
-          demurrageDays:
-            editing.demurrageDays !== null ? String(editing.demurrageDays) : "",
-          detentionDays:
-            editing.detentionDays !== null ? String(editing.detentionDays) : "",
-          reeferPlugInDays:
-            editing.reeferPlugInDays !== null
-              ? String(editing.reeferPlugInDays)
-              : "",
           demurrageAlertHours:
             editing.demurrageAlertHours !== null
               ? String(editing.demurrageAlertHours)
@@ -167,9 +153,6 @@ export function FreeDaysFormDialog({
     const payload: FreeDaysPayload = {
       clientId: values.scope === "client" ? Number(values.scopeId) : null,
       bookingId: values.scope === "booking" ? Number(values.scopeId) : null,
-      demurrageDays: toNullableInt(values.demurrageDays),
-      detentionDays: toNullableInt(values.detentionDays),
-      reeferPlugInDays: toNullableInt(values.reeferPlugInDays),
       demurrageAlertHours: toNullableInt(values.demurrageAlertHours),
       detentionAlertHours: toNullableInt(values.detentionAlertHours),
       reeferAlertHours: toNullableInt(values.reeferAlertHours),
@@ -209,7 +192,7 @@ export function FreeDaysFormDialog({
               : "Crear configuración de free days"}
           </DialogTitle>
           <DialogDescription>
-            Define los días libres y alertas para demurrage, detention y reefer
+            Define la frecuencia de alertas para demurrage, detention y reefer
             plug-in. La configuración por booking sobrescribe la del cliente.
           </DialogDescription>
         </DialogHeader>
@@ -310,26 +293,6 @@ export function FreeDaysFormDialog({
             <FieldSectionTitle>Demurrage</FieldSectionTitle>
             <FieldGroup className="grid gap-6 sm:grid-cols-2">
               <Controller
-                name="demurrageDays"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="fd-dem-days">Días libres</FieldLabel>
-                    <Input
-                      {...field}
-                      id="fd-dem-days"
-                      type="number"
-                      min={0}
-                      step={1}
-                      placeholder="Ej. 7"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
                 name="demurrageAlertHours"
                 control={form.control}
                 render={({ field, fieldState }) => (
@@ -358,26 +321,6 @@ export function FreeDaysFormDialog({
             <FieldSectionTitle>Detention</FieldSectionTitle>
             <FieldGroup className="grid gap-6 sm:grid-cols-2">
               <Controller
-                name="detentionDays"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="fd-det-days">Días libres</FieldLabel>
-                    <Input
-                      {...field}
-                      id="fd-det-days"
-                      type="number"
-                      min={0}
-                      step={1}
-                      placeholder="Ej. 5"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
                 name="detentionAlertHours"
                 control={form.control}
                 render={({ field, fieldState }) => (
@@ -405,26 +348,6 @@ export function FreeDaysFormDialog({
           <section className="space-y-5">
             <FieldSectionTitle>Reefer plug-in</FieldSectionTitle>
             <FieldGroup className="grid gap-6 sm:grid-cols-2">
-              <Controller
-                name="reeferPlugInDays"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="fd-reef-days">Días libres</FieldLabel>
-                    <Input
-                      {...field}
-                      id="fd-reef-days"
-                      type="number"
-                      min={0}
-                      step={1}
-                      placeholder="Ej. 3"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
               <Controller
                 name="reeferAlertHours"
                 control={form.control}

@@ -355,9 +355,6 @@ export type FreeDaysConfig = {
   id: number;
   clientId: number | null;
   bookingId: number | null;
-  demurrageDays: number | null;
-  detentionDays: number | null;
-  reeferPlugInDays: number | null;
   demurrageAlertHours: number | null;
   detentionAlertHours: number | null;
   reeferAlertHours: number | null;

@@ -52,11 +52,6 @@ import {
   type FreeDaysScope,
 } from "./free-days-form-dialog";
 
-function formatDays(value: number | null): string {
-  if (value === null || value === undefined) return "—";
-  return `${value}d`;
-}
-
 function formatHours(value: number | null): string {
   if (value === null || value === undefined) return "—";
   return `${value}h`;
@@ -154,31 +149,28 @@ export default function FreeDaysConfigPage() {
     (kind: FreeDaysScope): ColumnDef<FreeDaysConfig>[] => [
       scopeColumn(kind),
       {
-        accessorKey: "demurrageDays",
+        accessorKey: "demurrageAlertHours",
         header: "Demurrage",
         cell: ({ row }) => (
           <span className="font-mono text-xs">
-            {formatDays(row.original.demurrageDays)} ·{" "}
             {formatHours(row.original.demurrageAlertHours)}
           </span>
         ),
       },
       {
-        accessorKey: "detentionDays",
+        accessorKey: "detentionAlertHours",
         header: "Detention",
         cell: ({ row }) => (
           <span className="font-mono text-xs">
-            {formatDays(row.original.detentionDays)} ·{" "}
             {formatHours(row.original.detentionAlertHours)}
           </span>
         ),
       },
       {
-        accessorKey: "reeferPlugInDays",
+        accessorKey: "reeferAlertHours",
         header: "Reefer",
         cell: ({ row }) => (
           <span className="font-mono text-xs">
-            {formatDays(row.original.reeferPlugInDays)} ·{" "}
             {formatHours(row.original.reeferAlertHours)}
           </span>
         ),
@@ -243,7 +235,7 @@ export default function FreeDaysConfigPage() {
     <div className="space-y-6">
       <PageHeader
         title="Free days"
-        description="Días libres y frecuencia de alertas (demurrage, detention y reefer plug-in) por cliente o por booking. El booking override gana sobre el default del cliente."
+        description="Frecuencia de alertas (demurrage, detention y reefer plug-in) por cliente o por booking. El booking override gana sobre el default del cliente."
       />
 
       {error ? (
