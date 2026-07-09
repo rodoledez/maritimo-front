@@ -18,6 +18,8 @@ export type Client = {
   contactEmail?: string | null;
   contactEmail2?: string | null;
   phone?: string | null;
+  /** Send shipment notification emails to this client. Defaults to true. */
+  notificationsEnabled?: boolean;
   active: boolean;
 };
 

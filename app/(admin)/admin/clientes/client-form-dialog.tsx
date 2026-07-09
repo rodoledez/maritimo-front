@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -25,6 +26,7 @@ import {
   FieldSectionTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   useCreateClient,
   useUpdateClient,
@@ -58,6 +60,7 @@ const clientSchema = z.object({
     .optional()
     .or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
+  notificationsEnabled: z.boolean(),
 });
 
 type ClientFormValues = z.infer<typeof clientSchema>;
@@ -69,6 +72,7 @@ const emptyValues: ClientFormValues = {
   contactEmail: "",
   contactEmail2: "",
   phone: "",
+  notificationsEnabled: true,
 };
 
 function explainError(error: unknown, fallback: string): string {
@@ -126,6 +130,7 @@ export function ClientFormDialog({
               contactEmail: editing.contactEmail ?? "",
               contactEmail2: editing.contactEmail2 ?? "",
               phone: editing.phone ?? "",
+              notificationsEnabled: editing.notificationsEnabled ?? true,
             }
           : emptyValues
       );
@@ -140,6 +145,7 @@ export function ClientFormDialog({
       contactEmail: values.contactEmail,
       contactEmail2: values.contactEmail2 || null,
       phone: values.phone || null,
+      notificationsEnabled: values.notificationsEnabled,
     };
 
     try {
@@ -302,6 +308,31 @@ export function ClientFormDialog({
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="notificationsEnabled"
+              control={form.control}
+              render={({ field }) => (
+                <Field
+                  orientation="horizontal"
+                  className="justify-between rounded-lg border p-3"
+                >
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="client-notifications-enabled">
+                      Notificaciones por email
+                    </FieldLabel>
+                    <FieldDescription>
+                      Enviar correos de notificación de embarques a este
+                      cliente.
+                    </FieldDescription>
+                  </div>
+                  <Switch
+                    id="client-notifications-enabled"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
                 </Field>
               )}
             />
