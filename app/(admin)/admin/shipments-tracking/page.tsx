@@ -68,11 +68,24 @@ const STATUS_OPTIONS: FilterOption<StatusFilter>[] = [
   { value: "UNTRACKED", label: "Sin tracking" },
 ];
 
+const DEFAULT_PAGE_SIZE = 25;
+
 export default function ShipmentsTrackingPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const { data, isLoading, error, refetch, isFetching } = useShipmentsTracking(
-    statusFilter === "all" ? {} : { status: statusFilter }
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  const query = useMemo(
+    () => ({
+      skip: pageIndex * pageSize,
+      take: pageSize,
+      ...(statusFilter === "all" ? {} : { status: statusFilter }),
+    }),
+    [pageIndex, pageSize, statusFilter]
   );
+
+  const { data, isLoading, error, refetch, isFetching } =
+    useShipmentsTracking(query);
   const refreshMutation = useRefreshShipmentTracking();
   const deleteMutation = useDeleteShipmentTracking();
   const syncMutation = useSyncShipmentsTracking();
@@ -362,9 +375,25 @@ export default function ShipmentsTrackingPage() {
             value={statusFilter}
             defaultValue="all"
             options={STATUS_OPTIONS}
-            onChange={setStatusFilter}
+            onChange={(v) => {
+              setStatusFilter(v);
+              setPageIndex(0);
+            }}
           />
         }
+        serverPagination={{
+          pageIndex,
+          pageSize,
+          // El endpoint retorna un array plano (sin total): habilitamos
+          // "Siguiente" mientras la página venga llena.
+          hasNextPage: (data?.length ?? 0) === pageSize,
+          onPageChange: setPageIndex,
+          onPageSizeChange: (size) => {
+            setPageSize(size);
+            setPageIndex(0);
+          },
+          isFetching,
+        }}
         emptyState={
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <MapPin className="h-8 w-8" />

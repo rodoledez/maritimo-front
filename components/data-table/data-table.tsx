@@ -46,11 +46,16 @@ function readAlign(meta: unknown): ColumnAlign | undefined {
 /**
  * Paginación server-side. Cuando se pasa, la tabla NO pagina/filtra en cliente:
  * `data` ya es la página actual y los controles delegan en estos callbacks.
+ *
+ * Si el backend devuelve el total, pasar `total` (se calcula "Página X de Y").
+ * Si NO lo devuelve (endpoint que retorna un array plano), omitir `total` y
+ * pasar `hasNextPage`: "Siguiente" se habilita mientras la página venga llena.
  */
 type ServerPagination = {
   pageIndex: number; // 0-based
   pageSize: number;
-  total: number;
+  total?: number; // omitir cuando el backend no retorna un conteo
+  hasNextPage?: boolean; // usado sólo cuando `total` es desconocido
   onPageChange: (pageIndex: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   isFetching?: boolean;
@@ -126,23 +131,37 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize: 10 } },
   });
 
-  const totalRows = isServer
-    ? serverPagination.total
-    : table.getFilteredRowModel().rows.length;
+  // El total sólo se conoce en modo cliente (tenemos todo el dataset) o en
+  // server cuando el backend lo retorna. Sin total no hay "de N" ni "de Y".
+  const knownTotal = isServer && serverPagination.total !== undefined;
+  const showTotal = !isServer || knownTotal;
   const pageIndex = isServer
     ? serverPagination.pageIndex
     : table.getState().pagination.pageIndex;
   const pageSize = isServer
     ? serverPagination.pageSize
     : table.getState().pagination.pageSize;
-  const pageCount = isServer
-    ? Math.max(1, Math.ceil(totalRows / pageSize))
-    : table.getPageCount() || 1;
+  // Filas visibles en la página actual (server: `data`; cliente: página filtrada).
+  const currentPageCount = isServer
+    ? data.length
+    : table.getRowModel().rows.length;
+  const totalRows = knownTotal
+    ? (serverPagination.total as number)
+    : isServer
+      ? currentPageCount
+      : table.getFilteredRowModel().rows.length;
+  const pageCount = !isServer
+    ? table.getPageCount() || 1
+    : knownTotal
+      ? Math.max(1, Math.ceil((serverPagination.total as number) / pageSize))
+      : undefined;
   const canPrev = isServer
     ? pageIndex > 0 && !serverPagination.isFetching
     : table.getCanPreviousPage();
   const canNext = isServer
-    ? pageIndex + 1 < pageCount && !serverPagination.isFetching
+    ? (knownTotal
+        ? pageIndex + 1 < (pageCount as number)
+        : !!serverPagination.hasNextPage) && !serverPagination.isFetching
     : table.getCanNextPage();
   const goPrev = () =>
     isServer ? serverPagination.onPageChange(pageIndex - 1) : table.previousPage();
@@ -154,8 +173,10 @@ export function DataTable<TData, TValue>({
   const onSearchChange = (v: string) =>
     serverSearch ? serverSearch.onChange(v) : setGlobalFilter(v);
 
-  const rangeStart = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
-  const rangeEnd = Math.min((pageIndex + 1) * pageSize, totalRows);
+  const rangeStart = currentPageCount === 0 ? 0 : pageIndex * pageSize + 1;
+  const rangeEnd = knownTotal
+    ? Math.min((pageIndex + 1) * pageSize, totalRows)
+    : pageIndex * pageSize + currentPageCount;
 
   const handleExport = () => {
     const exportColumns = table.getAllLeafColumns().filter(
@@ -362,12 +383,16 @@ export function DataTable<TData, TValue>({
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="tabular-nums">
-            {totalRows === 0
+            {currentPageCount === 0
               ? "Sin resultados"
-              : `${rangeStart}–${rangeEnd} de ${totalRows}`}
+              : showTotal
+                ? `${rangeStart}–${rangeEnd} de ${totalRows}`
+                : `${rangeStart}–${rangeEnd}`}
           </span>
           <span className="tabular-nums">
-            Página {pageIndex + 1} de {pageCount}
+            {pageCount !== undefined
+              ? `Página ${pageIndex + 1} de ${pageCount}`
+              : `Página ${pageIndex + 1}`}
           </span>
           <div className="flex gap-2">
             <Button
