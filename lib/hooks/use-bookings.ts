@@ -12,6 +12,7 @@ import {
   confirmBooking,
   copyBooking,
   createBooking,
+  integrateBookingWithShipsgo,
   listBookings,
   listBookingsByClient,
   listBookingsPage,
@@ -130,5 +131,16 @@ export function useCancelBooking() {
       payload: BookingCancelPayload;
     }) => cancelBooking(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useIntegrateBookingWithShipsgo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: Booking["id"]) => integrateBookingWithShipsgo(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ["shipments-tracking"] });
+    },
   });
 }

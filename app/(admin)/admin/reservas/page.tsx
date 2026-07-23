@@ -3,7 +3,14 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Bell, ClipboardList, Copy, MoreHorizontal, Plus } from "lucide-react";
+import {
+  Bell,
+  ClipboardList,
+  Copy,
+  MoreHorizontal,
+  Plus,
+  Ship,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -28,7 +35,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
-import { useBookingsPage } from "@/lib/hooks/use-bookings";
+import {
+  useBookingsPage,
+  useIntegrateBookingWithShipsgo,
+} from "@/lib/hooks/use-bookings";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useTriggerBookingNotification } from "@/lib/hooks/use-notifications";
 import { errorMessage } from "@/lib/utils/errors";
@@ -78,6 +88,7 @@ export default function ReservasPage() {
   const [copying, setCopying] = useState<Booking | null>(null);
 
   const triggerMutation = useTriggerBookingNotification();
+  const integrateMutation = useIntegrateBookingWithShipsgo();
 
   const onView = useCallback((b: Booking) => setDetail(b), []);
   const onEdit = useCallback((b: Booking) => setEditing(b), []);
@@ -105,6 +116,17 @@ export default function ReservasPage() {
       }
     },
     [triggerMutation]
+  );
+  const onIntegrateShipsgo = useCallback(
+    async (b: Booking) => {
+      try {
+        await integrateMutation.mutateAsync(b.id);
+        toast.success(`Reserva #${b.id} integrada con ShipsGo`);
+      } catch (e) {
+        toast.error(errorMessage(e, "No se pudo integrar con ShipsGo"));
+      }
+    },
+    [integrateMutation]
   );
 
   const columns = useMemo<ColumnDef<Booking>[]>(
@@ -222,6 +244,13 @@ export default function ReservasPage() {
                         <Bell className="h-4 w-4" />
                         Enviar notificación
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onIntegrateShipsgo(b)}
+                        disabled={integrateMutation.isPending}
+                      >
+                        <Ship className="h-4 w-4" />
+                        Integrar con ShipsGo
+                      </DropdownMenuItem>
                     </>
                   ) : null}
                 </DropdownMenuContent>
@@ -239,7 +268,9 @@ export default function ReservasPage() {
       onUpdateConfirmation,
       onCancel,
       onNotify,
+      onIntegrateShipsgo,
       triggerMutation.isPending,
+      integrateMutation.isPending,
     ]
   );
 

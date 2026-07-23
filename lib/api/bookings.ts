@@ -7,6 +7,7 @@ import { unwrapList, unwrapOne, unwrapPaginated } from "@/lib/api/_shared";
 import type {
   Booking,
   PaginatedResponse,
+  ShipmentTracking,
   StackingDaySchedule,
 } from "@/types/domain";
 
@@ -242,4 +243,19 @@ export function cancelBooking(
   payload: BookingCancelPayload
 ): Promise<unknown> {
   return apiPut<unknown>(`/bookings/${id}/cancel`, payload);
+}
+
+/**
+ * Integra una reserva confirmada con ShipsGo (`POST /bookings/:id/shipsgo-integrate`),
+ * creando el shipment de tracking asociado. El backend rechaza la doble
+ * integración; el error se propaga para mostrarlo por toast.
+ */
+export async function integrateBookingWithShipsgo(
+  id: Booking["id"]
+): Promise<ShipmentTracking> {
+  return unwrapOne(
+    await apiPost<ShipmentTracking | { data: ShipmentTracking }>(
+      `/bookings/${id}/shipsgo-integrate`
+    )
+  );
 }
