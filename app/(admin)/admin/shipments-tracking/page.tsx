@@ -43,6 +43,7 @@ import {
   useShipmentsTracking,
   useSyncShipmentsTracking,
 } from "@/lib/hooks/use-shipments-tracking";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { errorMessage } from "@/lib/utils/errors";
 import { formatDate } from "@/lib/utils/format";
 import type { ShipmentTracking, ShipmentTrackingStatus } from "@/types/domain";
@@ -74,14 +75,17 @@ export default function ShipmentsTrackingPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [searchRaw, setSearchRaw] = useState("");
+  const search = useDebouncedValue(searchRaw.trim(), 350);
 
   const query = useMemo(
     () => ({
       skip: pageIndex * pageSize,
       take: pageSize,
+      search: search || undefined,
       ...(statusFilter === "all" ? {} : { status: statusFilter }),
     }),
-    [pageIndex, pageSize, statusFilter]
+    [pageIndex, pageSize, search, statusFilter]
   );
 
   const { data, isLoading, error, refetch, isFetching } =
@@ -343,7 +347,14 @@ export default function ShipmentsTrackingPage() {
         columns={columns}
         data={data ?? []}
         isLoading={isLoading}
-        searchPlaceholder="Buscar por referencia, contenedor, M/N…"
+        searchPlaceholder="Buscar por booking, referencia, estado, SCAC…"
+        serverSearch={{
+          value: searchRaw,
+          onChange: (value) => {
+            setSearchRaw(value);
+            setPageIndex(0);
+          },
+        }}
         toolbarLeft={
           <>
             <Button onClick={onCreate}>

@@ -18,6 +18,7 @@ export type TrackingPayload = {
 };
 
 export type TrackingListQuery = {
+  search?: string;
   status?: ShipmentTrackingStatus | string;
   carrier?: string;
   skip?: number;
