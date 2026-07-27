@@ -72,7 +72,7 @@ export function SearchableSelect({
         >
           <span
             className={cn(
-              "line-clamp-1 text-left",
+              "line-clamp-1 min-w-0 text-left",
               !selected && "text-muted-foreground"
             )}
           >
