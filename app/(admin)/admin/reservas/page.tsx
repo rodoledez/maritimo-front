@@ -9,6 +9,7 @@ import {
   Copy,
   MoreHorizontal,
   Plus,
+  Route,
   Ship,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -61,6 +62,7 @@ import { BookingCopyDialog } from "./booking-copy-dialog";
 import { BookingDetailDialog } from "./booking-detail-dialog";
 import { BookingEditDialog } from "./booking-edit-dialog";
 import { BookingUpdateConfirmationDialog } from "./booking-update-confirmation-dialog";
+import { BookingUpdateItineraryDialog } from "./booking-update-itinerary-dialog";
 
 export default function ReservasPage() {
   const [pageIndex, setPageIndex] = useState(0);
@@ -84,6 +86,9 @@ export default function ReservasPage() {
   const [confirming, setConfirming] = useState<Booking | null>(null);
   const [updatingConfirmation, setUpdatingConfirmation] =
     useState<Booking | null>(null);
+  const [updatingItinerary, setUpdatingItinerary] = useState<Booking | null>(
+    null
+  );
   const [cancelling, setCancelling] = useState<Booking | null>(null);
   const [copying, setCopying] = useState<Booking | null>(null);
 
@@ -95,6 +100,10 @@ export default function ReservasPage() {
   const onConfirm = useCallback((b: Booking) => setConfirming(b), []);
   const onUpdateConfirmation = useCallback(
     (b: Booking) => setUpdatingConfirmation(b),
+    []
+  );
+  const onUpdateItinerary = useCallback(
+    (b: Booking) => setUpdatingItinerary(b),
     []
   );
   const onCancel = useCallback((b: Booking) => setCancelling(b), []);
@@ -213,6 +222,13 @@ export default function ReservasPage() {
                     <Copy className="h-4 w-4" />
                     Copiar reserva
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onUpdateItinerary(b)}
+                    disabled={!canCopy}
+                  >
+                    <Route className="h-4 w-4" />
+                    Actualizar itinerario
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => onConfirm(b)}
@@ -266,6 +282,7 @@ export default function ReservasPage() {
       onCopy,
       onConfirm,
       onUpdateConfirmation,
+      onUpdateItinerary,
       onCancel,
       onNotify,
       onIntegrateShipsgo,
@@ -367,6 +384,11 @@ export default function ReservasPage() {
         open={!!updatingConfirmation}
         onOpenChange={(open) => !open && setUpdatingConfirmation(null)}
         booking={updatingConfirmation}
+      />
+      <BookingUpdateItineraryDialog
+        open={!!updatingItinerary}
+        onOpenChange={(open) => !open && setUpdatingItinerary(null)}
+        booking={updatingItinerary}
       />
       <BookingCancelDialog
         open={!!cancelling}

@@ -83,10 +83,17 @@ export function ItineraryFormDialog({
   open,
   onOpenChange,
   editing,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: Itinerary | null;
+  /**
+   * Se invoca con el itinerario creado/actualizado tras un guardado exitoso.
+   * Lo usa el diálogo "Actualizar itinerario" de reservas para auto-seleccionar
+   * el itinerario recién creado.
+   */
+  onSaved?: (itinerary: Itinerary) => void;
 }) {
   const isEditing = editing !== null;
   const { data: companies = [] } = useShippingCompanies();
@@ -176,13 +183,15 @@ export function ItineraryFormDialog({
     };
 
     try {
+      let saved: Itinerary;
       if (isEditing && editing) {
-        await updateMutation.mutateAsync({ id: editing.id, payload });
+        saved = await updateMutation.mutateAsync({ id: editing.id, payload });
         toast.success("Itinerario actualizado");
       } else {
-        await createMutation.mutateAsync(payload);
+        saved = await createMutation.mutateAsync(payload);
         toast.success("Itinerario creado");
       }
+      onSaved?.(saved);
       onOpenChange(false);
     } catch (error) {
       toast.error(
