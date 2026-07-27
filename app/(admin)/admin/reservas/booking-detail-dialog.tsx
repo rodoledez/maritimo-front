@@ -11,8 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
 import { useFacilities } from "@/lib/hooks/use-facilities";
-import { assocLabel, formatDate } from "@/lib/utils/format";
+import {
+  useShipmentTrackingByBooking,
+  useShipmentTrackingDetail,
+} from "@/lib/hooks/use-shipments-tracking";
+import { assocLabel, formatDate, formatDateTime as formatSyncDateTime } from "@/lib/utils/format";
 import type { Booking, Facility } from "@/types/domain";
+import { ShipsgoTrackingPanel } from "../shipments-tracking/shipsgo-tracking-panel";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -96,13 +101,21 @@ export function BookingDetailDialog({
   booking: Booking | null;
 }) {
   const { data: facilities = [] } = useFacilities();
+  const { data: tracking } = useShipmentTrackingByBooking(booking?.id, {
+    enabled: open && !!booking,
+  });
+  const { data: trackingDetail, isFetching: trackingFetching } =
+    useShipmentTrackingDetail(tracking?.id ?? undefined, {
+      enabled: open && !!tracking,
+    });
   if (!booking) return null;
+  const shipsgo = trackingDetail?.tracking ?? tracking ?? null;
   const it = booking.Itinerary;
   const terminalLabel = facilityLabel(facilities, booking.terminalId, booking.terminal);
   const depotLabel = facilityLabel(facilities, booking.depotId, booking.depot);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             Reserva #{booking.id}
@@ -215,6 +228,33 @@ export function BookingDetailDialog({
                   </p>
                 </div>
               ) : null}
+            </section>
+          </>
+        ) : null}
+
+        {shipsgo ? (
+          <>
+            <Separator />
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3 className="text-sm font-semibold text-secondary">
+                  Tracking ShipsGo
+                </h3>
+                {shipsgo.lastSyncedAt ? (
+                  <span className="text-xs text-muted-foreground">
+                    Última sincronización:{" "}
+                    <span className="text-foreground">
+                      {formatSyncDateTime(shipsgo.lastSyncedAt)}
+                    </span>
+                  </span>
+                ) : null}
+              </div>
+              <ShipsgoTrackingPanel
+                tracking={shipsgo}
+                containers={trackingDetail?.containers ?? []}
+                followers={trackingDetail?.followers ?? []}
+                isFetching={trackingFetching}
+              />
             </section>
           </>
         ) : null}

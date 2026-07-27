@@ -54,6 +54,28 @@ export function useShipmentTrackingDetail(
   });
 }
 
+/**
+ * Encuentra el shipment de tracking asociado a una reserva. El backend no expone
+ * un endpoint por-booking, así que listamos y filtramos por `bookingId` en el
+ * cliente. Devuelve `null` cuando la reserva aún no fue integrada con ShipsGo.
+ */
+export function useShipmentTrackingByBooking(
+  bookingId: number | string | null | undefined,
+  options: { enabled?: boolean } = {}
+) {
+  const { enabled = true } = options;
+  return useQuery({
+    queryKey: [...KEY, "by-booking", bookingId] as const,
+    queryFn: async () => {
+      const list = await listShipmentsTracking({ take: 500 });
+      return (
+        list.find((t) => String(t.bookingId) === String(bookingId)) ?? null
+      );
+    },
+    enabled: enabled && bookingId !== undefined && bookingId !== null,
+  });
+}
+
 export function useDashboardKpis() {
   return useQuery({
     queryKey: [...KEY, "dashboard", "kpis"] as const,
