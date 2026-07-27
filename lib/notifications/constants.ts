@@ -58,7 +58,7 @@ const TRIGGER_LABELS: Record<NotificationTriggerType, string> = {
 
 const REFERENCE_LABELS: Record<NotificationReferenceField, string> = {
   CUTOFF: "Corte documental",
-  LATE_ARRIVAL: "Late arrival",
+  LATE_ARRIVAL: "Listado Late arrival",
   ETD: "ETD",
   ETA: "ETA",
   DEPARTURE_ACTUAL: "Zarpe real",

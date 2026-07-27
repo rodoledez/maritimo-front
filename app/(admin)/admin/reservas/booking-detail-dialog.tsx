@@ -1,5 +1,8 @@
 "use client";
 
+import { Loader2, Ship } from "lucide-react";
+import { toast } from "sonner";
+
 import {
   Dialog,
   DialogContent,
@@ -8,13 +11,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
+import { useIntegrateBookingWithShipsgo } from "@/lib/hooks/use-bookings";
 import { useFacilities } from "@/lib/hooks/use-facilities";
 import {
   useShipmentTrackingByBooking,
   useShipmentTrackingDetail,
 } from "@/lib/hooks/use-shipments-tracking";
+import { errorMessage } from "@/lib/utils/errors";
 import { assocLabel, formatDate, formatDateTime as formatSyncDateTime } from "@/lib/utils/format";
 import type { Booking, Facility } from "@/types/domain";
 import { ShipsgoTrackingPanel } from "../shipments-tracking/shipsgo-tracking-panel";
@@ -101,15 +107,36 @@ export function BookingDetailDialog({
   booking: Booking | null;
 }) {
   const { data: facilities = [] } = useFacilities();
-  const { data: tracking } = useShipmentTrackingByBooking(booking?.id, {
+  const {
+    data: tracking,
+    isLoading: trackingLoading,
+    isSuccess: trackingLoaded,
+  } = useShipmentTrackingByBooking(booking?.id, {
     enabled: open && !!booking,
   });
   const { data: trackingDetail, isFetching: trackingFetching } =
     useShipmentTrackingDetail(tracking?.id ?? undefined, {
       enabled: open && !!tracking,
     });
+  const integrateMutation = useIntegrateBookingWithShipsgo();
+
+  const onIntegrate = async () => {
+    if (!booking) return;
+    try {
+      await integrateMutation.mutateAsync(booking.id);
+      toast.success(`Reserva #${booking.id} integrada con ShipsGo`);
+    } catch (e) {
+      toast.error(errorMessage(e, "No se pudo integrar con ShipsGo"));
+    }
+  };
+
   if (!booking) return null;
   const shipsgo = trackingDetail?.tracking ?? tracking ?? null;
+  // La integración con ShipsGo requiere una reserva confirmada.
+  const canIntegrate = booking.status === "Confirmado";
+  // Mostramos el estado "sin tracking" solo cuando la búsqueda ya resolvió y no
+  // hay tracking asociado (404 → null), para no parpadear durante la carga.
+  const showNoTracking = trackingLoaded && !shipsgo;
   const it = booking.Itinerary;
   const terminalLabel = facilityLabel(facilities, booking.terminalId, booking.terminal);
   const depotLabel = facilityLabel(facilities, booking.depotId, booking.depot);
@@ -232,7 +259,7 @@ export function BookingDetailDialog({
           </>
         ) : null}
 
-        {shipsgo ? (
+        {shipsgo || showNoTracking || trackingLoading ? (
           <>
             <Separator />
             <section className="space-y-4">
@@ -240,7 +267,7 @@ export function BookingDetailDialog({
                 <h3 className="text-sm font-semibold text-secondary">
                   Tracking ShipsGo
                 </h3>
-                {shipsgo.lastSyncedAt ? (
+                {shipsgo?.lastSyncedAt ? (
                   <span className="text-xs text-muted-foreground">
                     Última sincronización:{" "}
                     <span className="text-foreground">
@@ -249,12 +276,52 @@ export function BookingDetailDialog({
                   </span>
                 ) : null}
               </div>
-              <ShipsgoTrackingPanel
-                tracking={shipsgo}
-                containers={trackingDetail?.containers ?? []}
-                followers={trackingDetail?.followers ?? []}
-                isFetching={trackingFetching}
-              />
+
+              {shipsgo ? (
+                <ShipsgoTrackingPanel
+                  tracking={shipsgo}
+                  containers={trackingDetail?.containers ?? []}
+                  followers={trackingDetail?.followers ?? []}
+                  isFetching={trackingFetching}
+                />
+              ) : trackingLoading ? (
+                <div className="flex items-center justify-center py-6 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="ml-2 text-sm">Buscando tracking…</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-start gap-3 rounded-md border border-dashed bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Ship className="h-4 w-4" />
+                    Esta reserva aún no está integrada con ShipsGo.
+                  </div>
+                  {canIntegrate ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={onIntegrate}
+                      disabled={integrateMutation.isPending}
+                    >
+                      {integrateMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Integrando…
+                        </>
+                      ) : (
+                        <>
+                          <Ship className="h-4 w-4" />
+                          Integrar con ShipsGo
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      La reserva debe estar confirmada para integrarla con
+                      ShipsGo.
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
           </>
         ) : null}

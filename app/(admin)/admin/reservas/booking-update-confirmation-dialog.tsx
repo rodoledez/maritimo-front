@@ -771,7 +771,7 @@ export function BookingUpdateConfirmationDialog({
                   name="lateArrival"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Late arrival</FormLabel>
+                      <FormLabel>Listado Late arrival</FormLabel>
                       <FormControl>
                         <Input {...field} type="datetime-local" step={60} />
                       </FormControl>
