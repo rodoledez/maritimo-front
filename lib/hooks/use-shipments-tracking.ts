@@ -11,6 +11,7 @@ import {
   deleteShipmentTracking,
   getDashboardKpis,
   getShipmentTracking,
+  getShipmentTrackingByBooking,
   getShipmentTrackingDetail,
   listActiveShipments,
   listShipmentsTracking,
@@ -21,6 +22,7 @@ import {
   type TrackingListQuery,
   type TrackingPayload,
 } from "@/lib/api/shipments-tracking";
+import { isApiError } from "@/types/api";
 import type { ShipmentTracking } from "@/types/domain";
 
 const KEY = ["shipments-tracking"] as const;
@@ -55,9 +57,10 @@ export function useShipmentTrackingDetail(
 }
 
 /**
- * Encuentra el shipment de tracking asociado a una reserva. El backend no expone
- * un endpoint por-booking, así que listamos y filtramos por `bookingId` en el
- * cliente. Devuelve `null` cuando la reserva aún no fue integrada con ShipsGo.
+ * Encuentra el shipment de tracking asociado a una reserva vía
+ * `GET /shipments-tracking/by-booking/:bookingId`. El backend responde 404
+ * cuando la reserva aún no fue integrada con ShipsGo: lo traducimos a `null`
+ * (sin tracking) en vez de propagar el error.
  */
 export function useShipmentTrackingByBooking(
   bookingId: number | string | null | undefined,
@@ -67,10 +70,14 @@ export function useShipmentTrackingByBooking(
   return useQuery({
     queryKey: [...KEY, "by-booking", bookingId] as const,
     queryFn: async () => {
-      const list = await listShipmentsTracking({ take: 500 });
-      return (
-        list.find((t) => String(t.bookingId) === String(bookingId)) ?? null
-      );
+      try {
+        return await getShipmentTrackingByBooking(
+          bookingId as number | string
+        );
+      } catch (error) {
+        if (isApiError(error) && error.status === 404) return null;
+        throw error;
+      }
     },
     enabled: enabled && bookingId !== undefined && bookingId !== null,
   });

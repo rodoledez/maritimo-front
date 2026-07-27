@@ -46,6 +46,22 @@ export async function getShipmentTracking(
   );
 }
 
+/**
+ * Busca el shipment de tracking asociado a una reserva
+ * (`GET /shipments-tracking/by-booking/:bookingId`). El backend responde 404
+ * cuando la reserva aún no fue integrada con ShipsGo; el llamador lo trata como
+ * "sin tracking".
+ */
+export async function getShipmentTrackingByBooking(
+  bookingId: number | string
+): Promise<ShipmentTracking> {
+  return unwrapOne(
+    await apiGet<ShipmentTracking | { data: ShipmentTracking }>(
+      `/shipments-tracking/by-booking/${bookingId}`
+    )
+  );
+}
+
 export async function getShipmentTrackingDetail(
   shipmentId: number | string,
   refresh = false
