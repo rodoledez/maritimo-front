@@ -185,7 +185,7 @@ export function BookingUpdateItineraryDialog({
 
           <div className="space-y-4">
             <div className="flex items-end gap-2">
-              <div className="flex-1 space-y-1.5">
+              <div className="min-w-0 flex-1 space-y-1.5">
                 <label
                   htmlFor="update-itinerary-select"
                   className="text-sm font-medium"
@@ -212,6 +212,7 @@ export function BookingUpdateItineraryDialog({
               <Button
                 type="button"
                 variant="outline"
+                className="shrink-0"
                 onClick={() => setCreateOpen(true)}
               >
                 <Plus className="h-4 w-4" />
