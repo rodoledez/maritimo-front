@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useCreateClient,
   useUpdateClient,
@@ -123,7 +122,6 @@ export function ClientFormDialog({
   const createMutation = useCreateClient();
   const updateMutation = useUpdateClient();
 
-  const [tab, setTab] = useState<"datos" | "contactos">("datos");
   const [showLegacy, setShowLegacy] = useState(false);
 
   // Shares its cache with the contacts grid (default, unfiltered query).
@@ -131,9 +129,8 @@ export function ClientFormDialog({
   const hasContacts = (contacts?.length ?? 0) > 0;
 
   // Reset the view state on close (in the handler, not an effect) so the next
-  // open starts on the "datos" tab with the legacy fields collapsed.
+  // open starts with the legacy fields collapsed.
   const close = () => {
-    setTab("datos");
     setShowLegacy(false);
     onOpenChange(false);
   };
@@ -209,26 +206,14 @@ export function ClientFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          value={tab}
-          onValueChange={(value) => setTab(value as "datos" | "contactos")}
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-8"
+          noValidate
         >
-          <TabsList>
-            <TabsTrigger value="datos">Datos</TabsTrigger>
-            <TabsTrigger value="contactos" disabled={!isEditing}>
-              Contactos
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="datos" className="mt-4">
-            <form
-              id={FORM_ID}
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-8"
-              noValidate
-            >
-              <section className="space-y-5">
-                <FieldSectionTitle>Datos de la empresa</FieldSectionTitle>
+          <section className="space-y-5">
+            <FieldSectionTitle>Datos de la empresa</FieldSectionTitle>
             <FieldGroup className="grid gap-8 sm:grid-cols-2">
               <Controller
                 name="name"
@@ -277,168 +262,160 @@ export function ClientFormDialog({
             </FieldGroup>
           </section>
 
-              <section className="space-y-5">
-                <div className="flex items-center justify-between gap-2 border-b pb-2">
-                  <FieldSectionTitle className="border-0 pb-0">
-                    {hasContacts
-                      ? "Contacto principal (respaldo)"
-                      : "Contacto principal"}
-                  </FieldSectionTitle>
-                  {hasContacts && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowLegacy((value) => !value)}
-                    >
-                      {showLegacy ? "Ocultar" : "Mostrar"}
-                    </Button>
-                  )}
-                </div>
+          <section className="space-y-5">
+            <div className="flex items-center justify-between gap-2 border-b pb-2">
+              <FieldSectionTitle className="border-0 pb-0">
+                {hasContacts
+                  ? "Contacto principal (respaldo)"
+                  : "Contacto principal"}
+              </FieldSectionTitle>
+              {hasContacts && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowLegacy((value) => !value)}
+                >
+                  {showLegacy ? "Ocultar" : "Mostrar"}
+                </Button>
+              )}
+            </div>
 
-                {hasContacts && (
-                  <FieldDescription>
-                    Este cliente ya tiene contactos en la pestaña
-                    &ldquo;Contactos&rdquo;. Estos campos se conservan como
-                    respaldo y se usan solo si no hay contactos de la categoría
-                    correspondiente.
-                  </FieldDescription>
-                )}
+            {hasContacts && (
+              <FieldDescription>
+                Este cliente ya tiene contactos en la sección Contactos, más
+                abajo. Estos campos se conservan como respaldo y se usan solo si
+                no hay contactos de la categoría correspondiente.
+              </FieldDescription>
+            )}
 
-                {(!hasContacts || showLegacy) && (
-                  <>
-                    <FieldGroup className="grid gap-8 sm:grid-cols-2">
-                      <Controller
-                        name="contactName"
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                          <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="client-contact-name">
-                              Nombre contacto <FieldRequiredMark />
-                            </FieldLabel>
-                            <Input
-                              {...field}
-                              id="client-contact-name"
-                              aria-invalid={fieldState.invalid}
-                              placeholder="Nombre del contacto"
-                              autoComplete="off"
-                            />
-                            {fieldState.invalid && (
-                              <FieldError errors={[fieldState.error]} />
-                            )}
-                          </Field>
-                        )}
-                      />
-                      <Controller
-                        name="contactEmail"
-                        control={form.control}
-                        render={({ field, fieldState }) => (
-                          <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor="client-contact-email">
-                              Email contacto <FieldRequiredMark />
-                            </FieldLabel>
-                            <Input
-                              {...field}
-                              id="client-contact-email"
-                              type="email"
-                              aria-invalid={fieldState.invalid}
-                              placeholder="contacto@empresa.com"
-                              autoComplete="off"
-                            />
-                            {fieldState.invalid && (
-                              <FieldError errors={[fieldState.error]} />
-                            )}
-                          </Field>
-                        )}
-                      />
-                    </FieldGroup>
-                    <Controller
-                      name="contactEmail2"
-                      control={form.control}
-                      render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor="client-contact-email-2">
-                            Email adicional
-                          </FieldLabel>
-                          <Input
-                            {...field}
-                            id="client-contact-email-2"
-                            type="text"
-                            inputMode="email"
-                            aria-invalid={fieldState.invalid}
-                            placeholder="opcional (separe con , o ;)"
-                            autoComplete="off"
-                          />
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
-                          )}
-                        </Field>
-                      )}
-                    />
-                  </>
-                )}
-              </section>
-
-              <section className="space-y-5">
-                <FieldSectionTitle>Notificaciones</FieldSectionTitle>
-                <Controller
-                  name="notificationsEnabled"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Field
-                      orientation="horizontal"
-                      className="justify-between rounded-lg border p-3"
-                    >
-                      <div className="space-y-1">
-                        <FieldLabel htmlFor="client-notifications-enabled">
-                          Notificaciones por email
+            {(!hasContacts || showLegacy) && (
+              <>
+                <FieldGroup className="grid gap-8 sm:grid-cols-2">
+                  <Controller
+                    name="contactName"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="client-contact-name">
+                          Nombre contacto <FieldRequiredMark />
                         </FieldLabel>
-                        <FieldDescription>
-                          Enviar correos de notificación de embarques a este
-                          cliente.
-                        </FieldDescription>
-                      </div>
-                      <Switch
-                        id="client-notifications-enabled"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+                        <Input
+                          {...field}
+                          id="client-contact-name"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="Nombre del contacto"
+                          autoComplete="off"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="contactEmail"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="client-contact-email">
+                          Email contacto <FieldRequiredMark />
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="client-contact-email"
+                          type="email"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="contacto@empresa.com"
+                          autoComplete="off"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
+                <Controller
+                  name="contactEmail2"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="client-contact-email-2">
+                        Email adicional
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="client-contact-email-2"
+                        type="text"
+                        inputMode="email"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="opcional (separe con , o ;)"
+                        autoComplete="off"
                       />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
-              </section>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="contactos" className="mt-4">
-            {isEditing && editing ? (
-              <ClientContactsSection clientId={editing.id} />
-            ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Guarda el cliente primero para poder agregar contactos.
-              </p>
+              </>
             )}
-          </TabsContent>
-        </Tabs>
+          </section>
+
+          <section className="space-y-5">
+            <FieldSectionTitle>Notificaciones</FieldSectionTitle>
+            <Controller
+              name="notificationsEnabled"
+              control={form.control}
+              render={({ field }) => (
+                <Field
+                  orientation="horizontal"
+                  className="justify-between rounded-lg border p-3"
+                >
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="client-notifications-enabled">
+                      Notificaciones por email
+                    </FieldLabel>
+                    <FieldDescription>
+                      Enviar correos de notificación de embarques a este
+                      cliente.
+                    </FieldDescription>
+                  </div>
+                  <Switch
+                    id="client-notifications-enabled"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </Field>
+              )}
+            />
+          </section>
+        </form>
+
+        {isEditing && editing && (
+          <section className="space-y-4">
+            <FieldSectionTitle>Contactos</FieldSectionTitle>
+            <ClientContactsSection clientId={editing.id} />
+          </section>
+        )}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={close}>
-            {tab === "contactos" ? "Cerrar" : "Cancelar"}
+            Cancelar
           </Button>
-          {tab === "datos" && (
-            <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Guardando…
-                </>
-              ) : isEditing ? (
-                "Actualizar"
-              ) : (
-                "Guardar"
-              )}
-            </Button>
-          )}
+          <Button type="submit" form={FORM_ID} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando…
+              </>
+            ) : isEditing ? (
+              "Actualizar"
+            ) : (
+              "Guardar"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
