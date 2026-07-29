@@ -28,6 +28,30 @@ export type LoginResponse = {
   user: User | null;
 };
 
+export type ContactCategory = "BOOKING" | "TRACKING";
+
+/** Audit stamp returned by the contacts listing. */
+export type ContactAuditUser = {
+  id: number | string;
+  name?: string | null;
+  username?: string | null;
+};
+
+export type ClientContact = {
+  id: number | string;
+  clientId?: number | string;
+  name: string;
+  email: string;
+  category: ContactCategory;
+  /** Only for TRACKING contacts. Empty / null = subscribed to all events. */
+  subscribedEvents?: NotificationEventType[] | null;
+  active: boolean;
+  createdBy?: ContactAuditUser | null;
+  updatedBy?: ContactAuditUser | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 export type Commodity = {
   id: number | string;
   name: string;
