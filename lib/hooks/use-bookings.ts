@@ -17,6 +17,7 @@ import {
   listBookingsByClient,
   listBookingsPage,
   updateBooking,
+  updateBookingItinerary,
   updateConfirmation,
   type BookingCancelPayload,
   type BookingConfirmPayload,
@@ -88,6 +89,20 @@ export function useUpdateBooking() {
       id: Booking["id"];
       payload: BookingPayload;
     }) => updateBooking(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useUpdateBookingItinerary() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      itineraryId,
+    }: {
+      id: Booking["id"];
+      itineraryId: number | string;
+    }) => updateBookingItinerary(id, itineraryId),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

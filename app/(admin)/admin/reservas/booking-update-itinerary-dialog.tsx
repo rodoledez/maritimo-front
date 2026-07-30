@@ -16,7 +16,7 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ItineraryFormDialog } from "@/app/(admin)/admin/itinerarios/itinerary-form-dialog";
-import { useUpdateBooking } from "@/lib/hooks/use-bookings";
+import { useUpdateBookingItinerary } from "@/lib/hooks/use-bookings";
 import { useItineraries } from "@/lib/hooks/use-itineraries";
 import { errorMessage } from "@/lib/utils/errors";
 import { assocLabel, formatDate } from "@/lib/utils/format";
@@ -109,7 +109,7 @@ export function BookingUpdateItineraryDialog({
   booking: Booking | null;
 }) {
   const { data: itineraries = [], isLoading } = useItineraries({ vigent: "Y" });
-  const mutation = useUpdateBooking();
+  const mutation = useUpdateBookingItinerary();
 
   const [selectedId, setSelectedId] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -157,10 +157,7 @@ export function BookingUpdateItineraryDialog({
     try {
       await mutation.mutateAsync({
         id: booking.id,
-        payload: {
-          itinerary_id: selected.id,
-          itineraryId: selected.id,
-        },
+        itineraryId: selected.id,
       });
       toast.success("Itinerario de la reserva actualizado");
       onOpenChange(false);

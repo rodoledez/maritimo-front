@@ -188,6 +188,18 @@ export async function updateBooking(
   );
 }
 
+/**
+ * Reasigna el itinerario de una reserva (`PUT /bookings/:id/itinerary`).
+ * A diferencia de `updateBooking`, es una ruta dedicada que sólo cambia el
+ * itinerario asociado sin tocar el resto de los datos de la reserva.
+ */
+export function updateBookingItinerary(
+  id: Booking["id"],
+  itineraryId: number | string
+): Promise<unknown> {
+  return apiPut<unknown>(`/bookings/${id}/itinerary`, { itineraryId });
+}
+
 export async function copyBooking(
   id: Booking["id"]
 ): Promise<BookingCopyDraft> {
