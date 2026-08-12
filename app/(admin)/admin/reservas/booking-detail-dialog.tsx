@@ -14,15 +14,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
+import { StatusBadge } from "@/components/status-badge";
 import { useIntegrateBookingWithShipsgo } from "@/lib/hooks/use-bookings";
 import { useFacilities } from "@/lib/hooks/use-facilities";
 import {
   useShipmentTrackingByBooking,
   useShipmentTrackingDetail,
 } from "@/lib/hooks/use-shipments-tracking";
+import { eventTypeLabel } from "@/lib/notifications/constants";
 import { errorMessage } from "@/lib/utils/errors";
 import { assocLabel, formatDate, formatDateTime as formatSyncDateTime } from "@/lib/utils/format";
 import type { Booking, Facility } from "@/types/domain";
+import {
+  shipmentStatusLabel,
+  shipmentStatusTone,
+} from "../shipments-tracking/_status";
 import { ShipsgoTrackingPanel } from "../shipments-tracking/shipsgo-tracking-panel";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -258,6 +264,51 @@ export function BookingDetailDialog({
             </section>
           </>
         ) : null}
+
+        <Separator />
+
+        <section className="space-y-4">
+          <h3 className="text-sm font-semibold text-secondary">Integraciones</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Odoo (x_embarques)"
+              value={
+                booking.odooEmbarqueId ? `#${booking.odooEmbarqueId}` : "—"
+              }
+            />
+            <Field
+              label="Estado ShipsGo"
+              value={
+                booking.shipsgoStatus ? (
+                  <StatusBadge
+                    tone={shipmentStatusTone(booking.shipsgoStatus)}
+                    icon={null}
+                  >
+                    {shipmentStatusLabel(booking.shipsgoStatus)}
+                  </StatusBadge>
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <Field
+              label="Última notificación"
+              value={
+                booking.lastNotificationEvent
+                  ? eventTypeLabel(booking.lastNotificationEvent)
+                  : "—"
+              }
+            />
+            <Field
+              label="Enviada el"
+              value={
+                booking.lastNotificationSentAt
+                  ? formatSyncDateTime(booking.lastNotificationSentAt)
+                  : "—"
+              }
+            />
+          </div>
+        </section>
 
         {shipsgo || showNoTracking || trackingLoading ? (
           <>

@@ -461,4 +461,12 @@ export type Booking = {
   detentionDays?: number | null;
   reeferPlugInDays?: number | null;
   createdAt?: string | null;
+  /** Id del registro `x_embarques` en Odoo (null si aún no se sincronizó). */
+  odooEmbarqueId?: number | null;
+  /** Último estado ShipsGo del tracking asociado (null si no está integrada). */
+  shipsgoStatus?: ShipmentTrackingStatus | null;
+  /** Evento de la última notificación enviada (null si nunca se envió una). */
+  lastNotificationEvent?: NotificationEventType | null;
+  /** Fecha/hora en que se envió esa última notificación. */
+  lastNotificationSentAt?: string | null;
 };

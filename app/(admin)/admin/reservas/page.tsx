@@ -21,6 +21,7 @@ import {
   type FilterOption,
 } from "@/components/data-table/filter-popover";
 import { IdentityCell } from "@/components/data-table/identity-cell";
+import { StatusBadge } from "@/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,8 +43,15 @@ import {
 } from "@/lib/hooks/use-bookings";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { useTriggerBookingNotification } from "@/lib/hooks/use-notifications";
+import { eventTypeLabel } from "@/lib/notifications/constants";
 import { errorMessage } from "@/lib/utils/errors";
+import { formatDateTime } from "@/lib/utils/format";
 import type { Booking } from "@/types/domain";
+
+import {
+  shipmentStatusLabel,
+  shipmentStatusTone,
+} from "../shipments-tracking/_status";
 
 const DEFAULT_PAGE_SIZE = 25;
 
@@ -181,6 +189,52 @@ export default function ReservasPage() {
           row.original.typeContainer ?? row.original.typeContainerEntity ?? "—",
       },
       { accessorKey: "typeFreight", header: "Flete" },
+      {
+        accessorKey: "shipsgoStatus",
+        header: "ShipsGo",
+        cell: ({ row }) => {
+          const status = row.original.shipsgoStatus;
+          if (!status) return <span className="text-muted-foreground">—</span>;
+          return (
+            <StatusBadge tone={shipmentStatusTone(status)} icon={null}>
+              {shipmentStatusLabel(status)}
+            </StatusBadge>
+          );
+        },
+      },
+      {
+        accessorKey: "lastNotificationEvent",
+        header: "Última notif.",
+        cell: ({ row }) => {
+          const event = row.original.lastNotificationEvent;
+          const sentAt = row.original.lastNotificationSentAt;
+          if (!event && !sentAt)
+            return <span className="text-muted-foreground">—</span>;
+          return (
+            <div className="leading-tight">
+              <span className="text-sm">
+                {event ? eventTypeLabel(event) : "—"}
+              </span>
+              {sentAt ? (
+                <span className="block text-xs text-muted-foreground">
+                  {formatDateTime(sentAt)}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "odooEmbarqueId",
+        header: "Odoo",
+        meta: { align: "right" },
+        cell: ({ row }) =>
+          row.original.odooEmbarqueId ? (
+            `#${row.original.odooEmbarqueId}`
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
       {
         id: "actions",
         header: () => <span className="sr-only">Acciones</span>,
