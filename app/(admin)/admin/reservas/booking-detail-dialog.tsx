@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Ship } from "lucide-react";
+import { Bell, Loader2, Ship } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -13,10 +13,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { BookingStatusBadge } from "@/components/booking/status-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { useIntegrateBookingWithShipsgo } from "@/lib/hooks/use-bookings";
 import { useFacilities } from "@/lib/hooks/use-facilities";
+import { useNotificationLogs } from "@/lib/hooks/use-notifications";
 import {
   useShipmentTrackingByBooking,
   useShipmentTrackingDetail,
@@ -30,6 +37,7 @@ import {
   shipmentStatusTone,
 } from "../shipments-tracking/_status";
 import { ShipsgoTrackingPanel } from "../shipments-tracking/shipsgo-tracking-panel";
+import { BookingNotificationsPanel } from "./booking-notifications-panel";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -113,17 +121,24 @@ export function BookingDetailDialog({
   booking: Booking | null;
 }) {
   const { data: facilities = [] } = useFacilities();
-  const {
-    data: tracking,
-    isLoading: trackingLoading,
-    isSuccess: trackingLoaded,
-  } = useShipmentTrackingByBooking(booking?.id, {
-    enabled: open && !!booking,
-  });
+  const { data: tracking, isLoading: trackingLoading } =
+    useShipmentTrackingByBooking(booking?.id, {
+      enabled: open && !!booking,
+    });
   const { data: trackingDetail, isFetching: trackingFetching } =
     useShipmentTrackingDetail(tracking?.id ?? undefined, {
       enabled: open && !!tracking,
     });
+  const {
+    data: logsPage,
+    isLoading: logsLoading,
+    isFetching: logsFetching,
+    error: logsError,
+    refetch: refetchLogs,
+  } = useNotificationLogs(
+    { bookingId: booking ? Number(booking.id) : undefined, take: 100 },
+    { enabled: open && !!booking }
+  );
   const integrateMutation = useIntegrateBookingWithShipsgo();
 
   const onIntegrate = async () => {
@@ -137,12 +152,10 @@ export function BookingDetailDialog({
   };
 
   if (!booking) return null;
+  const logs = logsPage?.rows ?? [];
   const shipsgo = trackingDetail?.tracking ?? tracking ?? null;
   // La integración con ShipsGo requiere una reserva confirmada.
   const canIntegrate = booking.status === "Confirmado";
-  // Mostramos el estado "sin tracking" solo cuando la búsqueda ya resolvió y no
-  // hay tracking asociado (404 → null), para no parpadear durante la carga.
-  const showNoTracking = trackingLoaded && !shipsgo;
   const it = booking.Itinerary;
   const terminalLabel = facilityLabel(facilities, booking.terminalId, booking.terminal);
   const depotLabel = facilityLabel(facilities, booking.depotId, booking.depot);
@@ -310,23 +323,30 @@ export function BookingDetailDialog({
           </div>
         </section>
 
-        {shipsgo || showNoTracking || trackingLoading ? (
-          <>
-            <Separator />
+        <Separator />
+
+        <Tabs defaultValue="tracking">
+          <TabsList>
+            <TabsTrigger value="tracking">
+              <Ship />
+              Tracking ShipsGo
+            </TabsTrigger>
+            <TabsTrigger value="notifications">
+              <Bell />
+              Notificaciones{logs.length > 0 ? ` (${logs.length})` : ""}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="tracking" className="mt-4">
             <section className="space-y-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-sm font-semibold text-secondary">
-                  Tracking ShipsGo
-                </h3>
-                {shipsgo?.lastSyncedAt ? (
-                  <span className="text-xs text-muted-foreground">
-                    Última sincronización:{" "}
-                    <span className="text-foreground">
-                      {formatSyncDateTime(shipsgo.lastSyncedAt)}
-                    </span>
+              {shipsgo?.lastSyncedAt ? (
+                <p className="text-xs text-muted-foreground">
+                  Última sincronización:{" "}
+                  <span className="text-foreground">
+                    {formatSyncDateTime(shipsgo.lastSyncedAt)}
                   </span>
-                ) : null}
-              </div>
+                </p>
+              ) : null}
 
               {shipsgo ? (
                 <ShipsgoTrackingPanel
@@ -374,8 +394,18 @@ export function BookingDetailDialog({
                 </div>
               )}
             </section>
-          </>
-        ) : null}
+          </TabsContent>
+
+          <TabsContent value="notifications" className="mt-4">
+            <BookingNotificationsPanel
+              logs={logs}
+              isLoading={logsLoading}
+              isFetching={logsFetching}
+              error={logsError}
+              onRetry={() => refetchLogs()}
+            />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

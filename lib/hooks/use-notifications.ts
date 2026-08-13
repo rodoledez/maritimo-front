@@ -154,10 +154,15 @@ export function useDeleteFreeDaysConfig() {
 
 // --- Notification logs ---
 
-export function useNotificationLogs(params: LogListParams = {}) {
+export function useNotificationLogs(
+  params: LogListParams = {},
+  options: { enabled?: boolean } = {}
+) {
+  const { enabled = true } = options;
   return useQuery({
     queryKey: [LOGS_KEY, params] as const,
     queryFn: () => listLogs(params),
+    enabled,
   });
 }
 
