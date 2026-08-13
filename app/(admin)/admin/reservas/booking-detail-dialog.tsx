@@ -281,6 +281,40 @@ export function BookingDetailDialog({
         <Separator />
 
         <section className="space-y-4">
+          <h3 className="text-sm font-semibold text-secondary">Trazabilidad</h3>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field
+              label="Creada el"
+              value={formatSyncDateTime(booking.createdAt)}
+            />
+            <Field
+              label="Última modificación"
+              value={formatSyncDateTime(booking.updatedAt)}
+            />
+            {booking.confirmedAt ? (
+              <Field
+                label="Confirmada el"
+                value={formatSyncDateTime(booking.confirmedAt)}
+              />
+            ) : null}
+            {booking.confirmationUpdatedAt ? (
+              <Field
+                label="Confirmación actualizada el"
+                value={formatSyncDateTime(booking.confirmationUpdatedAt)}
+              />
+            ) : null}
+            {booking.cancelledAt ? (
+              <Field
+                label="Cancelada el"
+                value={formatSyncDateTime(booking.cancelledAt)}
+              />
+            ) : null}
+          </div>
+        </section>
+
+        <Separator />
+
+        <section className="space-y-4">
           <h3 className="text-sm font-semibold text-secondary">Integraciones</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field

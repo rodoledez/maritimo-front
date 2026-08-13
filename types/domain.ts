@@ -461,6 +461,13 @@ export type Booking = {
   detentionDays?: number | null;
   reeferPlugInDays?: number | null;
   createdAt?: string | null;
+  updatedAt?: string | null;
+  /** Fecha/hora en que se confirmó la reserva. */
+  confirmedAt?: string | null;
+  /** Fecha/hora de la última actualización de la confirmación (update-confirmation). */
+  confirmationUpdatedAt?: string | null;
+  /** Fecha/hora en que se canceló la reserva. */
+  cancelledAt?: string | null;
   /** Id del registro `x_embarques` en Odoo (null si aún no se sincronizó). */
   odooEmbarqueId?: number | null;
   /** Último estado ShipsGo del tracking asociado (null si no está integrada). */
