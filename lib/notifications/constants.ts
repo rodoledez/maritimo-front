@@ -48,6 +48,27 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   EMPTY_RETURN: "Devolución vacío",
 };
 
+/**
+ * El `eventType` de una regla ES el hito de ShipsGo: los 7 valores del enum
+ * mapean 1:1 contra los movimientos que devuelve la API de tracking
+ * (ver MOVEMENT_EVENT_LABEL en app/(admin)/admin/shipments-tracking/_status.ts).
+ */
+const EVENT_SHIPSGO_MOVEMENTS: Record<
+  NotificationEventType,
+  { code: string; description: string }
+> = {
+  GATE_OUT: { code: "EMSH", description: "Vacío retirado" },
+  GATE_IN: { code: "GTIN", description: "Ingreso a puerto" },
+  DEPARTURE: { code: "DEPA", description: "Zarpe" },
+  TRANSSHIPMENT: {
+    code: "ARRV / DEPA",
+    description: "Arribos y zarpes intermedios",
+  },
+  ARRIVAL: { code: "ARRV", description: "Arribo final" },
+  POD_GATE_OUT: { code: "GTOT", description: "Retiro en destino" },
+  EMPTY_RETURN: { code: "EMRT", description: "Devolución de vacío" },
+};
+
 const TRIGGER_LABELS: Record<NotificationTriggerType, string> = {
   BEFORE_REFERENCE: "Antes de fecha",
   AFTER_REFERENCE: "Después de fecha",
@@ -78,6 +99,13 @@ const LOG_STATUS_TONES: Record<NotificationLogStatus, StatusTone> = {
 
 export function eventTypeLabel(value: NotificationEventType): string {
   return EVENT_LABELS[value] ?? value;
+}
+
+export function eventShipsgoMovement(value: NotificationEventType): {
+  code: string;
+  description: string;
+} {
+  return EVENT_SHIPSGO_MOVEMENTS[value] ?? { code: "—", description: "—" };
 }
 
 export function triggerTypeLabel(value: NotificationTriggerType): string {

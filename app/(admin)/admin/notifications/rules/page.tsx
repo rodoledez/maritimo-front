@@ -45,6 +45,7 @@ import {
 } from "@/lib/hooks/use-notifications";
 import {
   NOTIFICATION_EVENT_TYPES,
+  eventShipsgoMovement,
   eventTypeLabel,
   referenceFieldLabel,
   triggerTypeLabel,
@@ -55,6 +56,7 @@ import type {
   NotificationRule,
 } from "@/types/domain";
 
+import { ShipsgoEventMap } from "../_shipsgo-event-map";
 import { RuleFormDialog } from "./rule-form-dialog";
 
 type EventFilter = "all" | NotificationEventType;
@@ -183,7 +185,23 @@ export default function NotificationRulesPage() {
       {
         accessorKey: "eventType",
         header: "Evento",
-        cell: ({ row }) => eventTypeLabel(row.original.eventType),
+        cell: ({ row }) => {
+          const evt = row.original.eventType;
+          const movement = eventShipsgoMovement(evt);
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm">{eventTypeLabel(evt)}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="w-fit font-mono text-xs text-muted-foreground">
+                    ShipsGo {movement.code}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{movement.description}</TooltipContent>
+              </Tooltip>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "clientId",
@@ -271,6 +289,8 @@ export default function NotificationRulesPage() {
         title="Reglas de notificación"
         description="Cuándo y con qué frecuencia se disparan las notificaciones por evento. Si existen reglas por cliente, las globales no aplican para ese cliente."
       />
+
+      <ShipsgoEventMap />
 
       {error ? (
         <Alert variant="destructive">

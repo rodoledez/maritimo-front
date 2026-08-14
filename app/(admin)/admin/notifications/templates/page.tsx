@@ -53,6 +53,7 @@ import type {
   NotificationTemplate,
 } from "@/types/domain";
 
+import { ShipsgoEventMap } from "../_shipsgo-event-map";
 import { TemplateFormDialog } from "./template-form-dialog";
 
 type EventFilter = "all" | NotificationEventType;
@@ -244,6 +245,8 @@ export default function NotificationTemplatesPage() {
         title="Plantillas de notificación"
         description="Asuntos y cuerpos Handlebars usados al enviar correos de tracking. Las plantillas globales aplican a todos los clientes salvo que exista una override específica."
       />
+
+      <ShipsgoEventMap />
 
       {error ? (
         <Alert variant="destructive">

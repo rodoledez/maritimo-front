@@ -45,6 +45,7 @@ import {
   NOTIFICATION_EVENT_TYPES,
   NOTIFICATION_REFERENCE_FIELDS,
   NOTIFICATION_TRIGGER_TYPES,
+  eventShipsgoMovement,
   eventTypeLabel,
   referenceFieldLabel,
   triggerTypeLabel,
@@ -302,11 +303,27 @@ export function RuleFormDialog({
                       <SelectContent>
                         {NOTIFICATION_EVENT_TYPES.map((evt) => (
                           <SelectItem key={evt} value={evt}>
-                            {eventTypeLabel(evt)}
+                            <span className="flex items-center gap-2">
+                              {eventTypeLabel(evt)}
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {eventShipsgoMovement(evt).code}
+                              </span>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <FieldDescription>
+                      Corresponde al movimiento{" "}
+                      <span className="font-mono">
+                        {eventShipsgoMovement(field.value).code}
+                      </span>{" "}
+                      de ShipsGo (
+                      {eventShipsgoMovement(field.value).description
+                        .toLocaleLowerCase("es")}
+                      ). La regla se evalúa cuando ese hito llega desde la API de
+                      tracking.
+                    </FieldDescription>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
