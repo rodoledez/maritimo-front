@@ -80,14 +80,20 @@ export async function getTemplate(id: number): Promise<NotificationTemplate> {
   );
 }
 
+/**
+ * Plantilla que el backend elegiría para un evento + cliente cuando la regla
+ * no declara `templateId`. Devuelve `null` si no hay ninguna configurada.
+ */
 export async function resolveTemplate(
   eventType: NotificationEventType,
   clientId?: number | null
-): Promise<NotificationTemplate> {
-  return unwrapOne(
-    await apiGet<NotificationTemplate | { data: NotificationTemplate }>(
-      `/notification-templates/resolve${buildQuery({ eventType, clientId })}`
-    )
+): Promise<NotificationTemplate | null> {
+  return (
+    unwrapOne(
+      await apiGet<NotificationTemplate | { data: NotificationTemplate } | null>(
+        `/notification-templates/resolve${buildQuery({ eventType, clientId })}`
+      )
+    ) ?? null
   );
 }
 
@@ -132,6 +138,8 @@ export type RulePayload = {
   eventType: NotificationEventType;
   clientId?: number | null;
   name: string;
+  /** `null` u omitido = la regla usa la plantilla por defecto del evento. */
+  templateId?: number | null;
   triggerType: NotificationTriggerType;
   referenceField?: NotificationReferenceField | null;
   offsetHours?: number | null;

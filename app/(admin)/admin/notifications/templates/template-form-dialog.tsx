@@ -45,6 +45,7 @@ import {
   TEMPLATE_VARIABLES,
   eventTypeLabel,
   renderHandlebarsPreview,
+  triggerSummary,
 } from "@/lib/notifications/constants";
 import type { TemplatePayload } from "@/lib/api/notifications";
 import type {
@@ -371,20 +372,51 @@ export function TemplateFormDialog({
             ) : null}
           </form>
 
-          <aside className="space-y-3">
-            <FieldSectionTitle>Variables disponibles</FieldSectionTitle>
-            <ul className="space-y-2">
-              {TEMPLATE_VARIABLES.map((v) => (
-                <li key={v.name} className="space-y-0.5">
-                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                    {`{{${v.name}}}`}
-                  </code>
+          <aside className="space-y-6">
+            {isEditing ? (
+              <section className="space-y-3">
+                <FieldSectionTitle>Reglas que la usan</FieldSectionTitle>
+                {editing?.rules && editing.rules.length > 0 ? (
+                  <ul className="space-y-2">
+                    {editing.rules.map((r) => (
+                      <li key={r.id} className="space-y-0.5">
+                        <p className="text-xs font-medium">
+                          {r.name}
+                          {r.isActive ? "" : " (inactiva)"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {triggerSummary(r)} ·{" "}
+                          {r.clientId === null
+                            ? "Global"
+                            : `Cliente #${r.clientId}`}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
                   <p className="text-xs text-muted-foreground">
-                    {v.description}
+                    Ninguna regla apunta a esta plantilla. Solo se enviará si es
+                    la plantilla por defecto del evento.
                   </p>
-                </li>
-              ))}
-            </ul>
+                )}
+              </section>
+            ) : null}
+
+            <section className="space-y-3">
+              <FieldSectionTitle>Variables disponibles</FieldSectionTitle>
+              <ul className="space-y-2">
+                {TEMPLATE_VARIABLES.map((v) => (
+                  <li key={v.name} className="space-y-0.5">
+                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                      {`{{${v.name}}}`}
+                    </code>
+                    <p className="text-xs text-muted-foreground">
+                      {v.description}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </aside>
         </div>
 

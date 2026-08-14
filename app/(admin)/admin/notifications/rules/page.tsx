@@ -47,8 +47,7 @@ import {
   NOTIFICATION_EVENT_TYPES,
   eventShipsgoMovement,
   eventTypeLabel,
-  referenceFieldLabel,
-  triggerTypeLabel,
+  triggerSummary,
 } from "@/lib/notifications/constants";
 import { errorMessage } from "@/lib/utils/errors";
 import type {
@@ -75,31 +74,6 @@ const SCOPE_OPTIONS: FilterOption<ScopeFilter>[] = [
   { value: "global", label: "Globales" },
   { value: "client", label: "Por cliente" },
 ];
-
-function triggerSummary(rule: NotificationRule): string {
-  switch (rule.triggerType) {
-    case "BEFORE_REFERENCE":
-      return `${rule.offsetHours ?? "?"}h antes de ${
-        rule.referenceField ? referenceFieldLabel(rule.referenceField) : "—"
-      }`;
-    case "AFTER_REFERENCE":
-      return `${rule.offsetHours ?? "?"}h después de ${
-        rule.referenceField ? referenceFieldLabel(rule.referenceField) : "—"
-      }`;
-    case "AT_TIME_OF_DAY":
-      return `Cada día a las ${rule.atTimeOfDay ?? "—"}`;
-    case "PERIODIC": {
-      const base = `Cada ${rule.recurrenceHours ?? "?"}h`;
-      return rule.maxRecurrences
-        ? `${base} (máx ${rule.maxRecurrences})`
-        : base;
-    }
-    case "ON_EVENT":
-      return "Al ocurrir el evento";
-    default:
-      return triggerTypeLabel(rule.triggerType);
-  }
-}
 
 export default function NotificationRulesPage() {
   const { data, isLoading, error, refetch, isFetching } = useNotificationRules({
@@ -223,6 +197,43 @@ export default function NotificationRulesPage() {
         },
       },
       {
+        id: "template",
+        header: "Plantilla",
+        cell: ({ row }) => {
+          const { template, templateId } = row.original;
+          if (!template) {
+            return (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="font-normal">
+                    {templateId ? `#${templateId}` : "Por defecto"}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {templateId
+                    ? "La plantilla asignada ya no está disponible"
+                    : "Usa la plantilla por defecto del evento (resuelta por evento + cliente al enviar)"}
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span className="block max-w-xs truncate text-sm">
+                {template.subject}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {template.clientId === null
+                  ? "Global"
+                  : (clientNameById.get(Number(template.clientId)) ??
+                    `Cliente #${template.clientId}`)}
+                {template.isActive ? "" : " · inactiva"}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
         accessorKey: "triggerType",
         header: "Disparo",
         cell: ({ row }) => (
@@ -287,7 +298,7 @@ export default function NotificationRulesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Reglas de notificación"
-        description="Cuándo y con qué frecuencia se disparan las notificaciones por evento. Si existen reglas por cliente, las globales no aplican para ese cliente."
+        description="Cuándo y con qué frecuencia se disparan las notificaciones por evento, y qué plantilla envía cada una. Si existen reglas por cliente, las globales no aplican para ese cliente."
       />
 
       <ShipsgoEventMap />

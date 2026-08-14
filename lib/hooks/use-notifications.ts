@@ -17,6 +17,7 @@ import {
   listLogs,
   listRules,
   listTemplates,
+  resolveTemplate,
   triggerBookingNotification,
   updateFreeDays,
   updateRule,
@@ -29,6 +30,7 @@ import {
   type TemplateListParams,
   type TemplatePayload,
 } from "@/lib/api/notifications";
+import type { NotificationEventType } from "@/types/domain";
 
 const TEMPLATES_KEY = "notification-templates";
 const RULES_KEY = "notification-rules";
@@ -41,6 +43,24 @@ export function useNotificationTemplates(params: TemplateListParams = {}) {
   return useQuery({
     queryKey: [TEMPLATES_KEY, params] as const,
     queryFn: () => listTemplates(params),
+  });
+}
+
+/**
+ * Plantilla que el backend usaría por defecto para un evento + cliente, es
+ * decir la que envía una regla con `templateId: null`.
+ */
+export function useResolvedNotificationTemplate(
+  eventType: NotificationEventType | undefined,
+  clientId: number | null,
+  options: { enabled?: boolean } = {}
+) {
+  const { enabled = true } = options;
+  return useQuery({
+    queryKey: [TEMPLATES_KEY, "resolve", eventType, clientId] as const,
+    queryFn: () => resolveTemplate(eventType!, clientId),
+    enabled: enabled && !!eventType,
+    retry: false,
   });
 }
 

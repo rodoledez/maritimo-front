@@ -124,6 +124,40 @@ export function logStatusTone(value: NotificationLogStatus): StatusTone {
   return LOG_STATUS_TONES[value] ?? "neutral";
 }
 
+/**
+ * Resumen legible del disparo de una regla. Acepta tanto una `NotificationRule`
+ * completa como el resumen embebido en `NotificationTemplate.rules`.
+ */
+export function triggerSummary(rule: {
+  triggerType: NotificationTriggerType;
+  referenceField?: NotificationReferenceField | null;
+  offsetHours?: number | null;
+  atTimeOfDay?: string | null;
+  recurrenceHours?: number | null;
+  maxRecurrences?: number | null;
+}): string {
+  switch (rule.triggerType) {
+    case "BEFORE_REFERENCE":
+      return `${rule.offsetHours ?? "?"}h antes de ${
+        rule.referenceField ? referenceFieldLabel(rule.referenceField) : "—"
+      }`;
+    case "AFTER_REFERENCE":
+      return `${rule.offsetHours ?? "?"}h después de ${
+        rule.referenceField ? referenceFieldLabel(rule.referenceField) : "—"
+      }`;
+    case "AT_TIME_OF_DAY":
+      return `Cada día a las ${rule.atTimeOfDay ?? "—"}`;
+    case "PERIODIC": {
+      const base = `Cada ${rule.recurrenceHours ?? "?"}h`;
+      return rule.maxRecurrences ? `${base} (máx ${rule.maxRecurrences})` : base;
+    }
+    case "ON_EVENT":
+      return "Al ocurrir el evento";
+    default:
+      return triggerTypeLabel(rule.triggerType);
+  }
+}
+
 export const TEMPLATE_VARIABLES: Array<{ name: string; description: string }> = [
   { name: "bookingNumber", description: "Número de booking del carrier" },
   { name: "opNumber", description: "Número de OP interno" },

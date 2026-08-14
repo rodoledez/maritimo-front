@@ -182,6 +182,48 @@ export default function NotificationTemplatesPage() {
         ),
       },
       {
+        id: "rules",
+        header: "Reglas",
+        cell: ({ row }) => {
+          const rules = row.original.rules;
+          if (!rules) return <span className="text-sm">—</span>;
+          if (rules.length === 0) {
+            return (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="font-normal">
+                    Sin reglas
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Ninguna regla la referencia: solo se usa si es la plantilla
+                  por defecto del evento.
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-sm underline decoration-dotted underline-offset-4">
+                  {rules.length} {rules.length === 1 ? "regla" : "reglas"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <ul className="space-y-1">
+                  {rules.map((r) => (
+                    <li key={r.id}>
+                      {r.name}
+                      {r.isActive ? "" : " (inactiva)"}
+                    </li>
+                  ))}
+                </ul>
+              </TooltipContent>
+            </Tooltip>
+          );
+        },
+      },
+      {
         accessorKey: "description",
         header: "Descripción",
         cell: ({ row }) => (
@@ -243,7 +285,7 @@ export default function NotificationTemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Plantillas de notificación"
-        description="Asuntos y cuerpos Handlebars usados al enviar correos de tracking. Las plantillas globales aplican a todos los clientes salvo que exista una override específica."
+        description="Asuntos y cuerpos Handlebars usados al enviar correos de tracking. Puedes tener varias plantillas por evento: cada regla elige cuál envía, y la que quede como default del evento se usa para las reglas que no eligen ninguna."
       />
 
       <ShipsgoEventMap />

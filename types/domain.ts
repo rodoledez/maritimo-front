@@ -346,6 +346,28 @@ export type NotificationReferenceField =
 
 export type NotificationLogStatus = "SENT" | "FAILED" | "SKIPPED";
 
+/** Resumen de regla que viaja embebido en `NotificationTemplate.rules`. */
+export type NotificationTemplateRule = {
+  id: number;
+  name: string;
+  clientId: number | null;
+  triggerType: NotificationTriggerType;
+  referenceField: NotificationReferenceField | null;
+  offsetHours: number | null;
+  atTimeOfDay: string | null;
+  recurrenceHours: number | null;
+  isActive: boolean;
+};
+
+/** Resumen de plantilla que viaja embebido en `NotificationRule.template`. */
+export type NotificationRuleTemplate = {
+  id: number;
+  eventType: NotificationEventType;
+  clientId: number | null;
+  subject: string;
+  isActive: boolean;
+};
+
 export type NotificationTemplate = {
   id: number;
   eventType: NotificationEventType;
@@ -357,6 +379,8 @@ export type NotificationTemplate = {
   description: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Reglas que apuntan explícitamente a esta plantilla. Vacío = solo se usa como default del evento. */
+  rules?: NotificationTemplateRule[];
 };
 
 export type NotificationRule = {
@@ -364,6 +388,8 @@ export type NotificationRule = {
   eventType: NotificationEventType;
   clientId: number | null;
   name: string;
+  /** `null` = usa la plantilla por defecto del evento (resuelta por evento + cliente). */
+  templateId: number | null;
   triggerType: NotificationTriggerType;
   referenceField: NotificationReferenceField | null;
   offsetHours: number | null;
@@ -375,6 +401,8 @@ export type NotificationRule = {
   description: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Plantilla asociada, o `null` si la regla usa la default del evento. */
+  template?: NotificationRuleTemplate | null;
 };
 
 export type FreeDaysConfig = {
