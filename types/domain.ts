@@ -454,6 +454,35 @@ export type NotificationLog = {
   createdAt: string;
 };
 
+/**
+ * Estado de aviso de un hito de tracking. `PENDING` lo reintenta el propio
+ * sistema (no hay acción del usuario); `SUPPRESSED_BACKLOG` y `SKIPPED` no
+ * generaron correo.
+ */
+export type MilestoneNotifyState =
+  | "SENT"
+  | "PENDING"
+  | "SUPPRESSED_BACKLOG"
+  | "SKIPPED";
+
+/**
+ * Hito informado por ShipsGo para una reserva
+ * (`GET /shipments-tracking/by-booking/:bookingId/milestones`). El backend
+ * devuelve la lista ya ordenada, del hito más antiguo al más reciente.
+ */
+export type BookingMilestone = {
+  id?: number;
+  eventType: NotificationEventType;
+  occurredAt: string;
+  locationName: string | null;
+  containerNumber: string | null;
+  /** > 1 en transbordos sucesivos: "Transbordo 2", "Transbordo 3", … */
+  sequence: number;
+  notifyState: MilestoneNotifyState;
+  notifiedAt: string | null;
+  notifyNote: string | null;
+};
+
 export type PaginatedResponse<T> = {
   rows: T[];
   total: number;

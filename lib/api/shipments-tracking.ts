@@ -3,6 +3,7 @@ import { unwrapList, unwrapOne } from "@/lib/api/_shared";
 import type {
   ActiveShipmentsListResponse,
   AlertLevel,
+  BookingMilestone,
   DashboardKpisResponse,
   ShipmentDetailResponse,
   ShipmentTracking,
@@ -58,6 +59,22 @@ export async function getShipmentTrackingByBooking(
   return unwrapOne(
     await apiGet<ShipmentTracking | { data: ShipmentTracking }>(
       `/shipments-tracking/by-booking/${bookingId}`
+    )
+  );
+}
+
+/**
+ * Timeline de hitos de una reserva
+ * (`GET /shipments-tracking/by-booking/:bookingId/milestones`). Llega ordenado
+ * del hito más antiguo al más reciente e incluye los hitos que no generaron
+ * correo, así que se renderiza tal cual, sin filtrar por `notifyState`.
+ */
+export async function listBookingMilestones(
+  bookingId: number | string
+): Promise<BookingMilestone[]> {
+  return unwrapList(
+    await apiGet<BookingMilestone[] | { data: BookingMilestone[] }>(
+      `/shipments-tracking/by-booking/${bookingId}/milestones`
     )
   );
 }

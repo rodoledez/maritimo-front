@@ -14,6 +14,7 @@ import {
   getShipmentTrackingByBooking,
   getShipmentTrackingDetail,
   listActiveShipments,
+  listBookingMilestones,
   listShipmentsTracking,
   listTrackingCarriers,
   refreshShipmentTracking,
@@ -76,6 +77,30 @@ export function useShipmentTrackingByBooking(
         );
       } catch (error) {
         if (isApiError(error) && error.status === 404) return null;
+        throw error;
+      }
+    },
+    enabled: enabled && bookingId !== undefined && bookingId !== null,
+  });
+}
+
+/**
+ * Hitos de tracking de una reserva. Igual que `by-booking`, el backend responde
+ * 404 cuando la reserva no tiene tracking: lo traducimos a lista vacía para que
+ * la ficha muestre "Sin hitos informados aún" en vez de un error.
+ */
+export function useBookingMilestones(
+  bookingId: number | string | null | undefined,
+  options: { enabled?: boolean } = {}
+) {
+  const { enabled = true } = options;
+  return useQuery({
+    queryKey: [...KEY, "milestones", bookingId] as const,
+    queryFn: async () => {
+      try {
+        return await listBookingMilestones(bookingId as number | string);
+      } catch (error) {
+        if (isApiError(error) && error.status === 404) return [];
         throw error;
       }
     },

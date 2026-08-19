@@ -1,4 +1,5 @@
 import type {
+  MilestoneNotifyState,
   NotificationEventType,
   NotificationLogStatus,
   NotificationReferenceField,
@@ -39,13 +40,13 @@ export const NOTIFICATION_LOG_STATUSES: NotificationLogStatus[] = [
 ];
 
 const EVENT_LABELS: Record<NotificationEventType, string> = {
-  GATE_OUT: "Retiro contenedor (origen)",
+  GATE_OUT: "Retiro de contenedor",
   GATE_IN: "Ingreso a puerto",
-  DEPARTURE: "Zarpe motonave",
-  TRANSSHIPMENT: "Conexión / transbordo",
-  ARRIVAL: "Arribo destino",
-  POD_GATE_OUT: "Retiro contenedor (POD)",
-  EMPTY_RETURN: "Devolución vacío",
+  DEPARTURE: "Zarpe",
+  TRANSSHIPMENT: "Transbordo",
+  ARRIVAL: "Arribo",
+  POD_GATE_OUT: "Retiro en destino",
+  EMPTY_RETURN: "Devolución de vacío",
 };
 
 /**
@@ -97,6 +98,25 @@ const LOG_STATUS_TONES: Record<NotificationLogStatus, StatusTone> = {
   SKIPPED: "neutral",
 };
 
+/**
+ * Etiquetas del badge de aviso de un hito. `SUPPRESSED_BACKLOG` y `SKIPPED`
+ * comparten copy: para el usuario ambos son "no avisado" (en `SKIPPED` el
+ * motivo viaja en `notifyNote`).
+ */
+const MILESTONE_NOTIFY_LABELS: Record<MilestoneNotifyState, string> = {
+  SENT: "Avisado",
+  PENDING: "Por avisar",
+  SUPPRESSED_BACKLOG: "No avisado",
+  SKIPPED: "No avisado",
+};
+
+const MILESTONE_NOTIFY_TONES: Record<MilestoneNotifyState, StatusTone> = {
+  SENT: "success",
+  PENDING: "pending",
+  SUPPRESSED_BACKLOG: "neutral",
+  SKIPPED: "neutral",
+};
+
 export function eventTypeLabel(value: NotificationEventType): string {
   return EVENT_LABELS[value] ?? value;
 }
@@ -122,6 +142,14 @@ export function logStatusLabel(value: NotificationLogStatus): string {
 
 export function logStatusTone(value: NotificationLogStatus): StatusTone {
   return LOG_STATUS_TONES[value] ?? "neutral";
+}
+
+export function milestoneNotifyLabel(value: MilestoneNotifyState): string {
+  return MILESTONE_NOTIFY_LABELS[value] ?? value;
+}
+
+export function milestoneNotifyTone(value: MilestoneNotifyState): StatusTone {
+  return MILESTONE_NOTIFY_TONES[value] ?? "neutral";
 }
 
 /**

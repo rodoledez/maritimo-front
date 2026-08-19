@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,8 +39,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useClients } from "@/lib/hooks/use-clients";
 import {
   useCreateNotificationRule,
-  useNotificationTemplates,
-  useResolvedNotificationTemplate,
   useUpdateNotificationRule,
 } from "@/lib/hooks/use-notifications";
 import {
@@ -64,9 +62,6 @@ import { explainNotificationError } from "../_shared";
 
 const GLOBAL_SCOPE = "__global__";
 
-/** Valor centinela del select de plantilla: se envía `templateId: null`. */
-const DEFAULT_TEMPLATE = "__default__";
-
 const TIME_REGEX = /^\d{2}:\d{2}(:\d{2})?$/;
 
 const ruleSchema = z
@@ -79,7 +74,6 @@ const ruleSchema = z
     ),
     clientId: z.string(),
     name: z.string().min(1, "Debe ingresar un nombre"),
-    templateId: z.string(),
     triggerType: z.enum(
       NOTIFICATION_TRIGGER_TYPES as [
         NotificationTriggerType,
@@ -156,7 +150,6 @@ const emptyValues: RuleFormValues = {
   eventType: "GATE_OUT",
   clientId: GLOBAL_SCOPE,
   name: "",
-  templateId: DEFAULT_TEMPLATE,
   triggerType: "ON_EVENT",
   referenceField: "",
   offsetHours: "",
@@ -186,8 +179,6 @@ export function RuleFormDialog({
     mode: "onBlur",
   });
   const { data: clients = [] } = useClients();
-  const { data: templatesPage, isLoading: templatesLoading } =
-    useNotificationTemplates({ take: 200 });
   const createMutation = useCreateNotificationRule();
   const updateMutation = useUpdateNotificationRule();
 
@@ -200,10 +191,6 @@ export function RuleFormDialog({
               clientId:
                 editing.clientId === null ? GLOBAL_SCOPE : String(editing.clientId),
               name: editing.name,
-              templateId:
-                editing.templateId !== null && editing.templateId !== undefined
-                  ? String(editing.templateId)
-                  : DEFAULT_TEMPLATE,
               triggerType: editing.triggerType,
               referenceField: editing.referenceField ?? "",
               offsetHours:
@@ -234,56 +221,12 @@ export function RuleFormDialog({
   const showTimeOfDay = triggerType === "AT_TIME_OF_DAY";
   const showPeriodic = triggerType === "PERIODIC";
 
-  const eventType = form.watch("eventType");
-  const clientIdValue = form.watch("clientId");
-  const templateIdValue = form.watch("templateId");
-  const scopeClientId =
-    clientIdValue === GLOBAL_SCOPE ? null : Number(clientIdValue);
-
-  const clientNameById = useMemo(() => {
-    const map = new Map<number, string>();
-    for (const c of clients) map.set(Number(c.id), c.name);
-    return map;
-  }, [clients]);
-
-  /**
-   * Solo plantillas activas del mismo evento que la regla: el backend rechaza
-   * con 400 cualquier otra. La plantilla ya asignada se conserva en la lista
-   * aunque esté inactiva, para no perderla en silencio al editar.
-   */
-  const templateOptions = useMemo(() => {
-    const rows = templatesPage?.rows ?? [];
-    const scopeLabel = (clientId: number | null) =>
-      clientId === null
-        ? "Global"
-        : (clientNameById.get(Number(clientId)) ?? `Cliente #${clientId}`);
-
-    return rows
-      .filter(
-        (t) =>
-          t.eventType === eventType &&
-          (t.isActive || String(t.id) === templateIdValue)
-      )
-      .map((t) => ({
-        value: String(t.id),
-        label: `${t.subject} · ${scopeLabel(t.clientId)}${t.isActive ? "" : " · inactiva"}`,
-      }));
-  }, [templatesPage, eventType, templateIdValue, clientNameById]);
-
-  const usesDefaultTemplate = templateIdValue === DEFAULT_TEMPLATE;
-  const { data: defaultTemplate, isLoading: defaultTemplateLoading } =
-    useResolvedNotificationTemplate(eventType, scopeClientId, {
-      enabled: open && usesDefaultTemplate,
-    });
-
   const onSubmit = async (values: RuleFormValues) => {
     const payload: RulePayload = {
       eventType: values.eventType,
       clientId:
         values.clientId === GLOBAL_SCOPE ? null : Number(values.clientId),
       name: values.name,
-      templateId:
-        values.templateId === DEFAULT_TEMPLATE ? null : Number(values.templateId),
       triggerType: values.triggerType,
       referenceField: showReference
         ? (values.referenceField as NotificationReferenceField)
@@ -353,17 +296,7 @@ export function RuleFormDialog({
                     <FieldLabel htmlFor="rule-event">
                       Evento <FieldRequiredMark />
                     </FieldLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Una plantilla pertenece a un único evento: al cambiar
-                        // el evento, la elegida deja de ser válida.
-                        if (value !== field.value) {
-                          form.setValue("templateId", DEFAULT_TEMPLATE);
-                        }
-                      }}
-                    >
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger id="rule-event">
                         <SelectValue />
                       </SelectTrigger>
@@ -445,63 +378,6 @@ export function RuleFormDialog({
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}
-                </Field>
-              )}
-            />
-          </section>
-
-          <section className="space-y-5">
-            <FieldSectionTitle>Plantilla</FieldSectionTitle>
-            <Controller
-              name="templateId"
-              control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <FieldLabel htmlFor="rule-template">
-                    Correo que envía esta regla
-                  </FieldLabel>
-                  <SearchableSelect
-                    id="rule-template"
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={templatesLoading}
-                    placeholder="Selecciona…"
-                    searchPlaceholder="Buscar plantilla…"
-                    options={[
-                      {
-                        value: DEFAULT_TEMPLATE,
-                        label: "Plantilla por defecto del evento",
-                      },
-                      ...templateOptions,
-                    ]}
-                  />
-                  <FieldDescription>
-                    {usesDefaultTemplate ? (
-                      defaultTemplateLoading ? (
-                        "Resolviendo la plantilla por defecto…"
-                      ) : defaultTemplate ? (
-                        <>
-                          Hoy se enviaría{" "}
-                          <span className="font-medium text-foreground">
-                            {defaultTemplate.subject}
-                          </span>
-                          . Cambia si otra plantilla del mismo evento se
-                          configura después.
-                        </>
-                      ) : (
-                        "No hay plantilla configurada para este evento y cliente: la regla no enviará correo hasta que exista una."
-                      )
-                    ) : (
-                      "La regla enviará siempre esta plantilla, sin importar cuántas otras existan para el evento."
-                    )}
-                  </FieldDescription>
-                  {!templatesLoading && templateOptions.length === 0 ? (
-                    <FieldDescription>
-                      No hay plantillas activas para{" "}
-                      {eventTypeLabel(eventType)}: solo puedes usar la de
-                      defecto.
-                    </FieldDescription>
-                  ) : null}
                 </Field>
               )}
             />

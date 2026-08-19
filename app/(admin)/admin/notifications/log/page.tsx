@@ -97,7 +97,7 @@ export default function NotificationLogPage() {
     <div className="space-y-6">
       <PageHeader
         title="Log de notificaciones"
-        description="Historial de notificaciones enviadas. El dispatcher (Phase 2) llenará esta tabla."
+        description="Historial de notificaciones enviadas a partir de los eventos informados por ShipsGo."
       />
 
       <Card size="sm">
@@ -246,7 +246,7 @@ export default function NotificationLogPage() {
                         <Inbox className="h-8 w-8" />
                         <p className="text-sm">No hay notificaciones registradas.</p>
                         <p className="text-xs">
-                          El dispatcher de Phase 2 poblará esta tabla.
+                          Se registran al enviarse los avisos de cada hito.
                         </p>
                       </div>
                     </TableCell>

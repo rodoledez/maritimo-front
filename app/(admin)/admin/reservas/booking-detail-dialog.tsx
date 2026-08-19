@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Loader2, Ship } from "lucide-react";
+import { Bell, Loader2, MapPin, Ship } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -25,6 +25,7 @@ import { useIntegrateBookingWithShipsgo } from "@/lib/hooks/use-bookings";
 import { useFacilities } from "@/lib/hooks/use-facilities";
 import { useNotificationLogs } from "@/lib/hooks/use-notifications";
 import {
+  useBookingMilestones,
   useShipmentTrackingByBooking,
   useShipmentTrackingDetail,
 } from "@/lib/hooks/use-shipments-tracking";
@@ -38,6 +39,7 @@ import {
   shipmentStatusTone,
 } from "../shipments-tracking/_status";
 import { ShipsgoTrackingPanel } from "../shipments-tracking/shipsgo-tracking-panel";
+import { BookingMilestonesPanel } from "./booking-milestones-panel";
 import { BookingNotificationsPanel } from "./booking-notifications-panel";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -130,6 +132,13 @@ export function BookingDetailDialog({
     useShipmentTrackingDetail(tracking?.id ?? undefined, {
       enabled: open && !!tracking,
     });
+  const {
+    data: milestones = [],
+    isLoading: milestonesLoading,
+    isFetching: milestonesFetching,
+    error: milestonesError,
+    refetch: refetchMilestones,
+  } = useBookingMilestones(booking?.id, { enabled: open && !!booking });
   const {
     data: logsPage,
     isLoading: logsLoading,
@@ -364,8 +373,12 @@ export function BookingDetailDialog({
 
         <Separator />
 
-        <Tabs defaultValue="tracking">
+        <Tabs defaultValue="milestones">
           <TabsList>
+            <TabsTrigger value="milestones">
+              <MapPin />
+              Hitos{milestones.length > 0 ? ` (${milestones.length})` : ""}
+            </TabsTrigger>
             <TabsTrigger value="tracking">
               <Ship />
               Tracking ShipsGo
@@ -375,6 +388,16 @@ export function BookingDetailDialog({
               Notificaciones{logs.length > 0 ? ` (${logs.length})` : ""}
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="milestones" className="mt-4">
+            <BookingMilestonesPanel
+              milestones={milestones}
+              isLoading={milestonesLoading}
+              isFetching={milestonesFetching}
+              error={milestonesError}
+              onRetry={() => refetchMilestones()}
+            />
+          </TabsContent>
 
           <TabsContent value="tracking" className="mt-4">
             <section className="space-y-4">

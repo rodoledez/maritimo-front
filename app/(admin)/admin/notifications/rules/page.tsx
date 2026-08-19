@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Bell, MoreHorizontal, Plus } from "lucide-react";
+import { Bell, Info, MoreHorizontal, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -197,43 +197,6 @@ export default function NotificationRulesPage() {
         },
       },
       {
-        id: "template",
-        header: "Plantilla",
-        cell: ({ row }) => {
-          const { template, templateId } = row.original;
-          if (!template) {
-            return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="outline" className="font-normal">
-                    {templateId ? `#${templateId}` : "Por defecto"}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {templateId
-                    ? "La plantilla asignada ya no está disponible"
-                    : "Usa la plantilla por defecto del evento (resuelta por evento + cliente al enviar)"}
-                </TooltipContent>
-              </Tooltip>
-            );
-          }
-          return (
-            <div className="flex flex-col gap-0.5">
-              <span className="block max-w-xs truncate text-sm">
-                {template.subject}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {template.clientId === null
-                  ? "Global"
-                  : (clientNameById.get(Number(template.clientId)) ??
-                    `Cliente #${template.clientId}`)}
-                {template.isActive ? "" : " · inactiva"}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
         accessorKey: "triggerType",
         header: "Disparo",
         cell: ({ row }) => (
@@ -298,8 +261,16 @@ export default function NotificationRulesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Reglas de notificación"
-        description="Cuándo y con qué frecuencia se disparan las notificaciones por evento, y qué plantilla envía cada una. Si existen reglas por cliente, las globales no aplican para ese cliente."
+        description="Cuándo y con qué frecuencia se disparan las notificaciones por evento. Si existen reglas por cliente, las globales no aplican para ese cliente."
       />
+
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Las reglas no están activas</AlertTitle>
+        <AlertDescription>
+          Las notificaciones se envían según los eventos informados por ShipsGo.
+        </AlertDescription>
+      </Alert>
 
       <ShipsgoEventMap />
 
