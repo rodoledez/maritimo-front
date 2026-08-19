@@ -33,6 +33,7 @@ import { errorMessage } from "@/lib/utils/errors";
 import { assocLabel, formatDate, formatDateTime as formatSyncDateTime } from "@/lib/utils/format";
 import type { Booking, Facility } from "@/types/domain";
 import {
+  isNoShipsgoIntegration,
   shipmentStatusLabel,
   shipmentStatusTone,
 } from "../shipments-tracking/_status";
@@ -154,8 +155,12 @@ export function BookingDetailDialog({
   if (!booking) return null;
   const logs = logsPage?.rows ?? [];
   const shipsgo = trackingDetail?.tracking ?? tracking ?? null;
-  // La integración con ShipsGo requiere una reserva confirmada.
-  const canIntegrate = booking.status === "Confirmado";
+  // Si la naviera del itinerario no se integra, la reserva nunca se va a
+  // registrar en ShipsGo: no ofrecemos el botón (el 400 del backend queda como
+  // red de seguridad).
+  const noShipsgoIntegration = isNoShipsgoIntegration(booking.shipsgoStatus);
+  // La integración con ShipsGo requiere además una reserva confirmada.
+  const canIntegrate = booking.status === "Confirmado" && !noShipsgoIntegration;
   const it = booking.Itinerary;
   const terminalLabel = facilityLabel(facilities, booking.terminalId, booking.terminal);
   const depotLabel = facilityLabel(facilities, booking.depotId, booking.depot);
@@ -398,9 +403,16 @@ export function BookingDetailDialog({
                 <div className="flex flex-col items-start gap-3 rounded-md border border-dashed bg-muted/30 p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Ship className="h-4 w-4" />
-                    Esta reserva aún no está integrada con ShipsGo.
+                    {noShipsgoIntegration
+                      ? "La naviera de este itinerario no se integra con ShipsGo."
+                      : "Esta reserva aún no está integrada con ShipsGo."}
                   </div>
-                  {canIntegrate ? (
+                  {noShipsgoIntegration ? (
+                    <p className="text-xs text-muted-foreground">
+                      Esta reserva no se va a registrar en ShipsGo, así que no
+                      tendrá tracking.
+                    </p>
+                  ) : canIntegrate ? (
                     <Button
                       type="button"
                       size="sm"

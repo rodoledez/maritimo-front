@@ -16,6 +16,7 @@ import {
   type ActiveFilter,
 } from "@/components/data-table/filter-popover";
 import { IdentityCell } from "@/components/data-table/identity-cell";
+import { StatusBadge } from "@/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -87,6 +88,26 @@ export default function ShippingCompaniesPage() {
     },
     [updateMutation]
   );
+  // `shipsgoIntegration` sólo controla el tracking, no el alta/baja (`active`).
+  const onToggleShipsgo = useCallback(
+    async (item: ShippingCompany) => {
+      const next = !item.shipsgoIntegration;
+      try {
+        await updateMutation.mutateAsync({
+          id: item.id,
+          payload: { shipsgoIntegration: next },
+        });
+        toast.success(
+          next
+            ? "La naviera se integrará con ShipsGo"
+            : "La naviera dejará de integrarse con ShipsGo"
+        );
+      } catch (e) {
+        toast.error(errorMessage(e, "No se pudo cambiar la integración"));
+      }
+    },
+    [updateMutation]
+  );
   const confirmDelete = async () => {
     if (!deleting) return;
     try {
@@ -119,6 +140,18 @@ export default function ShippingCompaniesPage() {
         cell: ({ row }) => <ActiveBadge active={row.original.active} />,
       },
       {
+        accessorKey: "shipsgoIntegration",
+        header: "ShipsGo",
+        cell: ({ row }) => {
+          const integrated = row.original.shipsgoIntegration !== false;
+          return (
+            <StatusBadge tone={integrated ? "success" : "neutral"} icon={null}>
+              {integrated ? "Integrada" : "No integrada"}
+            </StatusBadge>
+          );
+        },
+      },
+      {
         id: "actions",
         header: () => <span className="sr-only">Acciones</span>,
         enableSorting: false,
@@ -143,6 +176,11 @@ export default function ShippingCompaniesPage() {
                   <DropdownMenuItem onClick={() => onToggle(item)}>
                     {item.active ? "Desactivar" : "Activar"}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onToggleShipsgo(item)}>
+                    {item.shipsgoIntegration !== false
+                      ? "No integrar con ShipsGo"
+                      : "Integrar con ShipsGo"}
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
@@ -157,7 +195,7 @@ export default function ShippingCompaniesPage() {
         },
       },
     ],
-    [onEdit, onToggle]
+    [onEdit, onToggle, onToggleShipsgo]
   );
 
   return (

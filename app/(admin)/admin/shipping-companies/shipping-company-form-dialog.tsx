@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   useCreateShippingCompany,
   useUpdateShippingCompany,
@@ -48,6 +49,7 @@ const schema = z.object({
   address: z.string().optional().or(z.literal("")),
   description: z.string().optional().or(z.literal("")),
   active: z.boolean(),
+  shipsgoIntegration: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -61,6 +63,7 @@ const empty: FormValues = {
   address: "",
   description: "",
   active: true,
+  shipsgoIntegration: true,
 };
 
 const FORM_ID = "shipping-company-form";
@@ -96,6 +99,7 @@ export function ShippingCompanyFormDialog({
               address: editing.address ?? "",
               description: editing.description ?? "",
               active: editing.active ?? true,
+              shipsgoIntegration: editing.shipsgoIntegration ?? true,
             }
           : empty
       );
@@ -112,6 +116,7 @@ export function ShippingCompanyFormDialog({
       address: values.address || null,
       description: values.description || null,
       active: values.active,
+      shipsgoIntegration: values.shipsgoIntegration,
     };
     try {
       if (isEditing && editing) {
@@ -176,42 +181,71 @@ export function ShippingCompanyFormDialog({
                   </Field>
                 )}
               />
-              <div className="grid gap-6 sm:grid-cols-2">
-                <Controller
-                  name="website"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="naviera-website">Sitio web</FieldLabel>
-                      <Input
-                        {...field}
-                        id="naviera-website"
-                        aria-invalid={fieldState.invalid}
-                        placeholder="https://…"
-                        autoComplete="off"
-                      />
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
+              <Controller
+                name="website"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="naviera-website">Sitio web</FieldLabel>
+                    <Input
+                      {...field}
+                      id="naviera-website"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="https://…"
+                      autoComplete="off"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Controller
                   name="active"
                   control={form.control}
                   render={({ field }) => (
-                    <Field orientation="horizontal" className="justify-start self-end pb-2">
-                      <Checkbox
+                    <Field
+                      orientation="horizontal"
+                      className="justify-between rounded-lg border p-3"
+                    >
+                      <div className="space-y-1">
+                        <FieldLabel htmlFor="naviera-active">Activa</FieldLabel>
+                        <FieldDescription>
+                          Alta/baja de la naviera. Si está apagada no se puede
+                          usar en itinerarios ni reservas.
+                        </FieldDescription>
+                      </div>
+                      <Switch
                         id="naviera-active"
                         checked={field.value}
-                        onCheckedChange={(v) => field.onChange(v === true)}
+                        onCheckedChange={field.onChange}
                       />
-                      <FieldLabel
-                        htmlFor="naviera-active"
-                        className="font-normal"
-                      >
-                        Activa
-                      </FieldLabel>
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="shipsgoIntegration"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field
+                      orientation="horizontal"
+                      className="justify-between rounded-lg border p-3"
+                    >
+                      <div className="space-y-1">
+                        <FieldLabel htmlFor="naviera-shipsgo-integration">
+                          Se integra con ShipsGo
+                        </FieldLabel>
+                        <FieldDescription>
+                          Sólo afecta al tracking. Si está apagada, las reservas
+                          de esta naviera no se registran en ShipsGo.
+                        </FieldDescription>
+                      </div>
+                      <Switch
+                        id="naviera-shipsgo-integration"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </Field>
                   )}
                 />

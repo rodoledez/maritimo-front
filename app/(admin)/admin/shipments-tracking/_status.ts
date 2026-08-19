@@ -1,11 +1,19 @@
 import type { StatusTone } from "@/components/status-badge";
 import type {
-  ShipmentTrackingStatus,
+  BookingShipsgoStatus,
   ShipsgoContainerStatus,
   ShipsgoMovementEvent,
 } from "@/types/domain";
 
-export const SHIPMENT_STATUS_LABEL: Record<ShipmentTrackingStatus, string> = {
+/**
+ * `NAVIERA_NO_INTEGRADA` no es un estado de ShipsGo: significa que la naviera
+ * del itinerario no se integra, así que la reserva nunca va a tener tracking.
+ * Se muestra en gris (neutral) para no leerse ni como error ni como tránsito,
+ * y para distinguirse de `null`, que se muestra como "—" ("todavía no").
+ */
+export const NO_SHIPSGO_INTEGRATION = "NAVIERA_NO_INTEGRADA" as const;
+
+export const SHIPMENT_STATUS_LABEL: Record<BookingShipsgoStatus, string> = {
   NEW: "Nuevo",
   INPROGRESS: "En proceso",
   BOOKED: "Reservado",
@@ -14,9 +22,10 @@ export const SHIPMENT_STATUS_LABEL: Record<ShipmentTrackingStatus, string> = {
   ARRIVED: "Llegado",
   DISCHARGED: "Descargado",
   UNTRACKED: "Sin tracking",
+  NAVIERA_NO_INTEGRADA: "Naviera no integrada",
 };
 
-export const SHIPMENT_STATUS_TONE: Record<ShipmentTrackingStatus, StatusTone> = {
+export const SHIPMENT_STATUS_TONE: Record<BookingShipsgoStatus, StatusTone> = {
   NEW: "pending",
   INPROGRESS: "warning",
   BOOKED: "pending",
@@ -25,6 +34,7 @@ export const SHIPMENT_STATUS_TONE: Record<ShipmentTrackingStatus, StatusTone> = 
   ARRIVED: "success",
   DISCHARGED: "success",
   UNTRACKED: "danger",
+  NAVIERA_NO_INTEGRADA: "neutral",
 };
 
 export const CONTAINER_STATUS_LABEL: Record<ShipsgoContainerStatus, string> = {
@@ -62,14 +72,23 @@ export const MOVEMENT_EVENT_LABEL: Record<ShipsgoMovementEvent, string> = {
   EMRT: "Vacío retornado",
 };
 
-export function shipmentStatusLabel(status: ShipmentTrackingStatus | null | undefined): string {
+export function shipmentStatusLabel(
+  status: BookingShipsgoStatus | null | undefined
+): string {
   if (!status) return "—";
   return SHIPMENT_STATUS_LABEL[status] ?? status;
 }
 
 export function shipmentStatusTone(
-  status: ShipmentTrackingStatus | null | undefined
+  status: BookingShipsgoStatus | null | undefined
 ): StatusTone {
   if (!status) return "neutral";
   return SHIPMENT_STATUS_TONE[status] ?? "neutral";
+}
+
+/** La naviera del itinerario no se integra: nunca va a haber tracking. */
+export function isNoShipsgoIntegration(
+  status: BookingShipsgoStatus | null | undefined
+): boolean {
+  return status === NO_SHIPSGO_INTEGRATION;
 }

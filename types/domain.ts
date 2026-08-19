@@ -84,6 +84,11 @@ export type ShippingCompany = {
   address?: string | null;
   description?: string | null;
   active: boolean;
+  /**
+   * Si la naviera se integra con ShipsGo (tracking). Distinto de `active`, que
+   * es el alta/baja de la naviera. El backend lo asume `true` si no se envía.
+   */
+  shipsgoIntegration: boolean;
 };
 
 export type Port = {
@@ -129,6 +134,8 @@ export type Itinerary = {
   week?: string | null;
   carrier?: string | null;
   shippingCompanyId?: number | string | null;
+  /** Naviera anidada por el backend en `GET /itineraries`. */
+  shippingCompany?: (NamedAssoc & { shipsgoIntegration?: boolean }) | null;
   containerShip?: string | null;
   tripNo?: string | null;
   portOriginId?: number | string | null;
@@ -155,6 +162,18 @@ export type ShipmentTrackingStatus =
   | "ARRIVED"
   | "DISCHARGED"
   | "UNTRACKED";
+
+/**
+ * Estado ShipsGo derivado que expone la reserva. Además de los estados reales
+ * de ShipsGo puede traer `NAVIERA_NO_INTEGRADA` (la naviera del itinerario
+ * tiene `shipsgoIntegration = false`, así que la reserva nunca se va a
+ * registrar en ShipsGo) o `null` (la naviera sí se integra, pero todavía no
+ * hay tracking). El flag gana sobre el tracking: si se apaga la integración,
+ * las reservas ya registradas pasan a `NAVIERA_NO_INTEGRADA`.
+ */
+export type BookingShipsgoStatus =
+  | ShipmentTrackingStatus
+  | "NAVIERA_NO_INTEGRADA";
 
 export type ShipmentTracking = {
   id: number;
@@ -498,8 +517,11 @@ export type Booking = {
   cancelledAt?: string | null;
   /** Id del registro `x_embarques` en Odoo (null si aún no se sincronizó). */
   odooEmbarqueId?: number | null;
-  /** Último estado ShipsGo del tracking asociado (null si no está integrada). */
-  shipsgoStatus?: ShipmentTrackingStatus | null;
+  /**
+   * Último estado ShipsGo del tracking asociado. `null` = la naviera se integra
+   * pero todavía no hay tracking; `NAVIERA_NO_INTEGRADA` = no aplica.
+   */
+  shipsgoStatus?: BookingShipsgoStatus | null;
   /** Evento de la última notificación enviada (null si nunca se envió una). */
   lastNotificationEvent?: NotificationEventType | null;
   /** Fecha/hora en que se envió esa última notificación. */

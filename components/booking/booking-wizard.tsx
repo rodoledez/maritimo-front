@@ -1003,6 +1003,12 @@ function Step4Review({
             }
           />
         </div>
+        {itinerary?.shippingCompany?.shipsgoIntegration === false ? (
+          <p className="mt-3 rounded-lg border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+            La naviera de este itinerario no se integra con ShipsGo: esta
+            reserva no va a tener seguimiento automático del embarque.
+          </p>
+        ) : null}
       </section>
       <section>
         <h3 className="mb-3 text-sm font-semibold text-secondary">Carga</h3>

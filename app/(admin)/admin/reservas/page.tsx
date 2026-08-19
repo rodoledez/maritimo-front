@@ -49,6 +49,7 @@ import { formatDateTime } from "@/lib/utils/format";
 import type { Booking } from "@/types/domain";
 
 import {
+  isNoShipsgoIntegration,
   shipmentStatusLabel,
   shipmentStatusTone,
 } from "../shipments-tracking/_status";
@@ -245,6 +246,9 @@ export default function ReservasPage() {
           const isConfirmed = b.status === "Confirmado";
           const canCopy = isPending || isConfirmed;
           const canCancel = isPending || isConfirmed;
+          // La naviera del itinerario no se integra: la reserva nunca se va a
+          // registrar en ShipsGo.
+          const noShipsgoIntegration = isNoShipsgoIntegration(b.shipsgoStatus);
           return (
             <div className="flex justify-end">
               <DropdownMenu>
@@ -316,10 +320,14 @@ export default function ReservasPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onIntegrateShipsgo(b)}
-                        disabled={integrateMutation.isPending}
+                        disabled={
+                          integrateMutation.isPending || noShipsgoIntegration
+                        }
                       >
                         <Ship className="h-4 w-4" />
-                        Integrar con ShipsGo
+                        {noShipsgoIntegration
+                          ? "Naviera no integrada"
+                          : "Integrar con ShipsGo"}
                       </DropdownMenuItem>
                     </>
                   ) : null}

@@ -30,6 +30,8 @@ import { useBookings } from "@/lib/hooks/use-bookings";
 import { useCreateShipmentTracking } from "@/lib/hooks/use-shipments-tracking";
 import { errorMessage } from "@/lib/utils/errors";
 
+import { isNoShipsgoIntegration } from "./_status";
+
 const schema = z.object({
   bookingId: z.string().min(1, "Debe seleccionar un booking"),
   followers: z.string().optional().or(z.literal("")),
@@ -68,8 +70,14 @@ export function TrackingFormDialog({
     if (open) form.reset(empty);
   }, [open, form]);
 
+  // Se excluyen las reservas cuya naviera no se integra con ShipsGo: el
+  // backend las rechaza con un 400.
   const trackeableBookings = useMemo(
-    () => bookings.filter((b) => b.status === "Confirmado"),
+    () =>
+      bookings.filter(
+        (b) =>
+          b.status === "Confirmado" && !isNoShipsgoIntegration(b.shipsgoStatus)
+      ),
     [bookings]
   );
 
@@ -95,7 +103,8 @@ export function TrackingFormDialog({
         <DialogHeader>
           <DialogTitle>Registrar tracking</DialogTitle>
           <DialogDescription>
-            Sólo bookings confirmados pueden registrarse en ShipsGo.
+            Sólo bookings confirmados de navieras integradas con ShipsGo pueden
+            registrarse.
           </DialogDescription>
         </DialogHeader>
 
