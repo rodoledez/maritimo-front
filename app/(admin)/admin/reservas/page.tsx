@@ -120,7 +120,8 @@ export default function ReservasPage() {
   const onNotify = useCallback(
     async (b: Booking) => {
       try {
-        const result = await triggerMutation.mutateAsync(b.id);
+        // Sin eventType: el backend recorre los 7 hitos por reserva.
+        const result = await triggerMutation.mutateAsync({ bookingId: b.id });
         const summary = `${result.sent} enviadas · ${result.skipped} omitidas · ${result.failed} fallidas`;
         if (result.failed > 0) {
           toast.warning(`Reserva #${b.id}: ${summary}`);

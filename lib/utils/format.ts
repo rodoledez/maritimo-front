@@ -32,3 +32,34 @@ export function formatDateTime(value?: string | Date | null): string {
   const mins = String(date.getMinutes()).padStart(2, "0");
   return `${dd}-${mm}-${yyyy} ${hh}:${mins}`;
 }
+
+/**
+ * Formatea un instante UTC en una zona IANA concreta, no en la del navegador.
+ * Lo necesitan `nextSlotAt` / `lastSentAt` del resumen semanal: si se
+ * formatean en la zona del equipo, la pantalla muestra una hora distinta de la
+ * que el usuario acaba de escribir en `timeOfDay` y parece un bug del backend.
+ */
+export function formatDateTimeInZone(
+  value: string | Date | null | undefined,
+  timeZone: string
+): string {
+  if (!value) return "—";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("es-CL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone,
+    })
+      .format(date)
+      .replace(",", "");
+  } catch {
+    // Zona inválida o no soportada por el runtime: mejor la del navegador que nada.
+    return formatDateTime(date);
+  }
+}

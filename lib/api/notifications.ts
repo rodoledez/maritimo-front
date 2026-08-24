@@ -6,6 +6,7 @@ import {
 } from "@/lib/api/client";
 import { unwrapList, unwrapOne } from "@/lib/api/_shared";
 import type {
+  BookingNotificationEventType,
   FreeDaysConfig,
   NotificationEventType,
   NotificationLog,
@@ -127,7 +128,8 @@ export function deleteTemplate(id: number): Promise<unknown> {
 // --- Rules ---
 
 export type RuleListParams = {
-  eventType?: NotificationEventType;
+  /** Sólo hitos por reserva: `WEEKLY_SUMMARY` no se programa con reglas. */
+  eventType?: BookingNotificationEventType;
   clientId?: number | null;
   isActive?: boolean;
   skip?: number;
@@ -135,7 +137,8 @@ export type RuleListParams = {
 };
 
 export type RulePayload = {
-  eventType: NotificationEventType;
+  /** El backend rechaza `WEEKLY_SUMMARY` con 400. */
+  eventType: BookingNotificationEventType;
   clientId?: number | null;
   name: string;
   /** `null` u omitido = la regla usa la plantilla por defecto del evento. */
@@ -170,7 +173,7 @@ export async function getRule(id: number): Promise<NotificationRule> {
 }
 
 export async function resolveRules(
-  eventType: NotificationEventType,
+  eventType: BookingNotificationEventType,
   clientId?: number | null
 ): Promise<NotificationRule[]> {
   return unwrapList(
@@ -310,7 +313,7 @@ export async function getLog(id: number): Promise<NotificationLog> {
 // --- Trigger ---
 
 export type TriggerResultRow = {
-  eventType: NotificationEventType;
+  eventType: BookingNotificationEventType;
   status: NotificationLogStatus;
   reason?: string | null;
   notificationLogId?: number | null;
@@ -326,8 +329,16 @@ export type TriggerResult = {
   failed: number;
 };
 
+/**
+ * Envío manual por reserva. Sin `eventType` el backend recorre los **7** hitos
+ * por reserva (no 8): `WEEKLY_SUMMARY` queda fuera y, si se pasara explícito,
+ * devuelve 400 remitiendo a `POST /weekly-summary/send/:clientId`.
+ */
 export async function triggerBookingNotification(
-  bookingId: number | string
+  bookingId: number | string,
+  eventType?: BookingNotificationEventType
 ): Promise<TriggerResult> {
-  return apiPost<TriggerResult>(`/notifications/trigger/${bookingId}`);
+  return apiPost<TriggerResult>(
+    `/notifications/trigger/${bookingId}${buildQuery({ eventType })}`
+  );
 }

@@ -70,9 +70,16 @@ export function LogDetailDialog({
         <section className="grid gap-4 sm:grid-cols-2">
           <Field label="Destinatario" value={log.recipientEmail} />
           <Field label="CC" value={log.ccEmails || "—"} />
+          {/* WEEKLY_SUMMARY va sin reserva asociada: bookingId siempre null. */}
           <Field
             label="Booking"
-            value={log.bookingId !== null ? `#${log.bookingId}` : "—"}
+            value={
+              log.eventType === "WEEKLY_SUMMARY"
+                ? "Resumen semanal (por cliente)"
+                : log.bookingId !== null
+                  ? `#${log.bookingId}`
+                  : "—"
+            }
           />
           <Field
             label="Shipment tracking"

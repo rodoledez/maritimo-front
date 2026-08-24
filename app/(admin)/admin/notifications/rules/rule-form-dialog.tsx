@@ -42,7 +42,7 @@ import {
   useUpdateNotificationRule,
 } from "@/lib/hooks/use-notifications";
 import {
-  NOTIFICATION_EVENT_TYPES,
+  BOOKING_EVENT_TYPES,
   NOTIFICATION_REFERENCE_FIELDS,
   NOTIFICATION_TRIGGER_TYPES,
   eventShipsgoMovement,
@@ -52,7 +52,7 @@ import {
 } from "@/lib/notifications/constants";
 import type { RulePayload } from "@/lib/api/notifications";
 import type {
-  NotificationEventType,
+  BookingNotificationEventType,
   NotificationReferenceField,
   NotificationRule,
   NotificationTriggerType,
@@ -66,10 +66,11 @@ const TIME_REGEX = /^\d{2}:\d{2}(:\d{2})?$/;
 
 const ruleSchema = z
   .object({
+    // Sólo hitos por reserva: `WEEKLY_SUMMARY` daría 400 en /notification-rules.
     eventType: z.enum(
-      NOTIFICATION_EVENT_TYPES as [
-        NotificationEventType,
-        ...NotificationEventType[],
+      BOOKING_EVENT_TYPES as [
+        BookingNotificationEventType,
+        ...BookingNotificationEventType[],
       ]
     ),
     clientId: z.string(),
@@ -301,7 +302,7 @@ export function RuleFormDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {NOTIFICATION_EVENT_TYPES.map((evt) => (
+                        {BOOKING_EVENT_TYPES.map((evt) => (
                           <SelectItem key={evt} value={evt}>
                             <span className="flex items-center gap-2">
                               {eventTypeLabel(evt)}

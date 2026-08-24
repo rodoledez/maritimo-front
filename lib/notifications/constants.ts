@@ -1,4 +1,5 @@
 import type {
+  BookingNotificationEventType,
   MilestoneNotifyState,
   NotificationEventType,
   NotificationLogStatus,
@@ -7,7 +8,12 @@ import type {
 } from "@/types/domain";
 import type { StatusTone } from "@/components/status-badge";
 
-export const NOTIFICATION_EVENT_TYPES: NotificationEventType[] = [
+/**
+ * Los 7 hitos por reserva. Es la lista que deben ofrecer los selectores de
+ * **reglas** y de **envío manual por reserva**: el backend rechaza
+ * `WEEKLY_SUMMARY` en esos endpoints con 400.
+ */
+export const BOOKING_EVENT_TYPES: BookingNotificationEventType[] = [
   "GATE_OUT",
   "GATE_IN",
   "DEPARTURE",
@@ -15,6 +21,16 @@ export const NOTIFICATION_EVENT_TYPES: NotificationEventType[] = [
   "ARRIVAL",
   "POD_GATE_OUT",
   "EMPTY_RETURN",
+];
+
+/**
+ * Enum completo (8 valores). Sirve para **plantillas**, **contactos** y el
+ * **filtro del log**, que sí aceptan `WEEKLY_SUMMARY`. Para reglas y envío por
+ * reserva usar `BOOKING_EVENT_TYPES`.
+ */
+export const NOTIFICATION_EVENT_TYPES: NotificationEventType[] = [
+  ...BOOKING_EVENT_TYPES,
+  "WEEKLY_SUMMARY",
 ];
 
 export const NOTIFICATION_TRIGGER_TYPES: NotificationTriggerType[] = [
@@ -47,15 +63,17 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   ARRIVAL: "Arribo",
   POD_GATE_OUT: "Retiro en destino",
   EMPTY_RETURN: "Devolución de vacío",
+  WEEKLY_SUMMARY: "Resumen semanal",
 };
 
 /**
- * El `eventType` de una regla ES el hito de ShipsGo: los 7 valores del enum
+ * El `eventType` de una regla ES el hito de ShipsGo: los 7 valores por reserva
  * mapean 1:1 contra los movimientos que devuelve la API de tracking
  * (ver MOVEMENT_EVENT_LABEL en app/(admin)/admin/shipments-tracking/_status.ts).
+ * `WEEKLY_SUMMARY` queda fuera: no es un hito, es un resumen por cliente.
  */
 const EVENT_SHIPSGO_MOVEMENTS: Record<
-  NotificationEventType,
+  BookingNotificationEventType,
   { code: string; description: string }
 > = {
   GATE_OUT: { code: "EMSH", description: "Vacío retirado" },
@@ -121,7 +139,7 @@ export function eventTypeLabel(value: NotificationEventType): string {
   return EVENT_LABELS[value] ?? value;
 }
 
-export function eventShipsgoMovement(value: NotificationEventType): {
+export function eventShipsgoMovement(value: BookingNotificationEventType): {
   code: string;
   description: string;
 } {
@@ -186,7 +204,10 @@ export function triggerSummary(rule: {
   }
 }
 
-export const TEMPLATE_VARIABLES: Array<{ name: string; description: string }> = [
+export type TemplateVariable = { name: string; description: string };
+
+/** Variables del contexto de **una reserva** (los 7 hitos por reserva). */
+export const TEMPLATE_VARIABLES: TemplateVariable[] = [
   { name: "bookingNumber", description: "Número de booking del carrier" },
   { name: "opNumber", description: "Número de OP interno" },
   { name: "containerNumber", description: "Número de contenedor" },
@@ -201,6 +222,41 @@ export const TEMPLATE_VARIABLES: Array<{ name: string; description: string }> = 
   { name: "clientName", description: "Nombre del cliente" },
   { name: "freeDaysRemaining", description: "Días libres restantes" },
 ];
+
+/**
+ * Variables del contexto de **un cliente**, no de una reserva: `WEEKLY_SUMMARY`
+ * recibe la lista completa de embarques en curso. Por eso el panel de variables
+ * de la pantalla de plantillas cambia según el evento elegido.
+ */
+export const WEEKLY_SUMMARY_TEMPLATE_VARIABLES: TemplateVariable[] = [
+  { name: "clientName", description: "Nombre del cliente" },
+  { name: "slotLabel", description: "Etiqueta del envío (día y hora)" },
+  { name: "timezone", description: "Zona horaria de la programación" },
+  { name: "url", description: "Enlace al portal" },
+  { name: "bookingCount", description: "Embarques incluidos en el correo" },
+  { name: "totalCount", description: "Embarques en curso del cliente" },
+  { name: "containerCount", description: "Contenedores en total" },
+  { name: "hasBookings", description: "`true` si hay embarques que mostrar" },
+  { name: "truncated", description: "`true` si se recortó la lista" },
+  { name: "truncatedCount", description: "Embarques omitidos por el recorte" },
+  { name: "counts.enTransito", description: "Embarques en tránsito" },
+  { name: "counts.arribados", description: "Embarques arribados" },
+  { name: "counts.atrasados", description: "Embarques atrasados" },
+  { name: "counts.sinZarpar", description: "Embarques sin zarpar" },
+  {
+    name: "bookings",
+    description:
+      "Lista de embarques: opNumber, bookingNumber, blNumber, carrier, vessel, voyage, pol, pod, etd, eta, status, statusCode, transitPercentage, delayDays, isDelayed, alertLevel, lastMilestone, containerCount, hasContainers, containers[] { number, status, sizeType }",
+  },
+];
+
+export function templateVariablesFor(
+  eventType: NotificationEventType
+): TemplateVariable[] {
+  return eventType === "WEEKLY_SUMMARY"
+    ? WEEKLY_SUMMARY_TEMPLATE_VARIABLES
+    : TEMPLATE_VARIABLES;
+}
 
 const SAMPLE_DATA: Record<string, string> = {
   bookingNumber: "MEDU1234567",
@@ -217,6 +273,31 @@ const SAMPLE_DATA: Record<string, string> = {
   clientName: "Frutícola Ejemplo S.A.",
   freeDaysRemaining: "5",
 };
+
+const WEEKLY_SUMMARY_SAMPLE_DATA: Record<string, string> = {
+  clientName: "Frutícola Ejemplo S.A.",
+  slotLabel: "Miércoles 09:00",
+  timezone: "America/Santiago",
+  url: "https://portal.acostayaguayo.cl",
+  bookingCount: "8",
+  totalCount: "8",
+  containerCount: "21",
+  hasBookings: "true",
+  truncated: "false",
+  truncatedCount: "0",
+  "counts.enTransito": "5",
+  "counts.arribados": "2",
+  "counts.atrasados": "1",
+  "counts.sinZarpar": "0",
+};
+
+export function sampleDataFor(
+  eventType: NotificationEventType
+): Record<string, string> {
+  return eventType === "WEEKLY_SUMMARY"
+    ? WEEKLY_SUMMARY_SAMPLE_DATA
+    : SAMPLE_DATA;
+}
 
 const HANDLEBARS_PLACEHOLDER = /\{\{\s*([\w.]+)\s*\}\}/g;
 

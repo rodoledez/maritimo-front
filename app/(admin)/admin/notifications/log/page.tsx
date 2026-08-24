@@ -97,7 +97,7 @@ export default function NotificationLogPage() {
     <div className="space-y-6">
       <PageHeader
         title="Log de notificaciones"
-        description="Historial de notificaciones enviadas a partir de los eventos informados por ShipsGo."
+        description="Historial de notificaciones enviadas: los hitos informados por ShipsGo y el resumen semanal por cliente. Las filas de resumen semanal no tienen reserva asociada, así que no se pueden filtrar por booking — el cliente viene dentro del asunto."
       />
 
       <Card size="sm">
@@ -274,8 +274,21 @@ export default function NotificationLogPage() {
                           </span>
                         </div>
                       </TableCell>
+                      {/*
+                        Las filas de WEEKLY_SUMMARY llegan con bookingId,
+                        shipmentTrackingId y el include `booking` en null: es un
+                        resumen por cliente, no por reserva.
+                      */}
                       <TableCell className="px-3 py-2 font-mono text-xs">
-                        {row.bookingId !== null ? `#${row.bookingId}` : "—"}
+                        {row.eventType === "WEEKLY_SUMMARY" ? (
+                          <span className="font-sans text-muted-foreground">
+                            Resumen semanal
+                          </span>
+                        ) : row.bookingId !== null ? (
+                          `#${row.bookingId}`
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell className="px-3 py-2 text-sm">
                         {row.recipientEmail}

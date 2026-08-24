@@ -42,9 +42,10 @@ import {
 } from "@/lib/hooks/use-notifications";
 import {
   NOTIFICATION_EVENT_TYPES,
-  TEMPLATE_VARIABLES,
   eventTypeLabel,
   renderHandlebarsPreview,
+  sampleDataFor,
+  templateVariablesFor,
 } from "@/lib/notifications/constants";
 import type { TemplatePayload } from "@/lib/api/notifications";
 import type {
@@ -123,14 +124,30 @@ export function TemplateFormDialog({
 
   const subjectValue = form.watch("subject");
   const bodyHtmlValue = form.watch("bodyHtml");
+  const eventTypeValue = form.watch("eventType");
+
+  /**
+   * El contexto cambia según el evento: los 7 hitos reciben datos de **una
+   * reserva**, `WEEKLY_SUMMARY` recibe los de **un cliente** (con la lista
+   * completa de embarques). Por eso el panel de variables y los datos de
+   * ejemplo dependen del evento elegido.
+   */
+  const variables = useMemo(
+    () => templateVariablesFor(eventTypeValue),
+    [eventTypeValue]
+  );
+  const sampleData = useMemo(
+    () => sampleDataFor(eventTypeValue),
+    [eventTypeValue]
+  );
 
   const subjectPreview = useMemo(
-    () => renderHandlebarsPreview(subjectValue ?? ""),
-    [subjectValue]
+    () => renderHandlebarsPreview(subjectValue ?? "", sampleData),
+    [subjectValue, sampleData]
   );
   const bodyPreview = useMemo(
-    () => renderHandlebarsPreview(bodyHtmlValue ?? ""),
-    [bodyHtmlValue]
+    () => renderHandlebarsPreview(bodyHtmlValue ?? "", sampleData),
+    [bodyHtmlValue, sampleData]
   );
 
   const onSubmit = async (values: TemplateFormValues) => {
@@ -374,8 +391,13 @@ export function TemplateFormDialog({
           <aside className="space-y-6">
             <section className="space-y-3">
               <FieldSectionTitle>Variables disponibles</FieldSectionTitle>
+              <p className="text-xs text-muted-foreground">
+                {eventTypeValue === "WEEKLY_SUMMARY"
+                  ? "Contexto de un cliente: el resumen recibe la lista completa de sus embarques en curso."
+                  : "Contexto de una reserva."}
+              </p>
               <ul className="space-y-2">
-                {TEMPLATE_VARIABLES.map((v) => (
+                {variables.map((v) => (
                   <li key={v.name} className="space-y-0.5">
                     <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
                       {`{{${v.name}}}`}

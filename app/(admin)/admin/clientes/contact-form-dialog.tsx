@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +45,7 @@ import {
   contactCategoryLabel,
 } from "@/lib/contacts/constants";
 import { useCreateContact, useUpdateContact } from "@/lib/hooks/use-contacts";
+import { useWeeklySummarySchedules } from "@/lib/hooks/use-weekly-summary";
 import type { ContactPayload } from "@/lib/api/contacts";
 import { isApiError } from "@/types/api";
 import type { ClientContact, NotificationEventType } from "@/types/domain";
@@ -106,6 +108,29 @@ export function ContactFormDialog({
 
   const category = form.watch("category");
   const isTracking = category === "TRACKING";
+  const subscribedEvents = form.watch("subscribedEvents");
+
+  const numericClientId =
+    clientId === undefined || clientId === null ? null : Number(clientId);
+  const { data: schedulesPage } = useWeeklySummarySchedules(
+    { clientId: numericClientId ?? undefined, take: 1 },
+    { enabled: open && isTracking && numericClientId !== null }
+  );
+  const hasActiveWeeklySummary = useMemo(
+    () => (schedulesPage?.rows ?? []).some((s) => s.isActive),
+    [schedulesPage]
+  );
+
+  /**
+   * Un contacto con la lista **vacía** está suscrito a todo, así que recibe el
+   * resumen. Pero uno que enumeró sus eventos y no incluyó `WEEKLY_SUMMARY`
+   * queda fuera en silencio — de ahí el aviso.
+   */
+  const missesWeeklySummary =
+    isTracking &&
+    hasActiveWeeklySummary &&
+    subscribedEvents.length > 0 &&
+    !subscribedEvents.includes("WEEKLY_SUMMARY");
 
   useEffect(() => {
     if (open) {
@@ -268,6 +293,16 @@ export function ContactFormDialog({
                   <FieldDescription>
                     Deje todo sin marcar para recibir todos los eventos.
                   </FieldDescription>
+                  {missesWeeklySummary ? (
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Este contacto no recibirá el resumen semanal: el cliente
+                        tiene una programación activa, pero &ldquo;Resumen
+                        semanal&rdquo; no está entre sus eventos.
+                      </AlertDescription>
+                    </Alert>
+                  ) : null}
                   <div className="grid gap-2 sm:grid-cols-2">
                     {NOTIFICATION_EVENT_TYPES.map((event) => {
                       const checked = field.value.includes(event);

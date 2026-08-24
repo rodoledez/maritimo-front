@@ -4,6 +4,7 @@ import {
   BookOpen,
   Boxes,
   Building2,
+  CalendarCheck,
   CalendarClock,
   CalendarRange,
   ClipboardList,
@@ -48,6 +49,11 @@ export const adminLinks: NavLink[] = [
         label: "Reglas",
         href: "/admin/notifications/rules",
         icon: Bell,
+      },
+      {
+        label: "Resumen semanal",
+        href: "/admin/notifications/weekly-summary",
+        icon: CalendarCheck,
       },
       {
         label: "Free days",

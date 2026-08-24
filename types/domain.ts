@@ -340,7 +340,12 @@ export type ActiveShipmentsListResponse = {
   page: { skip: number; take: number };
 };
 
-export type NotificationEventType =
+/**
+ * Los 7 hitos de ciclo de vida de una reserva. Mapean 1:1 contra los
+ * movimientos de ShipsGo y son los únicos valores que aceptan
+ * `/notification-rules` y `POST /notifications/trigger/:bookingId`.
+ */
+export type BookingNotificationEventType =
   | "GATE_OUT"
   | "GATE_IN"
   | "DEPARTURE"
@@ -348,6 +353,16 @@ export type NotificationEventType =
   | "ARRIVAL"
   | "POD_GATE_OUT"
   | "EMPTY_RETURN";
+
+/**
+ * Enum completo del backend. `WEEKLY_SUMMARY` NO es un hito de contenedor: es
+ * un resumen por cliente que se programa en `/admin/notifications/weekly-summary`.
+ * Vale en plantillas, contactos y log; los endpoints por reserva lo rechazan
+ * con 400.
+ */
+export type NotificationEventType =
+  | BookingNotificationEventType
+  | "WEEKLY_SUMMARY";
 
 export type NotificationTriggerType =
   | "BEFORE_REFERENCE"
@@ -404,7 +419,8 @@ export type NotificationTemplate = {
 
 export type NotificationRule = {
   id: number;
-  eventType: NotificationEventType;
+  /** Sólo hitos por reserva: el backend rechaza `WEEKLY_SUMMARY` con 400. */
+  eventType: BookingNotificationEventType;
   clientId: number | null;
   name: string;
   /** `null` = usa la plantilla por defecto del evento (resuelta por evento + cliente). */
@@ -454,6 +470,123 @@ export type NotificationLog = {
   createdAt: string;
 };
 
+// --- Resumen semanal por cliente ---
+
+/** Plantilla embebida en una programación de resumen semanal. */
+export type WeeklySummaryScheduleTemplate = {
+  id: number;
+  eventType: NotificationEventType;
+  clientId: number | null;
+  subject: string;
+  isActive: boolean;
+};
+
+/**
+ * Programación del resumen semanal. Hay a lo más **una por cliente**
+ * (UNIQUE en `clientId`; crear una segunda devuelve 409).
+ *
+ * Ojo con los dos tipos de tiempo que conviven acá:
+ * - `timeOfDay` es hora de pared (`"09:00"`) en `timezone`. Nunca se convierte.
+ * - `nextSlotAt` / `lastSentAt` / `lastSlotAt` son instantes UTC y se formatean
+ *   en `timezone`, no en la zona del navegador (ver `formatDateTimeInZone`).
+ */
+export type WeeklySummarySchedule = {
+  id: number;
+  clientId: number;
+  client?: { id: number; name: string } | null;
+  /** 0 = domingo … 6 = sábado (convención `Date#getUTCDay()`, NO ISO-8601). */
+  dayOfWeek: number;
+  /** `"HH:mm"`, hora local de `timezone`. */
+  timeOfDay: string;
+  /** Zona IANA, p. ej. `America/Santiago`. */
+  timezone: string;
+  isActive: boolean;
+  /** `false` = si el cliente no tiene embarques en curso, no se envía nada. */
+  sendWhenEmpty: boolean;
+  /** `null` = usa la plantilla global de `WEEKLY_SUMMARY`. */
+  templateId: number | null;
+  template?: WeeklySummaryScheduleTemplate | null;
+  /** Lista separada por `,` o `;`. Si viene, **reemplaza** a los contactos. */
+  recipientEmails: string | null;
+  /** Instante UTC del último envío, o `null` si nunca se envió. */
+  lastSentAt: string | null;
+  /** Instante UTC del último slot evaluado. */
+  lastSlotAt: string | null;
+  /** `SENT`, `SKIPPED: sin embarques en curso`, `FAILED: …` */
+  lastResult: string | null;
+  /** Derivado por el backend, no persiste. Instante UTC. */
+  nextSlotAt: string | null;
+  createdBy?: ContactAuditUser | null;
+  updatedBy?: ContactAuditUser | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+/** Resultado de un envío / evaluación. `WOULD_SEND` sólo aparece en dry run. */
+export type WeeklySummaryStatus =
+  | "SENT"
+  | "SKIPPED"
+  | "FAILED"
+  | "WOULD_SEND";
+
+/** `GET /weekly-summary/preview/:clientId` — no envía ni escribe nada. */
+export type WeeklySummaryPreview = {
+  clientId: number;
+  clientName: string;
+  shipmentCount: number;
+  containerCount: number;
+  /** `true` = el correo muestra sólo los primeros N de `shipmentCount`. */
+  truncated: boolean;
+  templateId: number | null;
+  subject: string;
+  /** Documento HTML completo (con `<!DOCTYPE>` y `<style>`): va en un iframe. */
+  html: string;
+  recipients: { to: string[]; cc: string[] };
+  schedule: {
+    id: number;
+    dayOfWeek: number;
+    timeOfDay: string;
+    timezone: string;
+    isActive: boolean;
+    lastSlotAt: string | null;
+    nextSlotAt: string | null;
+  } | null;
+};
+
+/** `POST /weekly-summary/send/:clientId` — override del operador, siempre reenvía. */
+export type WeeklySummarySendResult = {
+  clientId?: number;
+  status: WeeklySummaryStatus;
+  reason?: string | null;
+  subject?: string | null;
+  recipientEmail?: string | null;
+  shipments?: number | null;
+  notificationLogId?: number | null;
+};
+
+export type WeeklySummaryTickDetail = {
+  scheduleId?: number;
+  clientId?: number;
+  clientName?: string | null;
+  status: WeeklySummaryStatus;
+  reason?: string | null;
+  shipments?: number | null;
+  subject?: string | null;
+};
+
+/** `POST /weekly-summary/run-tick` — diagnóstico. Con `dryRun` no escribe. */
+export type WeeklySummaryTickResult = {
+  dryRun?: boolean;
+  schedules: number;
+  due: number;
+  notDue: number;
+  stale: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  details: WeeklySummaryTickDetail[];
+};
+
 /**
  * Estado de aviso de un hito de tracking. `PENDING` lo reintenta el propio
  * sistema (no hay acción del usuario); `SUPPRESSED_BACKLOG` y `SKIPPED` no
@@ -472,7 +605,7 @@ export type MilestoneNotifyState =
  */
 export type BookingMilestone = {
   id?: number;
-  eventType: NotificationEventType;
+  eventType: BookingNotificationEventType;
   occurredAt: string;
   locationName: string | null;
   containerNumber: string | null;
@@ -551,8 +684,12 @@ export type Booking = {
    * pero todavía no hay tracking; `NAVIERA_NO_INTEGRADA` = no aplica.
    */
   shipsgoStatus?: BookingShipsgoStatus | null;
-  /** Evento de la última notificación enviada (null si nunca se envió una). */
-  lastNotificationEvent?: NotificationEventType | null;
+  /**
+   * Evento de la última notificación enviada (null si nunca se envió una).
+   * Nunca puede ser `WEEKLY_SUMMARY`: esas filas del log van con `bookingId`
+   * nulo, así que un resumen no aparece como última notificación de la reserva.
+   */
+  lastNotificationEvent?: BookingNotificationEventType | null;
   /** Fecha/hora en que se envió esa última notificación. */
   lastNotificationSentAt?: string | null;
 };

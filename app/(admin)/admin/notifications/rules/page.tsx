@@ -44,26 +44,30 @@ import {
   useUpdateNotificationRule,
 } from "@/lib/hooks/use-notifications";
 import {
-  NOTIFICATION_EVENT_TYPES,
+  BOOKING_EVENT_TYPES,
   eventShipsgoMovement,
   eventTypeLabel,
   triggerSummary,
 } from "@/lib/notifications/constants";
 import { errorMessage } from "@/lib/utils/errors";
 import type {
-  NotificationEventType,
+  BookingNotificationEventType,
   NotificationRule,
 } from "@/types/domain";
 
 import { ShipsgoEventMap } from "../_shipsgo-event-map";
 import { RuleFormDialog } from "./rule-form-dialog";
 
-type EventFilter = "all" | NotificationEventType;
+type EventFilter = "all" | BookingNotificationEventType;
 type ScopeFilter = "all" | "global" | "client";
 
+/**
+ * Sólo los 7 hitos por reserva: `WEEKLY_SUMMARY` no se programa con reglas de
+ * calendario (tiene su propia pantalla) y el backend lo rechaza con 400.
+ */
 const EVENT_OPTIONS: FilterOption<EventFilter>[] = [
   { value: "all", label: "Todos" },
-  ...NOTIFICATION_EVENT_TYPES.map<FilterOption<EventFilter>>((evt) => ({
+  ...BOOKING_EVENT_TYPES.map<FilterOption<EventFilter>>((evt) => ({
     value: evt,
     label: eventTypeLabel(evt),
   })),

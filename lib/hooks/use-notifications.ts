@@ -30,7 +30,10 @@ import {
   type TemplateListParams,
   type TemplatePayload,
 } from "@/lib/api/notifications";
-import type { NotificationEventType } from "@/types/domain";
+import type {
+  BookingNotificationEventType,
+  NotificationEventType,
+} from "@/types/domain";
 
 const TEMPLATES_KEY = "notification-templates";
 const RULES_KEY = "notification-rules";
@@ -188,11 +191,20 @@ export function useNotificationLogs(
 
 // --- Trigger ---
 
+/**
+ * Sin `eventType` recorre los 7 hitos por reserva. Si algún día se agrega un
+ * selector de evento acá, debe ofrecer `BOOKING_EVENT_TYPES`, no los 8 del enum.
+ */
 export function useTriggerBookingNotification() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (bookingId: number | string) =>
-      triggerBookingNotification(bookingId),
+    mutationFn: ({
+      bookingId,
+      eventType,
+    }: {
+      bookingId: number | string;
+      eventType?: BookingNotificationEventType;
+    }) => triggerBookingNotification(bookingId, eventType),
     onSuccess: () => qc.invalidateQueries({ queryKey: [LOGS_KEY] }),
   });
 }

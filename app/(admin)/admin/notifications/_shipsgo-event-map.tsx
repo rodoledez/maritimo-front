@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  NOTIFICATION_EVENT_TYPES,
+  BOOKING_EVENT_TYPES,
   eventShipsgoMovement,
   eventTypeLabel,
 } from "@/lib/notifications/constants";
@@ -56,7 +56,7 @@ export function ShipsgoEventMap({ className }: { className?: string }) {
                 </tr>
               </thead>
               <tbody>
-                {NOTIFICATION_EVENT_TYPES.map((evt) => {
+                {BOOKING_EVENT_TYPES.map((evt) => {
                   const movement = eventShipsgoMovement(evt);
                   return (
                     <tr key={evt} className="border-t border-foreground/10">
