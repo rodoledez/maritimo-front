@@ -19,7 +19,11 @@ import { ItineraryFormDialog } from "@/app/(admin)/admin/itinerarios/itinerary-f
 import { useUpdateBookingItinerary } from "@/lib/hooks/use-bookings";
 import { useItineraries } from "@/lib/hooks/use-itineraries";
 import { errorMessage } from "@/lib/utils/errors";
-import { assocLabel, formatDate } from "@/lib/utils/format";
+import {
+  assocLabel,
+  formatDate,
+  itineraryPortDestination,
+} from "@/lib/utils/format";
 import type { Booking, Itinerary } from "@/types/domain";
 
 /** Etiqueta compacta de un itinerario para el selector. */
@@ -40,7 +44,7 @@ function itineraryKeywords(it: Itinerary): string {
     it.containerShip,
     it.tripNo,
     assocLabel(it.portDeparture),
-    assocLabel(it.portDestination),
+    itineraryPortDestination(it),
     assocLabel(it.countryDestination),
   ]
     .filter(Boolean)
@@ -83,7 +87,7 @@ function ItineraryPreview({ itinerary }: { itinerary: Itinerary }) {
       />
       <PreviewField
         label="Pto. Destino"
-        value={assocLabel(itinerary.portDestination) || "—"}
+        value={itineraryPortDestination(itinerary) || "—"}
       />
       <PreviewField label="ETD" value={formatDate(itinerary.etd)} />
       <PreviewField label="ETA" value={formatDate(itinerary.eta)} />

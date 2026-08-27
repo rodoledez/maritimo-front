@@ -54,7 +54,11 @@ import { useTypeContainers } from "@/lib/hooks/use-type-containers";
 import { useItineraries } from "@/lib/hooks/use-itineraries";
 import { useCreateBooking } from "@/lib/hooks/use-bookings";
 import { errorMessage } from "@/lib/utils/errors";
-import { assocLabel, formatDate } from "@/lib/utils/format";
+import {
+  assocLabel,
+  formatDate,
+  itineraryPortDestination,
+} from "@/lib/utils/format";
 import type { Itinerary } from "@/types/domain";
 
 import { Stepper, type Step } from "./stepper";
@@ -165,7 +169,7 @@ export function BookingWizard({
   const destinationPorts = useMemo(() => {
     const map = new Map<string, { name: string; country: string | null }>();
     for (const it of itineraries) {
-      const name = assocLabel(it.portDestination);
+      const name = itineraryPortDestination(it);
       if (!name) continue;
       if (!map.has(name)) {
         const country = assocLabel(it.countryDestination) || null;
@@ -192,7 +196,7 @@ export function BookingWizard({
         ) {
           return false;
         }
-        if (values.port && assocLabel(it.portDestination) !== values.port) {
+        if (values.port && itineraryPortDestination(it) !== values.port) {
           return false;
         }
         return true;
@@ -623,7 +627,7 @@ function Step2({
                 <TableCell className="hidden md:table-cell">
                   {assocLabel(it.portDeparture) || "—"}
                 </TableCell>
-                <TableCell>{assocLabel(it.portDestination) || "—"}</TableCell>
+                <TableCell>{itineraryPortDestination(it) || "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">
                   {formatDate(it.etd)}
                 </TableCell>
@@ -990,7 +994,7 @@ function Step4Review({
           />
           <ReviewField
             label="Pto. Destino"
-            value={assocLabel(itinerary?.portDestination)}
+            value={itineraryPortDestination(itinerary)}
           />
           <ReviewField label="ETD" value={formatDate(itinerary?.etd)} />
           <ReviewField label="ETA" value={formatDate(itinerary?.eta)} />

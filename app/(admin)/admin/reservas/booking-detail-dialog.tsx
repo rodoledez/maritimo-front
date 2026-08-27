@@ -31,7 +31,12 @@ import {
 } from "@/lib/hooks/use-shipments-tracking";
 import { eventTypeLabel } from "@/lib/notifications/constants";
 import { errorMessage } from "@/lib/utils/errors";
-import { assocLabel, formatDate, formatDateTime as formatSyncDateTime } from "@/lib/utils/format";
+import {
+  assocLabel,
+  formatDate,
+  formatDateTime as formatSyncDateTime,
+  itineraryPortDestination,
+} from "@/lib/utils/format";
 import type { Booking, Facility } from "@/types/domain";
 import {
   isNoShipsgoIntegration,
@@ -237,10 +242,13 @@ export function BookingDetailDialog({
             <Field label="Naviera" value={it?.carrier} />
             <Field label="M/N" value={it?.containerShip} />
             <Field label="Viaje" value={it?.tripNo} />
-            <Field label="Pto. Zarpe" value={assocLabel(it?.portDeparture)} />
+            <Field
+              label="Pto. Zarpe"
+              value={assocLabel(it?.portDeparture) || "—"}
+            />
             <Field
               label="Pto. Destino"
-              value={assocLabel(it?.portDestination)}
+              value={itineraryPortDestination(it) || "—"}
             />
             <Field label="ETD" value={formatDate(it?.etd)} />
             <Field label="ETA" value={formatDate(it?.eta)} />

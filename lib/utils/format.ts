@@ -11,6 +11,33 @@ export function assocLabel(
   return value.name ?? "";
 }
 
+/**
+ * Nombre del puerto de destino de un itinerario, tolerante a las dos formas en
+ * que lo devuelve el backend:
+ *
+ * - `GET /itineraries` incluye la asociación `portDestination` (fila Port), y
+ *   la columna string queda oculta tras ella.
+ * - `GET /bookings*` incluye el itinerario SIN esa asociación, así que sólo
+ *   viene la columna string, serializada como `portDestinationName` (en el
+ *   modelo Sequelize `portDestination` es el BelongsTo, no la columna).
+ *
+ * `portDeparture` no necesita esto: es una columna string plana.
+ */
+export function itineraryPortDestination(
+  itinerary:
+    | {
+        portDestination?: string | { name?: string | null } | null;
+        portDestinationName?: string | null;
+      }
+    | null
+    | undefined
+): string {
+  if (!itinerary) return "";
+  return (
+    assocLabel(itinerary.portDestination) || itinerary.portDestinationName || ""
+  );
+}
+
 export function formatDate(value?: string | Date | null): string {
   if (!value) return "—";
   const date = typeof value === "string" ? new Date(value) : value;

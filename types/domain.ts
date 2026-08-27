@@ -142,6 +142,12 @@ export type Itinerary = {
   portDeparture?: string | NamedAssoc | null;
   portDestinationId?: number | string | null;
   portDestination?: string | NamedAssoc | null;
+  /**
+   * Nombre del puerto de destino tal como lo serializa el backend cuando NO
+   * eager-loadea la asociación `portDestination` (caso de `GET /bookings*`).
+   * Leerlo siempre vía `itineraryPortDestination()`.
+   */
+  portDestinationName?: string | null;
   countryDestination?: string | NamedAssoc | null;
   etd?: string | null;
   eta?: string | null;

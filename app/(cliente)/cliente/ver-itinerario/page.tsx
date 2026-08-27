@@ -10,7 +10,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useItineraries } from "@/lib/hooks/use-itineraries";
 import { errorMessage } from "@/lib/utils/errors";
-import { assocLabel, formatDate } from "@/lib/utils/format";
+import {
+  assocLabel,
+  formatDate,
+  itineraryPortDestination,
+} from "@/lib/utils/format";
 import type { Itinerary } from "@/types/domain";
 
 export default function VerItinerarioPage() {
@@ -32,7 +36,7 @@ export default function VerItinerarioPage() {
       {
         id: "portDestination",
         header: "Pto. Destino",
-        accessorFn: (row) => assocLabel(row.portDestination),
+        accessorFn: (row) => itineraryPortDestination(row),
       },
       {
         id: "countryDestination",

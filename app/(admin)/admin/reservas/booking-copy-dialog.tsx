@@ -44,7 +44,11 @@ import { useClients } from "@/lib/hooks/use-clients";
 import { useCommodities } from "@/lib/hooks/use-commodities";
 import { useTypeContainers } from "@/lib/hooks/use-type-containers";
 import { errorMessage } from "@/lib/utils/errors";
-import { assocLabel, formatDate } from "@/lib/utils/format";
+import {
+  assocLabel,
+  formatDate,
+  itineraryPortDestination,
+} from "@/lib/utils/format";
 import type { Booking } from "@/types/domain";
 
 const FREIGHT_OPTIONS = [
@@ -273,7 +277,7 @@ export function BookingCopyDialog({
                   />
                   <ItineraryField
                     label="Pto. Destino"
-                    value={assocLabel(itinerary?.portDestination)}
+                    value={itineraryPortDestination(itinerary)}
                   />
                   <ItineraryField
                     label="ETD"

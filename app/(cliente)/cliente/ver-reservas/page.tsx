@@ -13,7 +13,7 @@ import { BookingDetailDialog } from "@/app/(admin)/admin/reservas/booking-detail
 import { useAuth } from "@/lib/auth/auth-context";
 import { useBookingsByClient } from "@/lib/hooks/use-bookings";
 import { errorMessage } from "@/lib/utils/errors";
-import { assocLabel, formatDate } from "@/lib/utils/format";
+import { formatDate, itineraryPortDestination } from "@/lib/utils/format";
 import type { Booking } from "@/types/domain";
 
 export default function VerReservasPage() {
@@ -49,9 +49,9 @@ export default function VerReservasPage() {
       {
         id: "Itinerary.portDestination",
         header: "Pto. Destino",
-        accessorFn: (row) => assocLabel(row.Itinerary?.portDestination),
+        accessorFn: (row) => itineraryPortDestination(row.Itinerary),
         cell: ({ row }) =>
-          assocLabel(row.original.Itinerary?.portDestination) || "—",
+          itineraryPortDestination(row.original.Itinerary) || "—",
       },
       {
         accessorKey: "Itinerary.etd",
