@@ -28,11 +28,13 @@ import type { Booking, Itinerary } from "@/types/domain";
 
 /** Etiqueta compacta de un itinerario para el selector. */
 function itineraryLabel(it: Itinerary): string {
+  const destination = itineraryPortDestination(it);
   const parts = [
     `Sem ${it.weekNo}`,
     it.carrier ?? undefined,
     it.containerShip ?? undefined,
     it.tripNo ? `Viaje ${it.tripNo}` : undefined,
+    destination ? `→ ${destination}` : undefined,
   ].filter(Boolean);
   return parts.join(" · ");
 }
