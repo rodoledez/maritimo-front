@@ -69,7 +69,7 @@ function PreviewField({
       <p className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <p className="text-sm font-medium">{value ?? "—"}</p>
+      <p className="text-sm font-medium break-words">{value ?? "—"}</p>
     </div>
   );
 }
@@ -175,7 +175,7 @@ export function BookingUpdateItineraryDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Actualizar itinerario · Reserva #{booking?.id}</DialogTitle>
             <DialogDescription>
@@ -184,7 +184,7 @@ export function BookingUpdateItineraryDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <div className="flex items-end gap-2">
               <div className="min-w-0 flex-1 space-y-1.5">
                 <label
