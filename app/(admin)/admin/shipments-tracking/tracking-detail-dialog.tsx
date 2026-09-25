@@ -20,6 +20,7 @@ import { errorMessage } from "@/lib/utils/errors";
 import { formatDateTime } from "@/lib/utils/format";
 import type { ShipmentTracking } from "@/types/domain";
 
+import { isManualTracking } from "./_status";
 import { ShipsgoTrackingPanel } from "./shipsgo-tracking-panel";
 
 export function TrackingDetailDialog({
@@ -51,18 +52,24 @@ export function TrackingDetailDialog({
     }
   };
 
-  const title = t
-    ? `Tracking · ShipsGo #${t.shipsgoId}${t.bookingId !== null ? ` · Booking #${t.bookingId}` : ""}`
-    : "Tracking";
+  const manual = isManualTracking(t);
+
+  const title = !t
+    ? "Tracking"
+    : manual
+      ? `Tracking manual${t.bookingId !== null ? ` · Booking #${t.bookingId}` : ""}`
+      : `Tracking · ShipsGo #${t.shipsgoId}${t.bookingId !== null ? ` · Booking #${t.bookingId}` : ""}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Datos obtenidos desde ShipsGo.{" "}
-            {t?.lastSyncedAt ? (
+            {manual
+              ? "Seguimiento cargado manualmente: la naviera no se integra con ShipsGo."
+              : "Datos obtenidos desde ShipsGo."}{" "}
+            {!manual && t?.lastSyncedAt ? (
               <>
                 Última sincronización:{" "}
                 <span className="text-foreground">
@@ -99,6 +106,7 @@ export function TrackingDetailDialog({
           >
             Cerrar
           </Button>
+          {t && !manual ? (
           <Button
             type="button"
             onClick={onRefresh}
@@ -116,6 +124,7 @@ export function TrackingDetailDialog({
               </>
             )}
           </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

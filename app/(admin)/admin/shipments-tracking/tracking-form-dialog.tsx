@@ -70,13 +70,15 @@ export function TrackingFormDialog({
     if (open) form.reset(empty);
   }, [open, form]);
 
-  // Se excluyen las reservas cuya naviera no se integra con ShipsGo: el
-  // backend las rechaza con un 400.
+  // Se excluyen las reservas cuya naviera no se integra con ShipsGo y las que
+  // ya tienen seguimiento manual: el backend las rechaza con un 400.
   const trackeableBookings = useMemo(
     () =>
       bookings.filter(
         (b) =>
-          b.status === "Confirmado" && !isNoShipsgoIntegration(b.shipsgoStatus)
+          b.status === "Confirmado" &&
+          !isNoShipsgoIntegration(b.shipsgoStatus) &&
+          b.trackingSource !== "MANUAL"
       ),
     [bookings]
   );

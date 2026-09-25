@@ -78,6 +78,7 @@ function rowToTrackingStub(row: ActiveShipmentRow): ShipmentTracking {
     id: row.trackingId,
     bookingId: null,
     shipsgoId: "",
+    trackingSource: row.trackingSource,
     reference: null,
     bookingNumber: row.bookingNumber,
     carrierScac: null,

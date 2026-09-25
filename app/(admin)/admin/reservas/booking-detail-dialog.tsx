@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Loader2, MapPin, Ship } from "lucide-react";
+import { useState } from "react";
+import { Bell, Loader2, MapPin, Pencil, Plus, Ship } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -39,10 +40,12 @@ import {
 } from "@/lib/utils/format";
 import type { Booking, Facility } from "@/types/domain";
 import {
+  isManualTracking,
   isNoShipsgoIntegration,
   shipmentStatusLabel,
   shipmentStatusTone,
 } from "../shipments-tracking/_status";
+import { ManualTrackingFormDialog } from "../shipments-tracking/manual-tracking-form-dialog";
 import { ShipsgoTrackingPanel } from "../shipments-tracking/shipsgo-tracking-panel";
 import { BookingMilestonesPanel } from "./booking-milestones-panel";
 import { BookingNotificationsPanel } from "./booking-notifications-panel";
@@ -155,6 +158,7 @@ export function BookingDetailDialog({
     { enabled: open && !!booking }
   );
   const integrateMutation = useIntegrateBookingWithShipsgo();
+  const [manualFormOpen, setManualFormOpen] = useState(false);
 
   const onIntegrate = async () => {
     if (!booking) return;
@@ -170,11 +174,19 @@ export function BookingDetailDialog({
   const logs = logsPage?.rows ?? [];
   const shipsgo = trackingDetail?.tracking ?? tracking ?? null;
   // Si la naviera del itinerario no se integra, la reserva nunca se va a
-  // registrar en ShipsGo: no ofrecemos el botón (el 400 del backend queda como
-  // red de seguridad).
+  // registrar en ShipsGo: en vez de integrar se ofrece el seguimiento manual
+  // (el 400 del backend queda como red de seguridad).
   const noShipsgoIntegration = isNoShipsgoIntegration(booking.shipsgoStatus);
+  const isConfirmed = booking.status === "Confirmado";
   // La integración con ShipsGo requiere además una reserva confirmada.
-  const canIntegrate = booking.status === "Confirmado" && !noShipsgoIntegration;
+  const canIntegrate = isConfirmed && !noShipsgoIntegration;
+  const manualTracking =
+    isManualTracking(shipsgo) || booking.trackingSource === "MANUAL";
+  // `booking` es la fila con la que se abrió el diálogo: recién creado el
+  // seguimiento manual todavía dice NAVIERA_NO_INTEGRADA, así que en ese caso
+  // manda el estado del tracking.
+  const trackingStatus =
+    manualTracking && shipsgo ? shipsgo.status : booking.shipsgoStatus;
   const it = booking.Itinerary;
   const terminalLabel = facilityLabel(facilities, booking.terminalId, booking.terminal);
   const depotLabel = facilityLabel(facilities, booking.depotId, booking.depot);
@@ -346,15 +358,22 @@ export function BookingDetailDialog({
               }
             />
             <Field
-              label="Estado ShipsGo"
+              label={manualTracking ? "Estado tracking" : "Estado ShipsGo"}
               value={
-                booking.shipsgoStatus ? (
-                  <StatusBadge
-                    tone={shipmentStatusTone(booking.shipsgoStatus)}
-                    icon={null}
-                  >
-                    {shipmentStatusLabel(booking.shipsgoStatus)}
-                  </StatusBadge>
+                trackingStatus ? (
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <StatusBadge
+                      tone={shipmentStatusTone(trackingStatus)}
+                      icon={null}
+                    >
+                      {shipmentStatusLabel(trackingStatus)}
+                    </StatusBadge>
+                    {manualTracking ? (
+                      <StatusBadge tone="neutral" icon={Pencil}>
+                        Manual
+                      </StatusBadge>
+                    ) : null}
+                  </span>
                 ) : (
                   "—"
                 )
@@ -389,7 +408,7 @@ export function BookingDetailDialog({
             </TabsTrigger>
             <TabsTrigger value="tracking">
               <Ship />
-              Tracking ShipsGo
+              Tracking
             </TabsTrigger>
             <TabsTrigger value="notifications">
               <Bell />
@@ -409,7 +428,7 @@ export function BookingDetailDialog({
 
           <TabsContent value="tracking" className="mt-4">
             <section className="space-y-4">
-              {shipsgo?.lastSyncedAt ? (
+              {shipsgo?.lastSyncedAt && !manualTracking ? (
                 <p className="text-xs text-muted-foreground">
                   Última sincronización:{" "}
                   <span className="text-foreground">
@@ -424,6 +443,10 @@ export function BookingDetailDialog({
                   containers={trackingDetail?.containers ?? []}
                   followers={trackingDetail?.followers ?? []}
                   isFetching={trackingFetching}
+                  fallbackVessel={{
+                    name: it?.containerShip,
+                    voyage: it?.tripNo,
+                  }}
                 />
               ) : trackingLoading ? (
                 <div className="flex items-center justify-center py-6 text-muted-foreground">
@@ -439,10 +462,27 @@ export function BookingDetailDialog({
                       : "Esta reserva aún no está integrada con ShipsGo."}
                   </div>
                   {noShipsgoIntegration ? (
-                    <p className="text-xs text-muted-foreground">
-                      Esta reserva no se va a registrar en ShipsGo, así que no
-                      tendrá tracking.
-                    </p>
+                    isConfirmed ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          Puedes cargar el seguimiento a mano: puertos, fechas
+                          planificadas, contenedores y movimientos.
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setManualFormOpen(true)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Crear seguimiento manual
+                        </Button>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        La reserva debe estar confirmada para crear el
+                        seguimiento manual.
+                      </p>
+                    )
                   ) : canIntegrate ? (
                     <Button
                       type="button"
@@ -484,6 +524,12 @@ export function BookingDetailDialog({
           </TabsContent>
         </Tabs>
       </DialogContent>
+
+      <ManualTrackingFormDialog
+        open={manualFormOpen}
+        onOpenChange={setManualFormOpen}
+        booking={booking}
+      />
     </Dialog>
   );
 }

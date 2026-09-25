@@ -3,6 +3,7 @@ import type {
   BookingShipsgoStatus,
   ShipsgoContainerStatus,
   ShipsgoMovementEvent,
+  TrackingSource,
 } from "@/types/domain";
 
 /**
@@ -92,3 +93,47 @@ export function isNoShipsgoIntegration(
 ): boolean {
   return status === NO_SHIPSGO_INTEGRATION;
 }
+
+/** Tracking cargado a mano por un operador (naviera sin integración ShipsGo). */
+export function isManualTracking(
+  tracking: { trackingSource?: TrackingSource | null } | null | undefined
+): boolean {
+  return tracking?.trackingSource === "MANUAL";
+}
+
+/** Número que usa el backend para el contenedor aún sin número real. */
+export const NOT_ASSIGNED_CONTAINER = "NOT_ASSIGNED";
+
+export function containerNumberLabel(number: string): string {
+  return number === NOT_ASSIGNED_CONTAINER ? "Sin asignar" : number;
+}
+
+/** Mayúsculas y sin espacios, igual que normaliza el backend. */
+export function normalizeContainerNumber(value: string): string {
+  return value.replace(/\s+/g, "").toUpperCase();
+}
+
+/** UN/LOCODE: país (2 letras) + ubicación (3 alfanuméricos), p.ej. `CLSAI`. */
+export const UNLOCODE_RE = /^[A-Z]{2}[A-Z0-9]{3}$/;
+
+/** Orden lógico del viaje, para el selector de eventos. */
+export const MOVEMENT_EVENTS: ShipsgoMovementEvent[] = [
+  "EMSH",
+  "GTIN",
+  "LOAD",
+  "DEPA",
+  "ARRV",
+  "DISC",
+  "GTOT",
+  "EMRT",
+];
+
+/**
+ * Eventos cuyo UN/LOCODE es obligatorio: el backend lo compara con POL/POD
+ * para distinguir zarpe de origen, transbordo y arribo a destino.
+ */
+export const EVENTS_REQUIRING_LOCODE: ShipsgoMovementEvent[] = [
+  "DEPA",
+  "ARRV",
+  "DISC",
+];

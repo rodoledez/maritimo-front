@@ -1,15 +1,20 @@
-import { apiDelete, apiGet, apiPost } from "@/lib/api/client";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api/client";
 import { unwrapList, unwrapOne } from "@/lib/api/_shared";
 import type {
   ActiveShipmentsListResponse,
   AlertLevel,
   BookingMilestone,
+  CreateManualTrackingPayload,
   DashboardKpisResponse,
+  ManualContainerUpdatePayload,
+  ManualMovementPayload,
+  ManualMovementUpdatePayload,
   ShipmentDetailResponse,
   ShipmentTracking,
   ShipmentTrackingStatus,
   SyncResult,
   TrackingCarrier,
+  UpdateManualTrackingPayload,
 } from "@/types/domain";
 
 export type TrackingPayload = {
@@ -161,6 +166,94 @@ export async function listTrackingCarriers(): Promise<TrackingCarrier[]> {
   return unwrapList(
     await apiGet<TrackingCarrier[] | { data: TrackingCarrier[] }>(
       "/shipments-tracking/carriers"
+    )
+  );
+}
+
+// ─── Seguimiento manual ──────────────────────────────────────────────────────
+// Para navieras sin integración ShipsGo. Todas las escrituras responden el
+// detalle completo (misma forma que `GET /:id/detail`), así que el llamador lo
+// puede poner directo en la caché. Los endpoints con `:id` responden 400 si el
+// tracking es de ShipsGo.
+
+type DetailEnvelope = ShipmentDetailResponse | { data: ShipmentDetailResponse };
+
+export async function createManualTracking(
+  payload: CreateManualTrackingPayload
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiPost<DetailEnvelope>("/shipments-tracking/manual", payload)
+  );
+}
+
+export async function updateManualTracking(
+  shipmentId: number | string,
+  payload: UpdateManualTrackingPayload
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiPatch<DetailEnvelope>(
+      `/shipments-tracking/${shipmentId}/manual`,
+      payload
+    )
+  );
+}
+
+export async function updateManualContainer(
+  shipmentId: number | string,
+  containerNumber: string,
+  payload: ManualContainerUpdatePayload
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiPatch<DetailEnvelope>(
+      `/shipments-tracking/${shipmentId}/containers/${encodeURIComponent(containerNumber)}`,
+      payload
+    )
+  );
+}
+
+export async function deleteManualContainer(
+  shipmentId: number | string,
+  containerNumber: string
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiDelete<DetailEnvelope>(
+      `/shipments-tracking/${shipmentId}/containers/${encodeURIComponent(containerNumber)}`
+    )
+  );
+}
+
+export async function createManualMovement(
+  shipmentId: number | string,
+  payload: ManualMovementPayload
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiPost<DetailEnvelope>(
+      `/shipments-tracking/${shipmentId}/movements`,
+      payload
+    )
+  );
+}
+
+export async function updateManualMovement(
+  shipmentId: number | string,
+  movementId: string,
+  payload: ManualMovementUpdatePayload
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiPatch<DetailEnvelope>(
+      `/shipments-tracking/${shipmentId}/movements/${encodeURIComponent(movementId)}`,
+      payload
+    )
+  );
+}
+
+export async function deleteManualMovement(
+  shipmentId: number | string,
+  movementId: string
+): Promise<ShipmentDetailResponse> {
+  return unwrapOne(
+    await apiDelete<DetailEnvelope>(
+      `/shipments-tracking/${shipmentId}/movements/${encodeURIComponent(movementId)}`
     )
   );
 }

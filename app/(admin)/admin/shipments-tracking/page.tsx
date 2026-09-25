@@ -2,7 +2,14 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Loader2, MapPin, MoreHorizontal, Plus, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -49,6 +56,7 @@ import { formatDate } from "@/lib/utils/format";
 import type { ShipmentTracking, ShipmentTrackingStatus } from "@/types/domain";
 
 import {
+  isManualTracking,
   shipmentStatusLabel,
   shipmentStatusTone,
 } from "./_status";
@@ -152,7 +160,14 @@ export default function ShipmentsTrackingPage() {
             (t.bookingId !== null ? `Booking #${t.bookingId}` : `ShipsGo ${t.shipsgoId}`);
           return (
             <div className="flex flex-col gap-0.5">
-              <IdentityCell name={label} />
+              <div className="flex items-center gap-2">
+                <IdentityCell name={label} />
+                {isManualTracking(t) ? (
+                  <StatusBadge tone="neutral" icon={Pencil}>
+                    Manual
+                  </StatusBadge>
+                ) : null}
+              </div>
               {t.bookingId === null ? (
                 <span className="ml-9 text-xs text-muted-foreground">
                   Sin booking local
@@ -261,8 +276,10 @@ export default function ShipmentsTrackingPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const item = row.original;
+          // Un tracking manual no se refresca desde ShipsGo ni tiene mapa.
+          const manual = isManualTracking(item);
           const mapUrl =
-            item.mapToken && item.shipsgoId
+            !manual && item.mapToken && item.shipsgoId
               ? `https://map.shipsgo.com/ocean/shipments/${item.shipsgoId}?token=${item.mapToken}`
               : null;
           return (
@@ -283,13 +300,15 @@ export default function ShipmentsTrackingPage() {
                   <DropdownMenuItem onClick={() => onView(item)}>
                     Ver detalle
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onRefresh(item)}
-                    disabled={refreshMutation.isPending}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    Refrescar desde ShipsGo
-                  </DropdownMenuItem>
+                  {!manual ? (
+                    <DropdownMenuItem
+                      onClick={() => onRefresh(item)}
+                      disabled={refreshMutation.isPending}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Refrescar desde ShipsGo
+                    </DropdownMenuItem>
+                  ) : null}
                   {mapUrl ? (
                     <DropdownMenuItem asChild>
                       <a
@@ -433,14 +452,28 @@ export default function ShipmentsTrackingPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar tracking?</AlertDialogTitle>
             <AlertDialogDescription>
-              Se detendrá el seguimiento del shipment{" "}
-              <span className="font-semibold text-foreground">
-                ShipsGo #{deleting?.shipsgoId}
-              </span>{" "}
-              {deleting?.bookingId !== null && deleting?.bookingId !== undefined
-                ? `(booking #${deleting.bookingId}) `
-                : ""}
-              y se eliminará en ShipsGo. Esta acción no se puede deshacer.
+              {isManualTracking(deleting) ? (
+                <>
+                  Se eliminará el seguimiento manual{" "}
+                  <span className="font-semibold text-foreground">
+                    del booking #{deleting?.bookingId}
+                  </span>{" "}
+                  con sus contenedores y movimientos. Esta acción no se puede
+                  deshacer.
+                </>
+              ) : (
+                <>
+                  Se detendrá el seguimiento del shipment{" "}
+                  <span className="font-semibold text-foreground">
+                    ShipsGo #{deleting?.shipsgoId}
+                  </span>{" "}
+                  {deleting?.bookingId !== null &&
+                  deleting?.bookingId !== undefined
+                    ? `(booking #${deleting.bookingId}) `
+                    : ""}
+                  y se eliminará en ShipsGo. Esta acción no se puede deshacer.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

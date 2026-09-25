@@ -172,19 +172,25 @@ export type ShipmentTrackingStatus =
 /**
  * Estado ShipsGo derivado que expone la reserva. Además de los estados reales
  * de ShipsGo puede traer `NAVIERA_NO_INTEGRADA` (la naviera del itinerario
- * tiene `shipsgoIntegration = false`, así que la reserva nunca se va a
- * registrar en ShipsGo) o `null` (la naviera sí se integra, pero todavía no
- * hay tracking). El flag gana sobre el tracking: si se apaga la integración,
- * las reservas ya registradas pasan a `NAVIERA_NO_INTEGRADA`.
+ * tiene `shipsgoIntegration = false` y todavía no hay seguimiento manual) o
+ * `null` (la naviera sí se integra, pero todavía no hay tracking). Con
+ * seguimiento manual trae el estado de ese tracking (BOOKED, SAILING…).
  */
 export type BookingShipsgoStatus =
   | ShipmentTrackingStatus
   | "NAVIERA_NO_INTEGRADA";
 
+/**
+ * Origen del tracking. `MANUAL` = lo carga un operador a mano (naviera sin
+ * integración ShipsGo); su `shipsgoId` es `MANUAL-<bookingId>` y no se muestra.
+ */
+export type TrackingSource = "SHIPSGO" | "MANUAL";
+
 export type ShipmentTracking = {
   id: number;
   bookingId: number | null;
   shipsgoId: string;
+  trackingSource: TrackingSource;
   reference: string | null;
   bookingNumber: string | null;
   carrierScac: string | null;
@@ -248,6 +254,12 @@ export type ShipsgoMovement = {
   vessel: ShipsgoVessel | null;
   voyage: string | null;
   timestamp: string;
+  /** Sólo en movimientos manuales: identifica el movimiento para editarlo o eliminarlo. */
+  id?: string;
+  enteredById?: number | null;
+  enteredAt?: string | null;
+  updatedById?: number | null;
+  updatedAt?: string | null;
 };
 
 export type ShipsgoContainerStatus =
@@ -279,6 +291,49 @@ export type ShipmentDetailResponse = {
   containers: ShipsgoContainer[];
   followers: ShipsgoFollower[];
 };
+
+/** Puerto de un tracking manual. `code` = UN/LOCODE (p.ej. `CLSAI`). */
+export type ManualPort = { code: string; name: string };
+
+export type ManualContainerInput = {
+  number: string;
+  size?: number | null;
+  type?: string | null;
+};
+
+export type CreateManualTrackingPayload = {
+  bookingId: number;
+  portOfLoading: ManualPort;
+  portOfDischarge: ManualPort;
+  /** Zarpe PLANIFICADO (queda como `dateOfLoadingInitial`). */
+  etd?: string;
+  /** Arribo PLANIFICADO (`dateOfDischargeInitial`; base del KPI de atraso). */
+  eta?: string;
+  containers?: ManualContainerInput[];
+};
+
+/** `containers` agrega contenedores; no reemplaza la lista. */
+export type UpdateManualTrackingPayload = Partial<
+  Omit<CreateManualTrackingPayload, "bookingId">
+>;
+
+export type ManualContainerUpdatePayload = Partial<ManualContainerInput>;
+
+export type ManualMovementPayload = {
+  event: ShipsgoMovementEvent;
+  status?: ShipsgoMovementStatus;
+  /** ISO 8601. */
+  timestamp: string;
+  location: { code?: string; name: string };
+  vessel?: { name: string; imo?: number | null };
+  voyage?: string;
+  /** Omitido = el backend copia el movimiento a TODOS los contenedores. */
+  containerNumbers?: string[];
+};
+
+export type ManualMovementUpdatePayload = Partial<
+  Omit<ManualMovementPayload, "containerNumbers">
+>;
 
 export type SyncResult = {
   fetched: number;
@@ -320,6 +375,7 @@ export type ActiveRowEtaVsPlan = {
 
 export type ActiveShipmentRow = {
   trackingId: number;
+  trackingSource: TrackingSource;
   opNumber: string | null;
   shippingLine: string | null;
   client: string | null;
@@ -686,10 +742,17 @@ export type Booking = {
   /** Id del registro `x_embarques` en Odoo (null si aún no se sincronizó). */
   odooEmbarqueId?: number | null;
   /**
-   * Último estado ShipsGo del tracking asociado. `null` = la naviera se integra
-   * pero todavía no hay tracking; `NAVIERA_NO_INTEGRADA` = no aplica.
+   * Último estado del tracking asociado (ShipsGo o manual). `null` = la naviera
+   * se integra pero todavía no hay tracking; `NAVIERA_NO_INTEGRADA` = la
+   * naviera no se integra y aún no hay seguimiento manual.
    */
   shipsgoStatus?: BookingShipsgoStatus | null;
+  /**
+   * Origen del tracking de la reserva, si el backend lo expone. Con tracking
+   * manual `shipsgoStatus` trae el estado real (BOOKED, SAILING…), así que es
+   * la única forma de distinguirlo de uno de ShipsGo desde la lista.
+   */
+  trackingSource?: TrackingSource | null;
   /**
    * Evento de la última notificación enviada (null si nunca se envió una).
    * Nunca puede ser `WEEKLY_SUMMARY`: esas filas del log van con `bookingId`

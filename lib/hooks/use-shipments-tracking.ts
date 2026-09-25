@@ -4,10 +4,15 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  type QueryClient,
 } from "@tanstack/react-query";
 
 import {
+  createManualMovement,
+  createManualTracking,
   createShipmentTracking,
+  deleteManualContainer,
+  deleteManualMovement,
   deleteShipmentTracking,
   getDashboardKpis,
   getShipmentTracking,
@@ -19,12 +24,23 @@ import {
   listTrackingCarriers,
   refreshShipmentTracking,
   syncShipmentsTracking,
+  updateManualContainer,
+  updateManualMovement,
+  updateManualTracking,
   type ActiveShipmentsQuery,
   type TrackingListQuery,
   type TrackingPayload,
 } from "@/lib/api/shipments-tracking";
 import { isApiError } from "@/types/api";
-import type { ShipmentTracking } from "@/types/domain";
+import type {
+  CreateManualTrackingPayload,
+  ManualContainerUpdatePayload,
+  ManualMovementPayload,
+  ManualMovementUpdatePayload,
+  ShipmentDetailResponse,
+  ShipmentTracking,
+  UpdateManualTrackingPayload,
+} from "@/types/domain";
 
 const KEY = ["shipments-tracking"] as const;
 
@@ -161,5 +177,124 @@ export function useDeleteShipmentTracking() {
     mutationFn: (shipmentId: ShipmentTracking["id"]) =>
       deleteShipmentTracking(shipmentId),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+// ─── Seguimiento manual ──────────────────────────────────────────────────────
+
+/**
+ * Tras cada escritura manual: la respuesta ya es el detalle actualizado, así
+ * que va directo a la caché; el resto (tracking por reserva, hitos, dashboard,
+ * lista) se invalida. También las reservas, porque su `shipsgoStatus` cambia.
+ */
+function applyManualDetail(qc: QueryClient, detail: ShipmentDetailResponse) {
+  const detailKey = [...KEY, "detail", detail.tracking.id, false] as const;
+  qc.setQueryData(detailKey, detail);
+  qc.invalidateQueries({
+    queryKey: KEY,
+    predicate: (q) =>
+      !(
+        q.queryKey[1] === "detail" &&
+        String(q.queryKey[2]) === String(detail.tracking.id) &&
+        q.queryKey[3] === false
+      ),
+  });
+  qc.invalidateQueries({ queryKey: ["bookings"] });
+}
+
+export function useCreateManualTracking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateManualTrackingPayload) =>
+      createManualTracking(payload),
+    onSuccess: (detail) => applyManualDetail(qc, detail),
+  });
+}
+
+export function useUpdateManualTracking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      shipmentId,
+      payload,
+    }: {
+      shipmentId: ShipmentTracking["id"];
+      payload: UpdateManualTrackingPayload;
+    }) => updateManualTracking(shipmentId, payload),
+    onSuccess: (detail) => applyManualDetail(qc, detail),
+  });
+}
+
+export function useUpdateManualContainer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      shipmentId,
+      containerNumber,
+      payload,
+    }: {
+      shipmentId: ShipmentTracking["id"];
+      containerNumber: string;
+      payload: ManualContainerUpdatePayload;
+    }) => updateManualContainer(shipmentId, containerNumber, payload),
+    onSuccess: (detail) => applyManualDetail(qc, detail),
+  });
+}
+
+export function useDeleteManualContainer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      shipmentId,
+      containerNumber,
+    }: {
+      shipmentId: ShipmentTracking["id"];
+      containerNumber: string;
+    }) => deleteManualContainer(shipmentId, containerNumber),
+    onSuccess: (detail) => applyManualDetail(qc, detail),
+  });
+}
+
+export function useCreateManualMovement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      shipmentId,
+      payload,
+    }: {
+      shipmentId: ShipmentTracking["id"];
+      payload: ManualMovementPayload;
+    }) => createManualMovement(shipmentId, payload),
+    onSuccess: (detail) => applyManualDetail(qc, detail),
+  });
+}
+
+export function useUpdateManualMovement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      shipmentId,
+      movementId,
+      payload,
+    }: {
+      shipmentId: ShipmentTracking["id"];
+      movementId: string;
+      payload: ManualMovementUpdatePayload;
+    }) => updateManualMovement(shipmentId, movementId, payload),
+    onSuccess: (detail) => applyManualDetail(qc, detail),
+  });
+}
+
+export function useDeleteManualMovement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      shipmentId,
+      movementId,
+    }: {
+      shipmentId: ShipmentTracking["id"];
+      movementId: string;
+    }) => deleteManualMovement(shipmentId, movementId),
+    onSuccess: (detail) => applyManualDetail(qc, detail),
   });
 }

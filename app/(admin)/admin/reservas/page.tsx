@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Copy,
   MoreHorizontal,
+  Pencil,
   Plus,
   Route,
   Ship,
@@ -72,6 +73,7 @@ import { BookingDetailDialog } from "./booking-detail-dialog";
 import { BookingEditDialog } from "./booking-edit-dialog";
 import { BookingUpdateConfirmationDialog } from "./booking-update-confirmation-dialog";
 import { BookingUpdateItineraryDialog } from "./booking-update-itinerary-dialog";
+import { ManualTrackingFormDialog } from "../shipments-tracking/manual-tracking-form-dialog";
 
 export default function ReservasPage() {
   const [pageIndex, setPageIndex] = useState(0);
@@ -100,6 +102,7 @@ export default function ReservasPage() {
   );
   const [cancelling, setCancelling] = useState<Booking | null>(null);
   const [copying, setCopying] = useState<Booking | null>(null);
+  const [creatingManual, setCreatingManual] = useState<Booking | null>(null);
 
   const triggerMutation = useTriggerBookingNotification();
   const integrateMutation = useIntegrateBookingWithShipsgo();
@@ -117,6 +120,10 @@ export default function ReservasPage() {
   );
   const onCancel = useCallback((b: Booking) => setCancelling(b), []);
   const onCopy = useCallback((b: Booking) => setCopying(b), []);
+  const onCreateManualTracking = useCallback(
+    (b: Booking) => setCreatingManual(b),
+    []
+  );
   const onNotify = useCallback(
     async (b: Booking) => {
       try {
@@ -198,9 +205,16 @@ export default function ReservasPage() {
           const status = row.original.shipsgoStatus;
           if (!status) return <span className="text-muted-foreground">—</span>;
           return (
-            <StatusBadge tone={shipmentStatusTone(status)} icon={null}>
-              {shipmentStatusLabel(status)}
-            </StatusBadge>
+            <div className="flex flex-wrap items-center gap-1">
+              <StatusBadge tone={shipmentStatusTone(status)} icon={null}>
+                {shipmentStatusLabel(status)}
+              </StatusBadge>
+              {row.original.trackingSource === "MANUAL" ? (
+                <StatusBadge tone="neutral" icon={Pencil}>
+                  Manual
+                </StatusBadge>
+              ) : null}
+            </div>
           );
         },
       },
@@ -248,8 +262,11 @@ export default function ReservasPage() {
           const canCopy = isPending || isConfirmed;
           const canCancel = isPending || isConfirmed;
           // La naviera del itinerario no se integra: la reserva nunca se va a
-          // registrar en ShipsGo.
+          // registrar en ShipsGo; en su lugar se ofrece el seguimiento manual.
           const noShipsgoIntegration = isNoShipsgoIntegration(b.shipsgoStatus);
+          // Sólo se sabe si el backend expone `trackingSource` en la lista; si
+          // no, el 400 de "Integrar con ShipsGo" se muestra como toast.
+          const manualTracking = b.trackingSource === "MANUAL";
           return (
             <div className="flex justify-end">
               <DropdownMenu>
@@ -319,17 +336,26 @@ export default function ReservasPage() {
                         <Bell className="h-4 w-4" />
                         Enviar notificación
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onIntegrateShipsgo(b)}
-                        disabled={
-                          integrateMutation.isPending || noShipsgoIntegration
-                        }
-                      >
-                        <Ship className="h-4 w-4" />
-                        {noShipsgoIntegration
-                          ? "Naviera no integrada"
-                          : "Integrar con ShipsGo"}
-                      </DropdownMenuItem>
+                      {noShipsgoIntegration ? (
+                        <DropdownMenuItem
+                          onClick={() => onCreateManualTracking(b)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Crear seguimiento manual
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={() => onIntegrateShipsgo(b)}
+                          disabled={
+                            integrateMutation.isPending || manualTracking
+                          }
+                        >
+                          <Ship className="h-4 w-4" />
+                          {manualTracking
+                            ? "Seguimiento manual"
+                            : "Integrar con ShipsGo"}
+                        </DropdownMenuItem>
+                      )}
                     </>
                   ) : null}
                 </DropdownMenuContent>
@@ -349,6 +375,7 @@ export default function ReservasPage() {
       onCancel,
       onNotify,
       onIntegrateShipsgo,
+      onCreateManualTracking,
       triggerMutation.isPending,
       integrateMutation.isPending,
     ]
@@ -462,6 +489,11 @@ export default function ReservasPage() {
         open={!!copying}
         onOpenChange={(open) => !open && setCopying(null)}
         booking={copying}
+      />
+      <ManualTrackingFormDialog
+        open={!!creatingManual}
+        onOpenChange={(open) => !open && setCreatingManual(null)}
+        booking={creatingManual}
       />
     </div>
   );
