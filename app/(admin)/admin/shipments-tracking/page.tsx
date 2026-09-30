@@ -205,12 +205,15 @@ export default function ShipmentsTrackingPage() {
         },
       },
       {
-        accessorKey: "currentVessel",
+        accessorKey: "departureVessel",
         header: "M/N · Viaje",
         cell: ({ row }) => {
           const t = row.original;
-          if (!t.currentVessel && !t.currentVoyage) return "—";
-          return [t.currentVessel, t.currentVoyage].filter(Boolean).join(" · ");
+          // Nave de zarpe; la actual (transbordo) sólo si aún no hay zarpe.
+          const vessel = t.departureVessel ?? t.currentVessel;
+          const voyage = t.departureVessel ? t.departureVoyage : t.currentVoyage;
+          if (!vessel && !voyage) return "—";
+          return [vessel, voyage].filter(Boolean).join(" · ");
         },
       },
       {

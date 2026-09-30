@@ -97,9 +97,12 @@ function rowToTrackingStub(row: ActiveShipmentRow): ShipmentTracking {
     transitPercentage: row.etaVsPlan.transitPercentage,
     co2Emission: null,
     mapToken: null,
-    currentVessel: row.vessel,
-    currentVesselImo: row.vesselImo,
-    currentVoyage: row.voyage,
+    currentVessel: row.currentVessel ?? row.vessel,
+    currentVesselImo: null,
+    currentVoyage: row.currentVoyage ?? row.voyage,
+    departureVessel: row.vessel,
+    departureVesselImo: row.vesselImo,
+    departureVoyage: row.voyage,
     checkedAt: row.lastStatus.checkedAt,
     discardedAt: null,
     lastPayload: null,
@@ -656,6 +659,12 @@ export function ShipmentsDashboard() {
                             {row.vesselImo ? (
                               <span className="font-mono text-xs text-muted-foreground">
                                 IMO {row.vesselImo}
+                              </span>
+                            ) : null}
+                            {row.currentVessel &&
+                            row.currentVessel !== row.vessel ? (
+                              <span className="text-xs text-muted-foreground">
+                                Actual: {row.currentVessel}
                               </span>
                             ) : null}
                           </div>

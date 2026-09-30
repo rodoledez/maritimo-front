@@ -521,15 +521,30 @@ export function ShipsgoTrackingPanel({
               </span>
             ) : null}
           </DetailRow>
-          <DetailRow label="Motonave actual">
-            {t.currentVessel ?? "—"}
-            {t.currentVesselImo ? (
+          <DetailRow label="Motonave de zarpe">
+            {t.departureVessel ?? t.currentVessel ?? "—"}
+            {(t.departureVessel ? t.departureVesselImo : t.currentVesselImo) ? (
               <span className="ml-1 font-mono text-xs text-muted-foreground">
-                (IMO {t.currentVesselImo})
+                (IMO{" "}
+                {t.departureVessel ? t.departureVesselImo : t.currentVesselImo})
               </span>
             ) : null}
           </DetailRow>
-          <DetailRow label="Viaje actual">{t.currentVoyage ?? "—"}</DetailRow>
+          <DetailRow label="Viaje de zarpe">
+            {(t.departureVessel ? t.departureVoyage : t.currentVoyage) ?? "—"}
+          </DetailRow>
+          {t.departureVessel &&
+          t.currentVessel &&
+          t.currentVessel !== t.departureVessel ? (
+            <DetailRow label="Motonave actual (transbordo)">
+              {t.currentVessel}
+              {t.currentVoyage ? (
+                <span className="ml-1 font-mono text-xs text-muted-foreground">
+                  · {t.currentVoyage}
+                </span>
+              ) : null}
+            </DetailRow>
+          ) : null}
         </div>
       </section>
 

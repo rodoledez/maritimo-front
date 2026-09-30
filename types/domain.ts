@@ -212,6 +212,10 @@ export type ShipmentTracking = {
   currentVessel: string | null;
   currentVesselImo: number | null;
   currentVoyage: string | null;
+  /** Vessel leaving the POL — stays put after a transshipment, unlike currentVessel. */
+  departureVessel: string | null;
+  departureVesselImo: number | null;
+  departureVoyage: string | null;
   checkedAt: string | null;
   discardedAt: string | null;
   lastPayload?: Record<string, unknown> | null;
@@ -383,9 +387,13 @@ export type ActiveShipmentRow = {
   numberOfContainers: number | null;
   origin: string | null;
   destination: string | null;
+  /** Departure vessel (leaves the POL); falls back to the current one. */
   vessel: string | null;
   vesselImo: number | null;
   voyage: string | null;
+  /** Latest movement's vessel — differs from `vessel` after a transshipment. */
+  currentVessel: string | null;
+  currentVoyage: string | null;
   lastStatus: ActiveRowLastStatus;
   lastTransshipmentPort: string | null;
   nextPort: string | null;
