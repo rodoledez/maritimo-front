@@ -538,6 +538,9 @@ export type NotificationLog = {
   dedupeKey: string | null;
   sentAt: string | null;
   createdAt: string;
+  /** Usuario que disparó un envío manual; null en los del sistema. */
+  triggeredById?: number | null;
+  triggeredBy?: ContactAuditUser | null;
 };
 
 // --- Resumen semanal por cliente ---

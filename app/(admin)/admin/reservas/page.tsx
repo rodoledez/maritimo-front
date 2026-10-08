@@ -43,7 +43,6 @@ import {
   useIntegrateBookingWithShipsgo,
 } from "@/lib/hooks/use-bookings";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
-import { useTriggerBookingNotification } from "@/lib/hooks/use-notifications";
 import { eventTypeLabel } from "@/lib/notifications/constants";
 import { errorMessage } from "@/lib/utils/errors";
 import { formatDateTime } from "@/lib/utils/format";
@@ -67,6 +66,7 @@ const BOOKING_FILTER_OPTIONS: FilterOption<BookingFilter>[] = [
 ];
 
 import { BookingCancelDialog } from "./booking-cancel-dialog";
+import { BookingNotifyDialog } from "./booking-notify-dialog";
 import { BookingConfirmDialog } from "./booking-confirm-dialog";
 import { BookingCopyDialog } from "./booking-copy-dialog";
 import { BookingDetailDialog } from "./booking-detail-dialog";
@@ -101,10 +101,10 @@ export default function ReservasPage() {
     null
   );
   const [cancelling, setCancelling] = useState<Booking | null>(null);
+  const [notifying, setNotifying] = useState<Booking | null>(null);
   const [copying, setCopying] = useState<Booking | null>(null);
   const [creatingManual, setCreatingManual] = useState<Booking | null>(null);
 
-  const triggerMutation = useTriggerBookingNotification();
   const integrateMutation = useIntegrateBookingWithShipsgo();
 
   const onView = useCallback((b: Booking) => setDetail(b), []);
@@ -124,25 +124,9 @@ export default function ReservasPage() {
     (b: Booking) => setCreatingManual(b),
     []
   );
-  const onNotify = useCallback(
-    async (b: Booking) => {
-      try {
-        // Sin eventType: el backend recorre los 7 hitos por reserva.
-        const result = await triggerMutation.mutateAsync({ bookingId: b.id });
-        const summary = `${result.sent} enviadas · ${result.skipped} omitidas · ${result.failed} fallidas`;
-        if (result.failed > 0) {
-          toast.warning(`Reserva #${b.id}: ${summary}`);
-        } else if (result.sent === 0 && result.skipped > 0) {
-          toast.info(`Reserva #${b.id}: ${summary}`);
-        } else {
-          toast.success(`Reserva #${b.id}: ${summary}`);
-        }
-      } catch (e) {
-        toast.error(errorMessage(e, "No se pudo enviar la notificación"));
-      }
-    },
-    [triggerMutation]
-  );
+  // Abre el diálogo para elegir UN hito: el envío de los 7 de una vez
+  // notificaba estados que el embarque aún no alcanzaba.
+  const onNotify = useCallback((b: Booking) => setNotifying(b), []);
   const onIntegrateShipsgo = useCallback(
     async (b: Booking) => {
       try {
@@ -331,7 +315,6 @@ export default function ReservasPage() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onNotify(b)}
-                        disabled={triggerMutation.isPending}
                       >
                         <Bell className="h-4 w-4" />
                         Enviar notificación
@@ -376,7 +359,6 @@ export default function ReservasPage() {
       onNotify,
       onIntegrateShipsgo,
       onCreateManualTracking,
-      triggerMutation.isPending,
       integrateMutation.isPending,
     ]
   );
@@ -479,6 +461,11 @@ export default function ReservasPage() {
         open={!!updatingItinerary}
         onOpenChange={(open) => !open && setUpdatingItinerary(null)}
         booking={updatingItinerary}
+      />
+      <BookingNotifyDialog
+        open={!!notifying}
+        onOpenChange={(open) => !open && setNotifying(null)}
+        booking={notifying}
       />
       <BookingCancelDialog
         open={!!cancelling}

@@ -330,9 +330,10 @@ export type TriggerResult = {
 };
 
 /**
- * Envío manual por reserva. Sin `eventType` el backend recorre los **7** hitos
- * por reserva (no 8): `WEEKLY_SUMMARY` queda fuera y, si se pasara explícito,
- * devuelve 400 remitiendo a `POST /weekly-summary/send/:clientId`.
+ * Envío manual por reserva. Con `eventType` envía ese hito (aunque no figure
+ * como ocurrido). Sin él, el backend envía solo los hitos que ocurrieron y
+ * devuelve el resto como SKIPPED. `WEEKLY_SUMMARY` devuelve 400 remitiendo a
+ * `POST /weekly-summary/send/:clientId`.
  */
 export async function triggerBookingNotification(
   bookingId: number | string,
