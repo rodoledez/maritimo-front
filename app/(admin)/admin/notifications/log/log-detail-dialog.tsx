@@ -70,6 +70,16 @@ export function LogDetailDialog({
         <section className="grid gap-4 sm:grid-cols-2">
           <Field label="Destinatario" value={log.recipientEmail} />
           <Field label="CC" value={log.ccEmails || "—"} />
+          <Field
+            label="Enviado por"
+            value={
+              log.triggeredBy
+                ? `${log.triggeredBy.name ?? log.triggeredBy.username ?? `#${log.triggeredBy.id}`} (manual)`
+                : log.dedupeKey
+                  ? "Sistema"
+                  : "Manual (usuario no registrado)"
+            }
+          />
           {/* WEEKLY_SUMMARY va sin reserva asociada: bookingId siempre null. */}
           <Field
             label="Booking"
