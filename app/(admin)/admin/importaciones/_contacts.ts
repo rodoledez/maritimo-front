@@ -9,3 +9,22 @@ export function contactEmails(contacts: OdooConsigneeContact[]): string[] {
   }
   return [...seen];
 }
+
+/**
+ * Etiqueta de Odoo que marca a los contactos que reciben los emails
+ * automáticos de hitos de la importación.
+ */
+export const TRACKING_TAG = "tracking";
+
+/** Igual que el backend: sin distinguir mayúsculas ni acentos. */
+function normalizeTag(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase();
+}
+
+export function receivesTracking(contact: OdooConsigneeContact): boolean {
+  return contact.tags.some((tag) => normalizeTag(tag.name) === TRACKING_TAG);
+}

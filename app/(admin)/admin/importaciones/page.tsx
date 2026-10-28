@@ -30,6 +30,10 @@ import { errorMessage } from "@/lib/utils/errors";
 import { formatDate } from "@/lib/utils/format";
 import type { ImportShipment } from "@/types/domain";
 
+import {
+  shipmentStatusLabel,
+  shipmentStatusTone,
+} from "../shipments-tracking/_status";
 import { contactEmails } from "./_contacts";
 import { ImportShipmentDetailDialog } from "./import-shipment-detail-dialog";
 
@@ -132,6 +136,19 @@ export default function ImportacionesPage() {
           ) : (
             "—"
           ),
+      },
+      {
+        accessorKey: "shipsgoStatus",
+        header: "ShipsGo",
+        cell: ({ row }) => {
+          const status = row.original.shipsgoStatus;
+          if (!status) return <span className="text-muted-foreground">—</span>;
+          return (
+            <StatusBadge tone={shipmentStatusTone(status)} icon={null}>
+              {shipmentStatusLabel(status)}
+            </StatusBadge>
+          );
+        },
       },
       {
         id: "contacts",

@@ -32,12 +32,14 @@ export function BookingNotificationsPanel({
   isFetching,
   error,
   onRetry,
+  emptyMessage = "No se han enviado notificaciones para esta reserva.",
 }: {
   logs: NotificationLog[];
   isLoading: boolean;
   isFetching: boolean;
   error: unknown;
   onRetry: () => void;
+  emptyMessage?: string;
 }) {
   const [selected, setSelected] = useState<NotificationLog | null>(null);
 
@@ -74,9 +76,7 @@ export function BookingNotificationsPanel({
     return (
       <div className="flex flex-col items-center gap-2 rounded-md border border-dashed bg-muted/30 p-6 text-center text-muted-foreground">
         <BellOff className="h-6 w-6" />
-        <p className="text-sm">
-          No se han enviado notificaciones para esta reserva.
-        </p>
+        <p className="text-sm">{emptyMessage}</p>
       </div>
     );
   }
