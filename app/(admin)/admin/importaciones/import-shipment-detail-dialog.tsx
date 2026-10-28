@@ -195,6 +195,7 @@ export function ImportShipmentDetailDialog({
             <Section title="Embarque">
               <Field label="Operación" value={s.name} />
               <Field label="HBL" value={s.hbl} />
+              <Field label="Booking" value={s.booking} />
               <Field
                 label="Estado"
                 value={

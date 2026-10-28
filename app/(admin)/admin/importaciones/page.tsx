@@ -94,6 +94,11 @@ export default function ImportacionesPage() {
         cell: ({ row }) => row.original.hbl ?? "—",
       },
       {
+        accessorKey: "booking",
+        header: "Booking",
+        cell: ({ row }) => row.original.booking ?? "—",
+      },
+      {
         accessorKey: "consigneeName",
         header: "Consignatario",
         cell: ({ row }) => row.original.consigneeName ?? "—",
@@ -187,7 +192,7 @@ export default function ImportacionesPage() {
         columns={columns}
         data={rows}
         isLoading={isLoading}
-        searchPlaceholder="Buscar por operación, HBL, consignatario…"
+        searchPlaceholder="Buscar por operación, HBL, booking, consignatario…"
         serverSearch={{
           value: searchRaw,
           onChange: (value) => {
