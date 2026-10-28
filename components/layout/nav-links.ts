@@ -16,6 +16,7 @@ import {
   Library,
   MapPin,
   Package,
+  PackageOpen,
   Ship,
   UserCog,
   Users,
@@ -35,6 +36,7 @@ export const adminLinks: NavLink[] = [
   { label: "Clientes", href: "/admin/clientes", icon: Users },
   { label: "Reservas", href: "/admin/reservas", icon: ClipboardList },
   { label: "Tracking", href: "/admin/shipments-tracking", icon: MapPin },
+  { label: "Importaciones", href: "/admin/importaciones", icon: PackageOpen },
   { label: "Itinerarios", href: "/admin/itinerarios", icon: CalendarRange },
   {
     label: "Notificaciones",

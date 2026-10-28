@@ -181,6 +181,7 @@ For phased plan, effort estimates, per-phase definitions of done, and open quest
 | `/admin/usuarios` | ✅ Done | Includes change-password dialog. `active` via dedicated `/users/:id/{activate,deactivate}` |
 | `/admin/reservas` | ✅ Done | Detail / edit / confirm / cancel dialogs. Edit/confirm/cancel gated on `Pendiente` status. |
 | `/admin/itinerarios` | ✅ Done | CRUD + auto-calc transit time + Excel import + template download |
+| `/admin/importaciones` | ✅ Done | Read-only Odoo import shipments (`/odoo/embarques-importacion`) + consignee contacts in detail dialog |
 | `/cliente` | ✅ Done | Landing tiles |
 | `/cliente/ver-itinerario` | ✅ Done | Read-only itineraries (`/itineraries?vigent=Y`) |
 | `/cliente/ver-reservas` | ✅ Done | `/clients/:id/bookings` with detail dialog |

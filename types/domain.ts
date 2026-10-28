@@ -773,3 +773,93 @@ export type Booking = {
   /** Fecha/hora en que se envió esa última notificación. */
   lastNotificationSentAt?: string | null;
 };
+
+// ─── Embarques de importación (Odoo) ─────────────────────────────────────────
+// Espejo de solo lectura de los embarques de importación de Odoo
+// (`odoo_embarque_importacion`) con los contactos del consignatario
+// (`odoo_consignee_contact`). Los campos sin valor llegan como `null`. Los
+// campos de selección traen clave + etiqueta: siempre se muestra `*Label`.
+
+export type OdooContactTag = { id: number; name: string };
+
+export type OdooConsigneeContact = {
+  id: number;
+  odooId: number;
+  consigneeOdooId: number | null;
+  consigneeName: string | null;
+  /** true = registro del propio consignatario (suele traer el único email). */
+  isConsignee: boolean;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  mobile: string | null;
+  jobTitle: string | null;
+  type: string | null;
+  typeLabel: string | null;
+  tags: OdooContactTag[];
+  /** false = archivado en Odoo. */
+  active: boolean;
+  odooUpdatedAt: string | null;
+  syncedAt: string | null;
+};
+
+export type ImportShipment = {
+  id: number;
+  odooId: number;
+  /** Operación. */
+  name: string | null;
+  hbl: string | null;
+  carrierOdooId: number | null;
+  carrierName: string | null;
+  consigneeOdooId: number | null;
+  consigneeName: string | null;
+  companyOdooId: number | null;
+  companyName: string | null;
+  portOrigin: string | null;
+  portDestination: string | null;
+  etd: string | null;
+  eta: string | null;
+  blIssuePlace: string | null;
+  blIssuePlaceLabel: string | null;
+  /** Estado de Operación. */
+  subState: string | null;
+  subStateLabel: string | null;
+  shipmentType: string | null;
+  shipmentTypeLabel: string | null;
+  serviceType: string | null;
+  serviceTypeLabel: string | null;
+  containerType: string | null;
+  containerTypeLabel: string | null;
+  accountingMonth: string | null;
+  accountingMonthLabel: string | null;
+  alertMessage: string | null;
+  responsibleOdooId: number | null;
+  responsibleName: string | null;
+  salesExecutiveOdooId: number | null;
+  salesExecutiveName: string | null;
+  salesExecutiveText: string | null;
+  /** YYYY-MM-DD */
+  rateValidityDate: string | null;
+  rateExpired: boolean | null;
+  /** Montos en USD. */
+  totalIncome: number | null;
+  totalCost: number | null;
+  projectedMargin: number | null;
+  costingLocked: boolean | null;
+  costingLockedAt: string | null;
+  analyticAccountOdooId: number | null;
+  analyticAccountName: string | null;
+  quotedQty: number | null;
+  realQty: number | null;
+  qtyDeltaPct: number | null;
+  grossWeightKg: number | null;
+  odooCreatedAt: string | null;
+  odooUpdatedAt: string | null;
+  syncedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  /** Ordenados: consignatario, luego activos, luego por nombre. Puede venir vacío. */
+  contacts: OdooConsigneeContact[];
+};
+
+export type ImportShipmentSubState = { key: string; label: string | null };
