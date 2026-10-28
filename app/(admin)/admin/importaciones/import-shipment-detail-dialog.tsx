@@ -1,10 +1,9 @@
 "use client";
 
-import { Loader2, Mail, MailWarning, Phone, Smartphone } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { StatusBadge } from "@/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,9 +17,13 @@ import { Separator } from "@/components/ui/separator";
 import { useImportShipment } from "@/lib/hooks/use-import-shipments";
 import { cn } from "@/lib/utils";
 import { formatDate, formatDateTime } from "@/lib/utils/format";
-import type { ImportShipment, OdooConsigneeContact } from "@/types/domain";
+import type { ImportShipment } from "@/types/domain";
 
-import { contactEmails } from "./_contacts";
+import {
+  shipmentStatusLabel,
+  shipmentStatusTone,
+} from "../shipments-tracking/_status";
+import { ImportShipmentTabs } from "./import-shipment-tabs";
 
 const usd = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -67,76 +70,6 @@ function Section({
   );
 }
 
-function ContactCard({ contact }: { contact: OdooConsigneeContact }) {
-  return (
-    <li
-      className={cn(
-        "space-y-1.5 rounded-lg border p-3",
-        !contact.active && "opacity-60"
-      )}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium">{contact.name || "Sin nombre"}</span>
-        {contact.isConsignee ? (
-          <Badge variant="secondary">Consignatario</Badge>
-        ) : null}
-        {!contact.active ? <Badge variant="outline">Archivado</Badge> : null}
-        {contact.typeLabel ? (
-          <span className="text-xs text-muted-foreground">
-            {contact.typeLabel}
-          </span>
-        ) : null}
-      </div>
-      {contact.jobTitle ? (
-        <p className="text-xs text-muted-foreground">{contact.jobTitle}</p>
-      ) : null}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        {contact.email ? (
-          <a
-            href={`mailto:${contact.email}`}
-            className="inline-flex items-center gap-1 break-all text-primary hover:underline"
-          >
-            <Mail className="h-3.5 w-3.5 shrink-0" />
-            {contact.email}
-          </a>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-muted-foreground">
-            <Mail className="h-3.5 w-3.5" />
-            Sin email
-          </span>
-        )}
-        {contact.phone ? (
-          <a
-            href={`tel:${contact.phone}`}
-            className="inline-flex items-center gap-1 hover:underline"
-          >
-            <Phone className="h-3.5 w-3.5" />
-            {contact.phone}
-          </a>
-        ) : null}
-        {contact.mobile ? (
-          <a
-            href={`tel:${contact.mobile}`}
-            className="inline-flex items-center gap-1 hover:underline"
-          >
-            <Smartphone className="h-3.5 w-3.5" />
-            {contact.mobile}
-          </a>
-        ) : null}
-      </div>
-      {contact.tags.length ? (
-        <div className="flex flex-wrap gap-1">
-          {contact.tags.map((tag) => (
-            <Badge key={tag.id} variant="outline">
-              {tag.name}
-            </Badge>
-          ))}
-        </div>
-      ) : null}
-    </li>
-  );
-}
-
 export function ImportShipmentDetailDialog({
   open,
   onOpenChange,
@@ -151,8 +84,6 @@ export function ImportShipmentDetailDialog({
     enabled: open,
   });
   const s = data ?? shipment;
-  const contacts = s?.contacts ?? [];
-  const hasEmail = contactEmails(contacts).length > 0;
   const salesExecutive = s?.salesExecutiveName || s?.salesExecutiveText;
 
   return (
@@ -196,6 +127,21 @@ export function ImportShipmentDetailDialog({
               <Field label="Operación" value={s.name} />
               <Field label="HBL" value={s.hbl} />
               <Field label="Booking" value={s.booking} />
+              <Field
+                label="ShipsGo"
+                value={
+                  s.shipsgoStatus ? (
+                    <StatusBadge
+                      tone={shipmentStatusTone(s.shipsgoStatus)}
+                      icon={null}
+                    >
+                      {shipmentStatusLabel(s.shipsgoStatus)}
+                    </StatusBadge>
+                  ) : (
+                    "No integrada"
+                  )
+                }
+              />
               <Field
                 label="Estado"
                 value={
@@ -269,32 +215,7 @@ export function ImportShipmentDetailDialog({
 
             <Separator />
 
-            <section className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Contactos del consignatario ({contacts.length})
-              </h3>
-              {!hasEmail ? (
-                <Alert variant="destructive">
-                  <MailWarning className="h-4 w-4" />
-                  <AlertTitle>Sin email</AlertTitle>
-                  <AlertDescription>
-                    Ningún contacto del consignatario tiene email registrado en
-                    Odoo.
-                  </AlertDescription>
-                </Alert>
-              ) : null}
-              {contacts.length ? (
-                <ul className="grid gap-2 sm:grid-cols-2">
-                  {contacts.map((contact) => (
-                    <ContactCard key={contact.id} contact={contact} />
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  El consignatario no tiene contactos sincronizados.
-                </p>
-              )}
-            </section>
+            <ImportShipmentTabs shipment={s} open={open} />
           </div>
         )}
 

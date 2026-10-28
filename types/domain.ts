@@ -811,6 +811,10 @@ export type ImportShipment = {
   hbl: string | null;
   /** Booking de la naviera (en Odoo suele venir vacío). */
   booking: string | null;
+  /** Id del seguimiento ShipsGo asociado; `null` si no está integrada. */
+  shipmentTrackingId: number | null;
+  /** Status ShipsGo de ese seguimiento (mismos valores que `ShipmentTracking.status`). */
+  shipsgoStatus: BookingShipsgoStatus | null;
   carrierOdooId: number | null;
   carrierName: string | null;
   consigneeOdooId: number | null;
@@ -865,3 +869,10 @@ export type ImportShipment = {
 };
 
 export type ImportShipmentSubState = { key: string; label: string | null };
+
+/** Respuesta de `POST /shipments-tracking/by-importacion/:id/integrate`. */
+export type ImportShipsgoIntegrateResult = {
+  alreadyIntegrated: boolean;
+  message: string;
+  tracking: ShipmentTracking;
+};
