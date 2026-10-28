@@ -809,6 +809,8 @@ export type ImportShipment = {
   /** Operación. */
   name: string | null;
   hbl: string | null;
+  /** Booking de la naviera (en Odoo suele venir vacío). */
+  booking: string | null;
   carrierOdooId: number | null;
   carrierName: string | null;
   consigneeOdooId: number | null;

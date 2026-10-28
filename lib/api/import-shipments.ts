@@ -7,7 +7,7 @@ import type {
 } from "@/types/domain";
 
 export type ImportShipmentsQuery = {
-  /** Busca en Operación, HBL o nombre del consignatario. */
+  /** Busca en Operación, HBL, booking o nombre del consignatario. */
   search?: string;
   subState?: string;
   consigneeOdooId?: number;
