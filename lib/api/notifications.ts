@@ -14,6 +14,7 @@ import type {
   NotificationReferenceField,
   NotificationRule,
   NotificationTemplate,
+  NotificationTemplateScope,
   NotificationTriggerType,
   PaginatedResponse,
 } from "@/types/domain";
@@ -47,6 +48,7 @@ function buildQuery(params: Record<string, unknown>): string {
 
 export type TemplateListParams = {
   eventType?: NotificationEventType;
+  scope?: NotificationTemplateScope;
   clientId?: number | null;
   isActive?: boolean;
   skip?: number;
@@ -55,6 +57,7 @@ export type TemplateListParams = {
 
 export type TemplatePayload = {
   eventType: NotificationEventType;
+  scope?: NotificationTemplateScope;
   clientId?: number | null;
   subject: string;
   bodyHtml: string;

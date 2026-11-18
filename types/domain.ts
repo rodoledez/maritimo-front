@@ -472,9 +472,18 @@ export type NotificationRuleTemplate = {
   isActive: boolean;
 };
 
+/**
+ * Tipo de embarque para el que se escribió la plantilla. `BOOKING` =
+ * exportaciones (reservas); `IMPORTACION` = embarques de importación de Odoo,
+ * siempre globales y nunca resumen semanal.
+ */
+export type NotificationTemplateScope = "BOOKING" | "IMPORTACION";
+
 export type NotificationTemplate = {
   id: number;
   eventType: NotificationEventType;
+  /** Ausente sólo en un backend sin la migración 2026-11-17 (= BOOKING). */
+  scope?: NotificationTemplateScope;
   clientId: number | null;
   subject: string;
   bodyHtml: string;
