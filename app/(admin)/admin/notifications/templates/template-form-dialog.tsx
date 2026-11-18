@@ -42,6 +42,7 @@ import {
 } from "@/lib/hooks/use-notifications";
 import {
   NOTIFICATION_EVENT_TYPES,
+  TEMPLATE_SCOPE_LABELS,
   eventTypeLabel,
   renderHandlebarsPreview,
   sampleDataFor,
@@ -51,6 +52,7 @@ import type { TemplatePayload } from "@/lib/api/notifications";
 import type {
   NotificationEventType,
   NotificationTemplate,
+  NotificationTemplateScope,
 } from "@/types/domain";
 
 import { explainNotificationError } from "../_shared";
@@ -61,6 +63,7 @@ const templateSchema = z.object({
   eventType: z.enum(
     NOTIFICATION_EVENT_TYPES as [NotificationEventType, ...NotificationEventType[]]
   ),
+  scope: z.enum(["BOOKING", "IMPORTACION"]),
   clientId: z.string(),
   subject: z.string().min(1, "Debe ingresar un asunto"),
   bodyHtml: z.string().min(1, "Debe ingresar el cuerpo HTML"),
@@ -73,6 +76,7 @@ type TemplateFormValues = z.infer<typeof templateSchema>;
 
 const emptyValues: TemplateFormValues = {
   eventType: "GATE_OUT",
+  scope: "BOOKING",
   clientId: GLOBAL_SCOPE,
   subject: "",
   bodyHtml: "",
@@ -109,6 +113,7 @@ export function TemplateFormDialog({
         editing
           ? {
               eventType: editing.eventType,
+              scope: editing.scope ?? "BOOKING",
               clientId:
                 editing.clientId === null ? GLOBAL_SCOPE : String(editing.clientId),
               subject: editing.subject,
@@ -125,6 +130,8 @@ export function TemplateFormDialog({
   const subjectValue = form.watch("subject");
   const bodyHtmlValue = form.watch("bodyHtml");
   const eventTypeValue = form.watch("eventType");
+  const scopeValue = form.watch("scope");
+  const isImportacion = scopeValue === "IMPORTACION";
 
   /**
    * El contexto cambia según el evento: los 7 hitos reciben datos de **una
@@ -133,13 +140,27 @@ export function TemplateFormDialog({
    * ejemplo dependen del evento elegido.
    */
   const variables = useMemo(
-    () => templateVariablesFor(eventTypeValue),
-    [eventTypeValue]
+    () => templateVariablesFor(eventTypeValue, scopeValue),
+    [eventTypeValue, scopeValue]
   );
   const sampleData = useMemo(
-    () => sampleDataFor(eventTypeValue),
-    [eventTypeValue]
+    () => sampleDataFor(eventTypeValue, scopeValue),
+    [eventTypeValue, scopeValue]
   );
+
+  // Una importación no tiene cliente local ni resumen semanal.
+  const eventOptions = isImportacion
+    ? NOTIFICATION_EVENT_TYPES.filter((evt) => evt !== "WEEKLY_SUMMARY")
+    : NOTIFICATION_EVENT_TYPES;
+  const onScopeChange = (scope: NotificationTemplateScope) => {
+    form.setValue("scope", scope);
+    if (scope === "IMPORTACION") {
+      form.setValue("clientId", GLOBAL_SCOPE);
+      if (form.getValues("eventType") === "WEEKLY_SUMMARY") {
+        form.setValue("eventType", "GATE_OUT");
+      }
+    }
+  };
 
   const subjectPreview = useMemo(
     () => renderHandlebarsPreview(subjectValue ?? "", sampleData),
@@ -153,8 +174,11 @@ export function TemplateFormDialog({
   const onSubmit = async (values: TemplateFormValues) => {
     const payload: TemplatePayload = {
       eventType: values.eventType,
+      scope: values.scope,
       clientId:
-        values.clientId === GLOBAL_SCOPE ? null : Number(values.clientId),
+        values.scope === "IMPORTACION" || values.clientId === GLOBAL_SCOPE
+          ? null
+          : Number(values.clientId),
       subject: values.subject,
       bodyHtml: values.bodyHtml,
       bodyText: values.bodyText?.trim() ? values.bodyText : null,
@@ -197,7 +221,7 @@ export function TemplateFormDialog({
             <code className="rounded bg-muted px-1 py-0.5 text-xs">
               {"{{variable}}"}
             </code>{" "}
-            para incluir datos del booking.
+            para incluir datos del booking o de la importación.
           </DialogDescription>
         </DialogHeader>
 
@@ -210,7 +234,40 @@ export function TemplateFormDialog({
           >
             <section className="space-y-5">
               <FieldSectionTitle>Alcance</FieldSectionTitle>
-              <FieldGroup className="grid gap-6 sm:grid-cols-2">
+              <FieldGroup className="grid gap-6 sm:grid-cols-3">
+                <Controller
+                  name="scope"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel htmlFor="template-scope">
+                        Tipo de embarque <FieldRequiredMark />
+                      </FieldLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) =>
+                          onScopeChange(v as NotificationTemplateScope)
+                        }
+                        disabled={isEditing}
+                      >
+                        <SelectTrigger id="template-scope">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(
+                            Object.keys(
+                              TEMPLATE_SCOPE_LABELS
+                            ) as NotificationTemplateScope[]
+                          ).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {TEMPLATE_SCOPE_LABELS[s]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  )}
+                />
                 <Controller
                   name="eventType"
                   control={form.control}
@@ -228,7 +285,7 @@ export function TemplateFormDialog({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {NOTIFICATION_EVENT_TYPES.map((evt) => (
+                          {eventOptions.map((evt) => (
                             <SelectItem key={evt} value={evt}>
                               {eventTypeLabel(evt)}
                             </SelectItem>
@@ -253,7 +310,7 @@ export function TemplateFormDialog({
                         id="template-client"
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={isEditing}
+                        disabled={isEditing || isImportacion}
                         placeholder="Selecciona…"
                         searchPlaceholder="Buscar cliente…"
                         options={[
@@ -394,7 +451,9 @@ export function TemplateFormDialog({
               <p className="text-xs text-muted-foreground">
                 {eventTypeValue === "WEEKLY_SUMMARY"
                   ? "Contexto de un cliente: el resumen recibe la lista completa de sus embarques en curso."
-                  : "Contexto de una reserva."}
+                  : isImportacion
+                    ? "Contexto de una importación de Odoo. Las variables de reserva también están disponibles, con los datos de la importación."
+                    : "Contexto de una reserva."}
               </p>
               <ul className="space-y-2">
                 {variables.map((v) => (

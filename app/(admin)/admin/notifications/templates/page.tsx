@@ -45,6 +45,7 @@ import {
 } from "@/lib/hooks/use-notifications";
 import {
   NOTIFICATION_EVENT_TYPES,
+  TEMPLATE_SCOPE_LABELS,
   eventTypeLabel,
 } from "@/lib/notifications/constants";
 import { errorMessage } from "@/lib/utils/errors";
@@ -58,6 +59,7 @@ import { TemplateFormDialog } from "./template-form-dialog";
 
 type EventFilter = "all" | NotificationEventType;
 type ScopeFilter = "all" | "global" | "client";
+type KindFilter = "all" | "BOOKING" | "IMPORTACION";
 
 const EVENT_OPTIONS: FilterOption<EventFilter>[] = [
   { value: "all", label: "Todos" },
@@ -73,6 +75,12 @@ const SCOPE_OPTIONS: FilterOption<ScopeFilter>[] = [
   { value: "client", label: "Por cliente" },
 ];
 
+const KIND_OPTIONS: FilterOption<KindFilter>[] = [
+  { value: "all", label: "Todos" },
+  { value: "BOOKING", label: TEMPLATE_SCOPE_LABELS.BOOKING },
+  { value: "IMPORTACION", label: TEMPLATE_SCOPE_LABELS.IMPORTACION },
+];
+
 export default function NotificationTemplatesPage() {
   const { data, isLoading, error, refetch, isFetching } =
     useNotificationTemplates({ take: 100 });
@@ -85,6 +93,7 @@ export default function NotificationTemplatesPage() {
   const [deleting, setDeleting] = useState<NotificationTemplate | null>(null);
   const [eventFilter, setEventFilter] = useState<EventFilter>("all");
   const [scopeFilter, setScopeFilter] = useState<ScopeFilter>("all");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
 
   const clientNameById = useMemo(() => {
     const map = new Map<number, string>();
@@ -100,9 +109,12 @@ export default function NotificationTemplatesPage() {
       if (eventFilter !== "all" && t.eventType !== eventFilter) return false;
       if (scopeFilter === "global" && t.clientId !== null) return false;
       if (scopeFilter === "client" && t.clientId === null) return false;
+      if (kindFilter !== "all" && (t.scope ?? "BOOKING") !== kindFilter) {
+        return false;
+      }
       return true;
     });
-  }, [data, eventFilter, scopeFilter]);
+  }, [data, eventFilter, scopeFilter, kindFilter]);
 
   const onCreate = () => {
     setEditing(null);
@@ -152,6 +164,18 @@ export default function NotificationTemplatesPage() {
             </span>
           </div>
         ),
+      },
+      {
+        id: "scope",
+        header: "Tipo",
+        cell: ({ row }) =>
+          row.original.scope === "IMPORTACION" ? (
+            <Badge variant="secondary" className="font-normal">
+              Importación
+            </Badge>
+          ) : (
+            <span className="text-sm text-muted-foreground">Exportación</span>
+          ),
       },
       {
         accessorKey: "clientId",
@@ -285,7 +309,7 @@ export default function NotificationTemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Plantillas de notificación"
-        description="Asuntos y cuerpos Handlebars usados al enviar correos de tracking. Puedes tener varias plantillas por evento: cada regla elige cuál envía, y la que quede como default del evento se usa para las reglas que no eligen ninguna."
+        description="Asuntos y cuerpos Handlebars usados al enviar correos de tracking. Puedes tener varias plantillas por evento: cada regla elige cuál envía, y la que quede como default del evento se usa para las reglas que no eligen ninguna. Las importaciones usan su plantilla de tipo Importación activa y, si no hay, la global de exportación."
       />
 
       <ShipsgoEventMap />
@@ -327,6 +351,14 @@ export default function NotificationTemplatesPage() {
               options={EVENT_OPTIONS}
               onChange={setEventFilter}
               triggerLabel="Filtrar evento"
+            />
+            <FilterPopover
+              label="Tipo"
+              value={kindFilter}
+              defaultValue="all"
+              options={KIND_OPTIONS}
+              onChange={setKindFilter}
+              triggerLabel="Filtrar tipo"
             />
             <FilterPopover
               label="Alcance"

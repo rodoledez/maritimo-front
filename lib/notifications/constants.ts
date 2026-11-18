@@ -4,6 +4,7 @@ import type {
   NotificationEventType,
   NotificationLogStatus,
   NotificationReferenceField,
+  NotificationTemplateScope,
   NotificationTriggerType,
 } from "@/types/domain";
 import type { StatusTone } from "@/components/status-badge";
@@ -250,11 +251,42 @@ export const WEEKLY_SUMMARY_TEMPLATE_VARIABLES: TemplateVariable[] = [
   },
 ];
 
+/**
+ * Extras del contexto de **una importación** (Odoo). Las plantillas de
+ * importación también reciben las variables de reserva, alimentadas con los
+ * datos de la importación (`bookingNumber` = booking de Odoo, `clientName` =
+ * consignatario, `opNumber` = N° de operación IMP-…).
+ */
+export const IMPORTACION_TEMPLATE_VARIABLES: TemplateVariable[] = [
+  { name: "isImportacion", description: "`true` en los correos de importación" },
+  { name: "consigneeName", description: "Consignatario" },
+  { name: "hblNumber", description: "HBL" },
+  { name: "importacion.name", description: "N° de operación (IMP-…)" },
+  { name: "importacion.booking", description: "Booking en Odoo" },
+  { name: "importacion.carrierName", description: "Naviera / carrier en Odoo" },
+  { name: "importacion.companyName", description: "Compañía" },
+  { name: "importacion.portOrigin", description: "Puerto de origen (Odoo)" },
+  { name: "importacion.portDestination", description: "Puerto de destino (Odoo)" },
+  { name: "importacion.etd", description: "ETD registrado en Odoo" },
+  { name: "importacion.eta", description: "ETA registrado en Odoo" },
+  { name: "importacion.subStateLabel", description: "Estado de Operación" },
+  { name: "importacion.shipmentTypeLabel", description: "Tipo de embarque" },
+  { name: "importacion.serviceTypeLabel", description: "Tipo de servicio" },
+  { name: "importacion.containerTypeLabel", description: "Tipo de contenedor" },
+  { name: "importacion.responsibleName", description: "Responsable" },
+  { name: "importacion.salesExecutiveName", description: "Ejecutivo comercial" },
+  { name: "eventLabel", description: "Hito notificado" },
+  { name: "eventDate", description: "Fecha del hito" },
+  { name: "eventLocation", description: "Lugar del hito" },
+];
+
 export function templateVariablesFor(
-  eventType: NotificationEventType
+  eventType: NotificationEventType,
+  scope: NotificationTemplateScope = "BOOKING"
 ): TemplateVariable[] {
-  return eventType === "WEEKLY_SUMMARY"
-    ? WEEKLY_SUMMARY_TEMPLATE_VARIABLES
+  if (eventType === "WEEKLY_SUMMARY") return WEEKLY_SUMMARY_TEMPLATE_VARIABLES;
+  return scope === "IMPORTACION"
+    ? [...IMPORTACION_TEMPLATE_VARIABLES, ...TEMPLATE_VARIABLES]
     : TEMPLATE_VARIABLES;
 }
 
@@ -291,13 +323,47 @@ const WEEKLY_SUMMARY_SAMPLE_DATA: Record<string, string> = {
   "counts.sinZarpar": "0",
 };
 
+const IMPORTACION_SAMPLE_DATA: Record<string, string> = {
+  ...SAMPLE_DATA,
+  bookingNumber: "271698632",
+  opNumber: "IMP-758",
+  clientName: "Importadora Ejemplo SpA",
+  portOfLoading: "Ningbo",
+  portOfDischarge: "San Antonio",
+  isImportacion: "true",
+  consigneeName: "Importadora Ejemplo SpA",
+  hblNumber: "HBL-NGB-0458",
+  "importacion.name": "IMP-758",
+  "importacion.booking": "271698632",
+  "importacion.carrierName": "MAERSK",
+  "importacion.companyName": "Acosta & Aguayo",
+  "importacion.portOrigin": "Ningbo",
+  "importacion.portDestination": "San Antonio",
+  "importacion.etd": "02-10-2026",
+  "importacion.eta": "08-11-2026",
+  "importacion.subStateLabel": "Zarpe / Salida",
+  "importacion.shipmentTypeLabel": "FCL",
+  "importacion.serviceTypeLabel": "Marítimo",
+  "importacion.containerTypeLabel": "40HC",
+  "importacion.responsibleName": "Operaciones",
+  "importacion.salesExecutiveName": "Ejecutivo Ejemplo",
+  eventLabel: "Zarpe",
+  eventDate: "02-10-2026",
+  eventLocation: "NINGBO",
+};
+
 export function sampleDataFor(
-  eventType: NotificationEventType
+  eventType: NotificationEventType,
+  scope: NotificationTemplateScope = "BOOKING"
 ): Record<string, string> {
-  return eventType === "WEEKLY_SUMMARY"
-    ? WEEKLY_SUMMARY_SAMPLE_DATA
-    : SAMPLE_DATA;
+  if (eventType === "WEEKLY_SUMMARY") return WEEKLY_SUMMARY_SAMPLE_DATA;
+  return scope === "IMPORTACION" ? IMPORTACION_SAMPLE_DATA : SAMPLE_DATA;
 }
+
+export const TEMPLATE_SCOPE_LABELS: Record<NotificationTemplateScope, string> = {
+  BOOKING: "Exportación (booking)",
+  IMPORTACION: "Importación",
+};
 
 const HANDLEBARS_PLACEHOLDER = /\{\{\s*([\w.]+)\s*\}\}/g;
 
