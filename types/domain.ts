@@ -812,6 +812,29 @@ export type OdooConsigneeContact = {
   syncedAt: string | null;
 };
 
+/**
+ * Persona de la lista de tracking del cliente en Odoo (`x.tracking.contact`,
+ * pestaña Importaciones del cliente). Puede ser un contacto del cliente o un
+ * tercero (agente de aduana, …) que no es hijo del consignatario.
+ */
+export type OdooTrackingContact = {
+  id: number;
+  odooId: number;
+  customerOdooId: number;
+  customerName: string | null;
+  partnerOdooId: number;
+  name: string | null;
+  email: string | null;
+  jobTitle: string | null;
+  /** true = no pertenece a la empresa del cliente. */
+  isThirdParty: boolean;
+  note: string | null;
+  /** false = archivado en Odoo (no recibe). */
+  active: boolean;
+  odooUpdatedAt: string | null;
+  syncedAt: string | null;
+};
+
 export type ImportShipment = {
   id: number;
   odooId: number;
@@ -875,6 +898,8 @@ export type ImportShipment = {
   updatedAt: string | null;
   /** Ordenados: consignatario, luego activos, luego por nombre. Puede venir vacío. */
   contacts: OdooConsigneeContact[];
+  /** Lista de tracking del cliente en Odoo. Ausente en un backend anterior. */
+  trackingContacts?: OdooTrackingContact[];
 };
 
 export type ImportShipmentSubState = { key: string; label: string | null };

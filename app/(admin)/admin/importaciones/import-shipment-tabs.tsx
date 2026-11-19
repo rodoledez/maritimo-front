@@ -30,14 +30,78 @@ import { useShipmentTrackingDetail } from "@/lib/hooks/use-shipments-tracking";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/lib/utils/errors";
 import { formatDateTime } from "@/lib/utils/format";
-import type { ImportShipment, OdooConsigneeContact } from "@/types/domain";
+import type {
+  ImportShipment,
+  OdooConsigneeContact,
+  OdooTrackingContact,
+} from "@/types/domain";
 
 import { BookingMilestonesPanel } from "../reservas/booking-milestones-panel";
 import { BookingNotificationsPanel } from "../reservas/booking-notifications-panel";
 import { ShipsgoTrackingPanel } from "../shipments-tracking/shipsgo-tracking-panel";
-import { contactEmails, receivesTracking, TRACKING_TAG } from "./_contacts";
+import {
+  contactEmails,
+  receivesTracking,
+  TRACKING_TAG,
+  trackingRecipientEmails,
+} from "./_contacts";
 
-function ContactCard({ contact }: { contact: OdooConsigneeContact }) {
+/** Buzón que el backend copia en todo email de hitos de importación. */
+const IMPORTACIONES_MAILBOX = "importaciones@acostayaguayo.cl";
+
+function TrackingListCard({ contact }: { contact: OdooTrackingContact }) {
+  return (
+    <li
+      className={cn(
+        "space-y-1.5 rounded-lg border p-3",
+        !contact.active && "opacity-60"
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{contact.name || "Sin nombre"}</span>
+        {contact.active ? (
+          <Badge>
+            <BellRing />
+            Recibe hitos
+          </Badge>
+        ) : (
+          <Badge variant="outline">Archivado</Badge>
+        )}
+        {contact.isThirdParty ? (
+          <Badge variant="secondary">Tercero</Badge>
+        ) : null}
+      </div>
+      {contact.jobTitle ? (
+        <p className="text-xs text-muted-foreground">{contact.jobTitle}</p>
+      ) : null}
+      {contact.email ? (
+        <a
+          href={`mailto:${contact.email}`}
+          className="inline-flex items-center gap-1 break-all text-sm text-primary hover:underline"
+        >
+          <Mail className="h-3.5 w-3.5 shrink-0" />
+          {contact.email}
+        </a>
+      ) : (
+        <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+          <Mail className="h-3.5 w-3.5" />
+          Sin email
+        </span>
+      )}
+      {contact.note ? (
+        <p className="text-xs text-muted-foreground">{contact.note}</p>
+      ) : null}
+    </li>
+  );
+}
+
+function ContactCard({
+  contact,
+  shipment,
+}: {
+  contact: OdooConsigneeContact;
+  shipment: ImportShipment;
+}) {
   return (
     <li
       className={cn(
@@ -50,7 +114,7 @@ function ContactCard({ contact }: { contact: OdooConsigneeContact }) {
         {contact.isConsignee ? (
           <Badge variant="secondary">Consignatario</Badge>
         ) : null}
-        {receivesTracking(contact) ? (
+        {receivesTracking(contact, shipment) ? (
           <Badge>
             <BellRing />
             Recibe hitos
@@ -113,61 +177,89 @@ function ContactCard({ contact }: { contact: OdooConsigneeContact }) {
   );
 }
 
-function ContactsPanel({ contacts }: { contacts: OdooConsigneeContact[] }) {
+function ContactsPanel({ shipment }: { shipment: ImportShipment }) {
+  const contacts = shipment.contacts ?? [];
+  const trackingList = shipment.trackingContacts ?? [];
   const hasEmail = contactEmails(contacts).length > 0;
   return (
-    <div className="space-y-2">
-      {!hasEmail ? (
-        <Alert variant="destructive">
-          <MailWarning className="h-4 w-4" />
-          <AlertTitle>Sin email</AlertTitle>
-          <AlertDescription>
-            Ningún contacto del consignatario tiene email registrado en Odoo.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {contacts.length ? (
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {contacts.map((contact) => (
-            <ContactCard key={contact.id} contact={contact} />
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          El consignatario no tiene contactos sincronizados.
-        </p>
-      )}
+    <div className="space-y-4">
+      <section className="space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Lista de tracking del cliente (Odoo)
+        </h4>
+        {trackingList.length ? (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {trackingList.map((contact) => (
+              <TrackingListCard key={contact.id} contact={contact} />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            El cliente no tiene lista de tracking en Odoo (pestaña Importaciones
+            del cliente).
+          </p>
+        )}
+      </section>
+      <section className="space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Contactos del consignatario
+        </h4>
+        {!hasEmail ? (
+          <Alert variant="destructive">
+            <MailWarning className="h-4 w-4" />
+            <AlertTitle>Sin email</AlertTitle>
+            <AlertDescription>
+              Ningún contacto del consignatario tiene email registrado en Odoo.
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {contacts.length ? (
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {contacts.map((contact) => (
+              <ContactCard
+                key={contact.id}
+                contact={contact}
+                shipment={shipment}
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            El consignatario no tiene contactos sincronizados.
+          </p>
+        )}
+      </section>
     </div>
   );
 }
 
 /**
- * Quiénes reciben los emails automáticos de hitos: los contactos activos del
- * consignatario con la etiqueta `tracking` en Odoo y con email.
+ * Quiénes reciben los emails automáticos de hitos: la lista de tracking del
+ * cliente en Odoo y los contactos del consignatario con la etiqueta
+ * `tracking`, más el buzón de importaciones en copia.
  */
-function TrackingRecipientsNotice({
-  contacts,
-}: {
-  contacts: OdooConsigneeContact[];
-}) {
-  const recipients = contacts.filter(
-    (c) => c.active && receivesTracking(c) && c.email?.trim()
-  );
+function TrackingRecipientsNotice({ shipment }: { shipment: ImportShipment }) {
+  const recipients = trackingRecipientEmails(shipment);
   return (
     <Alert>
       <Info className="h-4 w-4" />
       <AlertTitle>
         {recipients.length
-          ? `Los hitos se avisan a ${recipients.length} ${recipients.length === 1 ? "contacto" : "contactos"}`
-          : "Ningún contacto recibe los hitos"}
+          ? `Los hitos se avisan a ${recipients.length} ${recipients.length === 1 ? "destinatario" : "destinatarios"} del cliente`
+          : "Ningún contacto del cliente recibe los hitos"}
       </AlertTitle>
       <AlertDescription>
         <p>
-          Los emails automáticos de hitos van a los contactos del consignatario
-          que tienen la etiqueta «{TRACKING_TAG}» en Odoo.
+          Los emails automáticos de hitos van a la lista de tracking del cliente
+          en Odoo (pestaña Importaciones) y a los contactos del consignatario
+          con la etiqueta «{TRACKING_TAG}».
+          {recipients.length ? ` (${recipients.join(", ")})` : ""}
+        </p>
+        <p>
+          {IMPORTACIONES_MAILBOX} va siempre en copia
           {recipients.length
-            ? ` (${recipients.map((c) => c.email).join(", ")})`
-            : " Mientras ningún contacto con email la tenga, los hitos quedan como omitidos."}
+            ? "."
+            : "; mientras el cliente no tenga contactos de tracking, los hitos llegan solo a ese buzón."}
         </p>
         <p>Los hitos con más de 48 h de antigüedad no se envían por email.</p>
       </AlertDescription>
@@ -307,7 +399,7 @@ export function ImportShipmentTabs({
       </TabsList>
 
       <TabsContent value="contacts" className="mt-4">
-        <ContactsPanel contacts={contacts} />
+        <ContactsPanel shipment={shipment} />
       </TabsContent>
 
       <TabsContent value="milestones" className="mt-4">
@@ -393,7 +485,7 @@ export function ImportShipmentTabs({
       </TabsContent>
 
       <TabsContent value="notifications" className="mt-4 space-y-3">
-        <TrackingRecipientsNotice contacts={contacts} />
+        <TrackingRecipientsNotice shipment={shipment} />
         {integrated ? (
           <BookingNotificationsPanel
             logs={logs}
